@@ -41,6 +41,35 @@ nexsmsid/
 - Zod
 - Docker Compose
 
+## Phase 0 Foundation
+
+Phase 0 hanya berisi pondasi awal:
+
+- pnpm workspace dan Turborepo
+- `apps/api` NestJS backend minimal dengan endpoint `/` dan `/health`
+- `apps/web` Next.js App Router minimal
+- shared packages awal: `ui`, `types`, `validators`, `api-client`, dan `config`
+- Docker Compose untuk PostgreSQL dan Redis
+
+Belum ada auth, modul siswa, guru, finance, PPDB, absensi, nilai, atau microservice.
+
+## Menjalankan Project
+
+```bash
+pnpm install
+pnpm dev
+pnpm build
+docker compose up -d
+```
+
+Default service lokal:
+
+- Web: `http://localhost:3000`
+- API: `http://localhost:4000`
+- API health check: `http://localhost:4000/health`
+- PostgreSQL: `localhost:5432`
+- Redis: `localhost:6379`
+
 ## Target UI
 
 - Public homepage modern

@@ -1,0 +1,21 @@
+{
+  "name": "@nexsmsid/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev -p 3000",
+    "start": "next start -p 3000"
+  },
+  "dependencies": {
+    "next": "^15.5.6",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.6",
+    "@types/react": "^19.1.16",
+    "@types/react-dom": "^19.1.9",
+    "typescript": "^5.9.3"
+  }
+}
