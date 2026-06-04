@@ -4,6 +4,7 @@ import { AppController } from "./app.controller";
 import { AuditModule } from "./audit/audit.module";
 import { AuthModule } from "./auth/auth.module";
 import { AppConfigModule } from "./config/app-config.module";
+import { DashboardModule } from "./dashboard/dashboard.module";
 import { DatabaseModule } from "./database/database.module";
 import { HealthModule } from "./health/health.module";
 import { PermissionsModule } from "./permissions/permissions.module";
@@ -16,6 +17,7 @@ import { UsersModule } from "./users/users.module";
     DatabaseModule,
     AuditModule,
     AuthModule,
+    DashboardModule,
     HealthModule,
     UsersModule,
     RolesModule,

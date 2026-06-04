@@ -49,6 +49,71 @@ export type PermissionSummary = {
   description: string | null;
 };
 
+export type DashboardSummary = {
+  users: {
+    total: number;
+    active: number;
+    inactive: number;
+    suspended: number;
+  };
+  roles: {
+    total: number;
+  };
+  permissions: {
+    total: number;
+  };
+  auditLogs: {
+    total: number;
+  };
+  refreshTokens: {
+    active: number;
+  };
+};
+
+export type DashboardRoleSummary = {
+  id: string;
+  name: string;
+  slug: string;
+  isActive: boolean;
+  totalUsers: number;
+  activeUsers: number;
+  totalPermissions: number;
+};
+
+export type DashboardRecentActivity = {
+  id: string;
+  action: string;
+  entity: string;
+  entityId: string | null;
+  metadata: unknown;
+  actor: {
+    id: string;
+    email: string;
+    name: string;
+  } | null;
+  createdAt: string;
+};
+
+export type DashboardSystemStatus = {
+  api: {
+    status: string;
+    version: string;
+    uptime: number;
+  };
+  database: {
+    provider: string;
+    status: string;
+  };
+  redis: {
+    configured: boolean;
+    available: boolean;
+    status: string;
+    host?: string;
+    port?: number;
+  };
+  generatedAt: string;
+};
+
 export type ApiClientOptions = {
   accessToken?: string | (() => string | null | undefined);
   baseUrl?: string;
@@ -122,6 +187,22 @@ export function createApiClient(options: ApiClientOptions = {}) {
     },
     async permissions() {
       return request<PermissionSummary[]>("/permissions");
+    },
+    async dashboardSummary() {
+      const response = await request<DashboardSummary>("/dashboard/summary");
+      return response.data;
+    },
+    async dashboardUserRoleSummary() {
+      const response = await request<DashboardRoleSummary[]>("/dashboard/user-role-summary");
+      return response.data;
+    },
+    async dashboardRecentActivities() {
+      const response = await request<DashboardRecentActivity[]>("/dashboard/recent-activities");
+      return response.data;
+    },
+    async dashboardSystemStatus() {
+      const response = await request<DashboardSystemStatus>("/dashboard/system-status");
+      return response.data;
     }
   };
 }
