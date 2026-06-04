@@ -116,3 +116,172 @@ model AuditLog {
   @@index([createdAt])
   @@map("audit_logs")
 }
+
+model SchoolProfile {
+  id            String   @id @default(cuid())
+  name          String
+  npsn          String?
+  address       String?
+  phone         String?
+  email         String?
+  website       String?
+  principalName String?  @map("principal_name")
+  logoUrl       String?  @map("logo_url")
+  description   String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("school_profiles")
+}
+
+model AcademicYear {
+  id        String     @id @default(cuid())
+  name      String
+  startDate DateTime   @map("start_date")
+  endDate   DateTime   @map("end_date")
+  isActive  Boolean    @default(false) @map("is_active")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  deletedAt DateTime?  @map("deleted_at")
+  semesters Semester[]
+
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("academic_years")
+}
+
+model Semester {
+  id             String       @id @default(cuid())
+  academicYearId String       @map("academic_year_id")
+  name           String
+  order          Int
+  startDate      DateTime     @map("start_date")
+  endDate        DateTime     @map("end_date")
+  isActive       Boolean      @default(false) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  deletedAt      DateTime?    @map("deleted_at")
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
+
+  @@index([academicYearId])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("semesters")
+}
+
+model Department {
+  id           String       @id @default(cuid())
+  code         String       @unique
+  name         String
+  description  String?
+  isActive     Boolean      @default(true) @map("is_active")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  deletedAt    DateTime?    @map("deleted_at")
+  competencies Competency[]
+
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("departments")
+}
+
+model Competency {
+  id           String      @id @default(cuid())
+  departmentId String      @map("department_id")
+  code         String      @unique
+  name         String
+  description  String?
+  isActive     Boolean     @default(true) @map("is_active")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  deletedAt    DateTime?   @map("deleted_at")
+  department   Department  @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  classrooms   Classroom[]
+
+  @@index([departmentId])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("competencies")
+}
+
+model Classroom {
+  id           String     @id @default(cuid())
+  competencyId String     @map("competency_id")
+  code         String     @unique
+  name         String
+  level        Int
+  isActive     Boolean    @default(true) @map("is_active")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  deletedAt    DateTime?  @map("deleted_at")
+  competency   Competency @relation(fields: [competencyId], references: [id], onDelete: Restrict)
+
+  @@index([competencyId])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("classrooms")
+}
+
+model Room {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  name      String
+  type      String?
+  capacity  Int?
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("rooms")
+}
+
+model Subject {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  name      String
+  group     String?
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("subjects")
+}
+
+model LessonHour {
+  id        String    @id @default(cuid())
+  name      String
+  order     Int
+  startTime String    @map("start_time")
+  endTime   String    @map("end_time")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([order])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("lesson_hours")
+}
+
+model PaymentCategory {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  name          String
+  description   String?
+  defaultAmount Int       @default(0) @map("default_amount")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("payment_categories")
+}

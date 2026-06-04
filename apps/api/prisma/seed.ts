@@ -152,6 +152,24 @@ async function main() {
     }
   });
 
+  const existingSchoolProfile = await prisma.schoolProfile.findFirst();
+
+  if (existingSchoolProfile) {
+    await prisma.schoolProfile.update({
+      where: { id: existingSchoolProfile.id },
+      data: {
+        name: existingSchoolProfile.name || "NexSMSID School"
+      }
+    });
+  } else {
+    await prisma.schoolProfile.create({
+      data: {
+        name: "NexSMSID School",
+        description: "Profil sekolah awal untuk Phase 5."
+      }
+    });
+  }
+
   await prisma.auditLog.create({
     data: {
       actorId: superAdmin.id,
