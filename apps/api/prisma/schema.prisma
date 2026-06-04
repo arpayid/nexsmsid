@@ -24,9 +24,13 @@ model User {
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
   deletedAt     DateTime?      @map("deleted_at")
-  roles         UserRole[]
-  refreshTokens RefreshToken[]
-  auditLogs     AuditLog[]     @relation("AuditActor")
+  roles                UserRole[]
+  refreshTokens        RefreshToken[]
+  auditLogs            AuditLog[]            @relation("AuditActor")
+  verifiedPayments     Payment[]             @relation("VerifiedPayments")
+  approvedExpenses     Expense[]             @relation("ApprovedExpenses")
+  ppdbRegistrations    PpdbRegistration[]    @relation("PpdbVerifier")
+  ppdbStatusChanges    PpdbStatusHistory[]   @relation("PpdbStatusChanger")
 
   @@map("users")
 }
@@ -145,6 +149,8 @@ model AcademicYear {
   deletedAt DateTime?  @map("deleted_at")
   semesters Semester[]
   teachingAssignments TeachingAssignment[]
+  invoices Invoice[]
+  ppdbPeriods PpdbPeriod[]
 
   @@index([isActive])
   @@index([deletedAt])
@@ -164,6 +170,7 @@ model Semester {
   deletedAt      DateTime?    @map("deleted_at")
   academicYear   AcademicYear        @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
   teachingAssignments TeachingAssignment[]
+  invoices Invoice[]
 
   @@index([academicYearId])
   @@index([isActive])
@@ -181,6 +188,7 @@ model Department {
   updatedAt    DateTime     @updatedAt @map("updated_at")
   deletedAt    DateTime?    @map("deleted_at")
   competencies Competency[]
+  ppdbRegistrations PpdbRegistration[] @relation("PpdbDepartment")
 
   @@index([isActive])
   @@index([deletedAt])
@@ -199,6 +207,7 @@ model Competency {
   deletedAt    DateTime?   @map("deleted_at")
   department   Department  @relation(fields: [departmentId], references: [id], onDelete: Restrict)
   classrooms   Classroom[]
+  ppdbRegistrations PpdbRegistration[] @relation("PpdbCompetency")
 
   @@index([departmentId])
   @@index([isActive])
@@ -287,6 +296,7 @@ model PaymentCategory {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   deletedAt     DateTime? @map("deleted_at")
+  invoiceItems  InvoiceItem[]
 
   @@index([isActive])
   @@index([deletedAt])
@@ -510,10 +520,12 @@ model Student {
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
   deletedAt    DateTime?   @map("deleted_at")
-  classroom    Classroom?  @relation(fields: [classroomId], references: [id], onDelete: SetNull)
-  guardians    StudentGuardian[]
-  attendanceRecords AttendanceRecord[]
-  grades       Grade[]
+  classroom            Classroom?         @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  guardians            StudentGuardian[]
+  attendanceRecords    AttendanceRecord[]
+  grades               Grade[]
+  invoices             Invoice[]
+  ppdbRegistrations    PpdbRegistration[] @relation("ConvertedStudent")
 
   @@index([classroomId])
   @@index([status])
@@ -598,4 +610,238 @@ model Staff {
   @@index([name])
   @@index([position])
   @@map("staffs")
+}
+
+// Phase 8 - Finance
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIAL
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  QRIS
+  OTHER
+}
+
+enum ExpenseStatus {
+  DRAFT
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+model Invoice {
+  id              String        @id @default(cuid())
+  invoiceNumber   String        @unique @map("invoice_number")
+  studentId       String        @map("student_id")
+  academicYearId  String?       @map("academic_year_id")
+  semesterId      String?       @map("semester_id")
+  issueDate       DateTime      @map("issue_date")
+  dueDate         DateTime?     @map("due_date")
+  subtotal        Decimal       @default(0) @map("subtotal")
+  discount        Decimal       @default(0) @map("discount")
+  penalty         Decimal       @default(0) @map("penalty")
+  total           Decimal       @default(0) @map("total")
+  paidAmount      Decimal       @default(0) @map("paid_amount")
+  status          InvoiceStatus @default(DRAFT)
+  note            String?
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  deletedAt       DateTime?     @map("deleted_at")
+
+  student        Student        @relation(fields: [studentId], references: [id])
+  academicYear   AcademicYear?  @relation(fields: [academicYearId], references: [id])
+  semester       Semester?      @relation(fields: [semesterId], references: [id])
+  items          InvoiceItem[]
+  payments       Payment[]
+
+  @@index([studentId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id                 String          @id @default(cuid())
+  invoiceId          String          @map("invoice_id")
+  paymentCategoryId  String?         @map("payment_category_id")
+  name               String
+  quantity           Int             @default(1)
+  unitPrice          Decimal         @map("unit_price")
+  total              Decimal         @map("total")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+
+  invoice          Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  paymentCategory  PaymentCategory? @relation(fields: [paymentCategoryId], references: [id])
+
+  @@index([invoiceId])
+  @@map("invoice_items")
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  paymentNumber   String        @unique @map("payment_number")
+  invoiceId       String        @map("invoice_id")
+  amount          Decimal       @map("amount")
+  method          PaymentMethod @default(CASH)
+  status          PaymentStatus @default(PENDING)
+  paidAt          DateTime      @default(now()) @map("paid_at")
+  verifiedAt      DateTime?     @map("verified_at")
+  verifiedById    String?       @map("verified_by_id")
+  proofUrl        String?       @map("proof_url")
+  note            String?
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  invoice    Invoice @relation(fields: [invoiceId], references: [id])
+  verifiedBy User?   @relation("VerifiedPayments", fields: [verifiedById], references: [id])
+
+  @@index([invoiceId])
+  @@index([status])
+  @@map("payments")
+}
+
+model Expense {
+  id            String        @id @default(cuid())
+  expenseNumber String        @unique @map("expense_number")
+  title         String
+  category      String
+  amount        Decimal       @map("amount")
+  date          DateTime      @default(now()) @map("date")
+  status        ExpenseStatus @default(DRAFT)
+  approvedById  String?       @map("approved_by_id")
+  note          String?
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  deletedAt     DateTime?     @map("deleted_at")
+
+  approvedBy User? @relation("ApprovedExpenses", fields: [approvedById], references: [id])
+
+  @@index([status])
+  @@index([deletedAt])
+  @@map("expenses")
+}
+
+// Phase 8 - PPDB
+enum PpdbRegistrationStatus {
+  DRAFT
+  SUBMITTED
+  VERIFIED
+  REVISION
+  ACCEPTED
+  REJECTED
+  CONVERTED
+}
+
+enum PpdbDocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum PpdbSelectionStatus {
+  PENDING
+  PASSED
+  FAILED
+}
+
+model PpdbPeriod {
+  id              String    @id @default(cuid())
+  name            String
+  academicYearId  String?   @map("academic_year_id")
+  startDate       DateTime  @map("start_date")
+  endDate         DateTime  @map("end_date")
+  isActive        Boolean   @default(true) @map("is_active")
+  quota           Int?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  academicYear AcademicYear?        @relation(fields: [academicYearId], references: [id])
+  registrations PpdbRegistration[]
+
+  @@index([isActive])
+  @@map("ppdb_periods")
+}
+
+model PpdbRegistration {
+  id                   String                  @id @default(cuid())
+  registrationNumber   String                  @unique @map("registration_number")
+  periodId             String                  @map("period_id")
+  name                 String
+  gender               Gender
+  birthPlace           String?                 @map("birth_place")
+  birthDate            DateTime?               @map("birth_date")
+  address              String?
+  phone                String
+  email                String?
+  previousSchool       String?                 @map("previous_school")
+  selectedDepartmentId String?                 @map("selected_department_id")
+  selectedCompetencyId String?                 @map("selected_competency_id")
+  status               PpdbRegistrationStatus  @default(DRAFT)
+  selectionStatus      PpdbSelectionStatus     @default(PENDING) @map("selection_status")
+  verifiedAt           DateTime?               @map("verified_at")
+  verifiedById         String?                 @map("verified_by_id")
+  convertedStudentId   String?                 @map("converted_student_id")
+  note                 String?
+  createdAt            DateTime                @default(now()) @map("created_at")
+  updatedAt            DateTime                @updatedAt @map("updated_at")
+
+  period             PpdbPeriod          @relation(fields: [periodId], references: [id])
+  selectedDepartment Department?         @relation("PpdbDepartment", fields: [selectedDepartmentId], references: [id])
+  selectedCompetency Competency?         @relation("PpdbCompetency", fields: [selectedCompetencyId], references: [id])
+  verifiedBy         User?               @relation("PpdbVerifier", fields: [verifiedById], references: [id])
+  convertedStudent   Student?            @relation("ConvertedStudent", fields: [convertedStudentId], references: [id])
+  documents          PpdbDocument[]
+  statusHistory      PpdbStatusHistory[]
+
+  @@index([periodId])
+  @@index([status])
+  @@index([convertedStudentId])
+  @@map("ppdb_registrations")
+}
+
+model PpdbDocument {
+  id             String              @id @default(cuid())
+  registrationId String              @map("registration_id")
+  name           String
+  fileUrl        String              @map("file_url")
+  status         PpdbDocumentStatus  @default(PENDING)
+  note           String?
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  registration PpdbRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  @@index([registrationId])
+  @@map("ppdb_documents")
+}
+
+model PpdbStatusHistory {
+  id             String                  @id @default(cuid())
+  registrationId String                  @map("registration_id")
+  fromStatus     PpdbRegistrationStatus? @map("from_status")
+  toStatus       PpdbRegistrationStatus  @map("to_status")
+  note           String?
+  changedById    String?                 @map("changed_by_id")
+  createdAt      DateTime                @default(now()) @map("created_at")
+
+  registration PpdbRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  changedBy    User?            @relation("PpdbStatusChanger", fields: [changedById], references: [id])
+
+  @@index([registrationId])
+  @@map("ppdb_status_histories")
 }

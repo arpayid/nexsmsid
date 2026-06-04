@@ -11,12 +11,20 @@ import { AppConfigModule } from "./config/app-config.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { DatabaseModule } from "./database/database.module";
 import { DepartmentsModule } from "./departments/departments.module";
+import { ExpensesModule } from "./expenses/expenses.module";
+import { FinanceDashboardModule } from "./finance-dashboard/finance-dashboard.module";
 import { GradesModule } from "./grades/grades.module";
 import { GuardiansModule } from "./guardians/guardians.module";
 import { HealthModule } from "./health/health.module";
+import { InvoicesModule } from "./invoices/invoices.module";
 import { LessonHoursModule } from "./lesson-hours/lesson-hours.module";
 import { PaymentCategoriesModule } from "./payment-categories/payment-categories.module";
+import { PaymentsModule } from "./payments/payments.module";
 import { PermissionsModule } from "./permissions/permissions.module";
+import { PpdbDashboardModule } from "./ppdb-dashboard/ppdb-dashboard.module";
+import { PpdbPeriodsModule } from "./ppdb-periods/ppdb-periods.module";
+import { PpdbRegistrationsModule } from "./ppdb-registrations/ppdb-registrations.module";
+import { PublicPpdbModule } from "./public-ppdb/public-ppdb.module";
 import { RolesModule } from "./roles/roles.module";
 import { RoomsModule } from "./rooms/rooms.module";
 import { SchedulesModule } from "./schedules/schedules.module";
@@ -57,7 +65,15 @@ import { UsersModule } from "./users/users.module";
     TeachingAssignmentsModule,
     SchedulesModule,
     AttendanceModule,
-    GradesModule
+    GradesModule,
+    InvoicesModule,
+    PaymentsModule,
+    ExpensesModule,
+    FinanceDashboardModule,
+    PpdbPeriodsModule,
+    PpdbRegistrationsModule,
+    PpdbDashboardModule,
+    PublicPpdbModule
   ],
   controllers: [AppController]
 })

@@ -59,15 +59,17 @@ const navigation = [
   { href: "/admin/master-data/subjects", icon: BookOpenCheck, label: "Mata Pelajaran", permission: "master-data.view" },
   { href: "/admin/master-data/lesson-hours", icon: Clock, label: "Jam Pelajaran", permission: "master-data.view" },
   { href: "/admin/master-data/payment-categories", icon: WalletCards, label: "Kategori Pembayaran", permission: "master-data.view" },
-  { href: "#", icon: Landmark, label: "Keuangan", permission: "master-data.view" },
+  { href: "/admin/finance", icon: Landmark, label: "Keuangan", permission: "finance.view" },
+  { href: "/admin/finance/invoices", icon: FileText, label: "Tagihan", permission: "invoices.view" },
+  { href: "/admin/finance/payments", icon: WalletCards, label: "Pembayaran", permission: "payments.view" },
+  { href: "/admin/finance/expenses", icon: BriefcaseBusiness, label: "Pengeluaran", permission: "expenses.view" },
   { href: "/admin/academic/teaching-assignments", icon: ClipboardList, label: "Mengajar", permission: "teaching-assignments.view" },
   { href: "/admin/academic/schedules", icon: CalendarDays, label: "Jadwal", permission: "schedules.view" },
   { href: "/admin/academic/attendance", icon: ClipboardCheck, label: "Presensi", permission: "attendance.view" },
   { href: "/admin/academic/grades", icon: Award, label: "Nilai", permission: "grades.view" },
-  { href: "#", icon: BriefcaseBusiness, label: "Magang", permission: "master-data.view" },
-  { href: "#", icon: BarChart3, label: "BKK", permission: "master-data.view" },
-  { href: "#", icon: Newspaper, label: "Website CMS", permission: "school-profile.view" },
-  { href: "#", icon: FileText, label: "Laporan", permission: "dashboard.view" }
+  { href: "/admin/ppdb", icon: GraduationCap, label: "PPDB", permission: "ppdb.view" },
+  { href: "/admin/ppdb/periods", icon: CalendarDays, label: "Periode PPDB", permission: "ppdb.view" },
+  { href: "/admin/ppdb/registrations", icon: Users, label: "Pendaftaran", permission: "ppdb.view" }
 ];
 
 export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
@@ -320,6 +322,14 @@ function getCurrentPageLabel(pathname: string) {
 
   if (pathname.startsWith("/admin/academic/")) {
     return "Akademik";
+  }
+
+  if (pathname.startsWith("/admin/finance/")) {
+    return "Keuangan";
+  }
+
+  if (pathname.startsWith("/admin/ppdb/")) {
+    return "PPDB";
   }
 
   if (pathname.startsWith("/admin/")) {
