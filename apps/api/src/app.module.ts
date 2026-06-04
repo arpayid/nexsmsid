@@ -1,10 +1,12 @@
 import { Module } from "@nestjs/common";
 
 import { AcademicYearsModule } from "./academic-years/academic-years.module";
+import { AlumniModule } from "./alumni/alumni.module";
 import { AppController } from "./app.controller";
 import { AttendanceModule } from "./attendance/attendance.module";
 import { AuditModule } from "./audit/audit.module";
 import { AuthModule } from "./auth/auth.module";
+import { BkkDashboardModule } from "./bkk-dashboard/bkk-dashboard.module";
 import { ClassroomsModule } from "./classrooms/classrooms.module";
 import { CompetenciesModule } from "./competencies/competencies.module";
 import { AppConfigModule } from "./config/app-config.module";
@@ -16,7 +18,12 @@ import { FinanceDashboardModule } from "./finance-dashboard/finance-dashboard.mo
 import { GradesModule } from "./grades/grades.module";
 import { GuardiansModule } from "./guardians/guardians.module";
 import { HealthModule } from "./health/health.module";
+import { IndustryPartnersModule } from "./industry-partners/industry-partners.module";
 import { InvoicesModule } from "./invoices/invoices.module";
+import { InternshipLogsModule } from "./internship-logs/internship-logs.module";
+import { InternshipsModule } from "./internships/internships.module";
+import { JobApplicationsModule } from "./job-applications/job-applications.module";
+import { JobVacanciesModule } from "./job-vacancies/job-vacancies.module";
 import { LessonHoursModule } from "./lesson-hours/lesson-hours.module";
 import { PaymentCategoriesModule } from "./payment-categories/payment-categories.module";
 import { PaymentsModule } from "./payments/payments.module";
@@ -35,6 +42,7 @@ import { StudentsModule } from "./students/students.module";
 import { SubjectsModule } from "./subjects/subjects.module";
 import { TeachersModule } from "./teachers/teachers.module";
 import { TeachingAssignmentsModule } from "./teaching-assignments/teaching-assignments.module";
+import { TracerStudiesModule } from "./tracer-studies/tracer-studies.module";
 import { UsersModule } from "./users/users.module";
 
 @Module({
@@ -73,7 +81,15 @@ import { UsersModule } from "./users/users.module";
     PpdbPeriodsModule,
     PpdbRegistrationsModule,
     PpdbDashboardModule,
-    PublicPpdbModule
+    PublicPpdbModule,
+    IndustryPartnersModule,
+    InternshipsModule,
+    InternshipLogsModule,
+    AlumniModule,
+    JobVacanciesModule,
+    JobApplicationsModule,
+    TracerStudiesModule,
+    BkkDashboardModule
   ],
   controllers: [AppController]
 })

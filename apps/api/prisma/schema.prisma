@@ -31,6 +31,8 @@ model User {
   approvedExpenses     Expense[]             @relation("ApprovedExpenses")
   ppdbRegistrations    PpdbRegistration[]    @relation("PpdbVerifier")
   ppdbStatusChanges    PpdbStatusHistory[]   @relation("PpdbStatusChanger")
+  reviewedInternshipLogs InternshipLog[]      @relation("InternshipLogReviewer")
+  assessedInternshipScores InternshipScore[]  @relation("InternshipScoreAssessor")
 
   @@map("users")
 }
@@ -526,6 +528,8 @@ model Student {
   grades               Grade[]
   invoices             Invoice[]
   ppdbRegistrations    PpdbRegistration[] @relation("ConvertedStudent")
+  internships          Internship[]
+  alumni               Alumni?          @relation("StudentAlumni")
 
   @@index([classroomId])
   @@index([status])
@@ -581,6 +585,7 @@ model Teacher {
   updatedAt       DateTime    @updatedAt @map("updated_at")
   deletedAt       DateTime?   @map("deleted_at")
   teachingAssignments TeachingAssignment[]
+  supervisedInternships Internship[] @relation("InternshipSupervisor")
 
   @@index([status])
   @@index([deletedAt])
@@ -844,4 +849,246 @@ model PpdbStatusHistory {
 
   @@index([registrationId])
   @@map("ppdb_status_histories")
+}
+
+// Phase 9 - PKL, Alumni, BKK
+enum PartnerStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum InternshipStatus {
+  PLANNED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum InternshipLogStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  CANCELLED
+}
+
+enum JobApplicationStatus {
+  SUBMITTED
+  REVIEWED
+  INTERVIEW
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum AlumniStatus {
+  ACTIVE
+  WORKING
+  STUDYING
+  ENTREPRENEUR
+  UNEMPLOYED
+  UNKNOWN
+}
+
+model IndustryPartner {
+  id            String        @id @default(cuid())
+  name          String
+  type          String?
+  contactPerson String?       @map("contact_person")
+  phone         String?
+  email         String?
+  address       String?
+  website       String?
+  status        PartnerStatus @default(ACTIVE)
+  note          String?
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  deletedAt     DateTime?     @map("deleted_at")
+
+  internships  Internship[]
+  jobVacancies JobVacancy[]
+
+  @@index([status])
+  @@index([deletedAt])
+  @@index([name])
+  @@map("industry_partners")
+}
+
+model Internship {
+  id                  String           @id @default(cuid())
+  studentId           String           @map("student_id")
+  industryPartnerId   String           @map("industry_partner_id")
+  supervisorTeacherId String?          @map("supervisor_teacher_id")
+  title               String
+  startDate           DateTime         @map("start_date")
+  endDate             DateTime         @map("end_date")
+  status              InternshipStatus @default(PLANNED)
+  finalScore          Decimal?         @map("final_score")
+  note                String?
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+  deletedAt           DateTime?        @map("deleted_at")
+
+  student         Student         @relation(fields: [studentId], references: [id])
+  industryPartner IndustryPartner @relation(fields: [industryPartnerId], references: [id])
+  supervisor      Teacher?        @relation("InternshipSupervisor", fields: [supervisorTeacherId], references: [id])
+  logs            InternshipLog[]
+  score           InternshipScore?
+
+  @@index([studentId])
+  @@index([industryPartnerId])
+  @@index([supervisorTeacherId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("internships")
+}
+
+model InternshipLog {
+  id            String              @id @default(cuid())
+  internshipId  String              @map("internship_id")
+  date          DateTime
+  activity      String
+  obstacle      String?
+  solution      String?
+  status        InternshipLogStatus @default(DRAFT)
+  reviewedById  String?             @map("reviewed_by_id")
+  reviewedAt    DateTime?           @map("reviewed_at")
+  note          String?
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  internship Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  reviewedBy User?      @relation("InternshipLogReviewer", fields: [reviewedById], references: [id])
+
+  @@index([internshipId])
+  @@index([status])
+  @@map("internship_logs")
+}
+
+model InternshipScore {
+  id              String   @id @default(cuid())
+  internshipId    String   @unique @map("internship_id")
+  disciplineScore Int      @map("discipline_score")
+  skillScore      Int      @map("skill_score")
+  attitudeScore   Int      @map("attitude_score")
+  reportScore     Int      @map("report_score")
+  finalScore      Decimal  @map("final_score")
+  assessedById    String?  @map("assessed_by_id")
+  note            String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  internship Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  assessedBy User?      @relation("InternshipScoreAssessor", fields: [assessedById], references: [id])
+
+  @@index([assessedById])
+  @@map("internship_scores")
+}
+
+model Alumni {
+  id              String       @id @default(cuid())
+  studentId       String?      @unique @map("student_id")
+  nis             String?
+  name            String
+  graduationYear  Int          @map("graduation_year")
+  phone           String?
+  email           String?
+  address         String?
+  status          AlumniStatus @default(UNKNOWN)
+  currentCompany  String?      @map("current_company")
+  currentPosition String?      @map("current_position")
+  university      String?
+  businessName    String?      @map("business_name")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  deletedAt       DateTime?    @map("deleted_at")
+
+  student         Student?         @relation("StudentAlumni", fields: [studentId], references: [id])
+  jobApplications JobApplication[]
+  tracerStudies   TracerStudy[]
+
+  @@index([status])
+  @@index([graduationYear])
+  @@index([deletedAt])
+  @@index([name])
+  @@map("alumni")
+}
+
+model JobVacancy {
+  id                String     @id @default(cuid())
+  industryPartnerId String?    @map("industry_partner_id")
+  title             String
+  companyName       String     @map("company_name")
+  description       String
+  qualification     String?
+  location          String?
+  employmentType    String?    @map("employment_type")
+  salaryRange       String?    @map("salary_range")
+  deadline          DateTime?
+  status            JobStatus  @default(DRAFT)
+  publishedAt       DateTime?  @map("published_at")
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+  deletedAt         DateTime?  @map("deleted_at")
+
+  industryPartner IndustryPartner? @relation(fields: [industryPartnerId], references: [id])
+  applications    JobApplication[]
+
+  @@index([industryPartnerId])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([deadline])
+  @@map("job_vacancies")
+}
+
+model JobApplication {
+  id             String               @id @default(cuid())
+  jobVacancyId   String               @map("job_vacancy_id")
+  alumniId       String?              @map("alumni_id")
+  applicantName  String               @map("applicant_name")
+  applicantEmail String?              @map("applicant_email")
+  applicantPhone String?              @map("applicant_phone")
+  cvUrl          String?              @map("cv_url")
+  status         JobApplicationStatus @default(SUBMITTED)
+  note           String?
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+
+  jobVacancy JobVacancy @relation(fields: [jobVacancyId], references: [id], onDelete: Cascade)
+  alumni     Alumni?    @relation(fields: [alumniId], references: [id])
+
+  @@unique([jobVacancyId, applicantEmail])
+  @@index([jobVacancyId])
+  @@index([alumniId])
+  @@index([status])
+  @@map("job_applications")
+}
+
+model TracerStudy {
+  id           String       @id @default(cuid())
+  alumniId     String       @map("alumni_id")
+  year         Int
+  status       AlumniStatus @default(UNKNOWN)
+  companyName  String?      @map("company_name")
+  position     String?
+  university   String?
+  major        String?
+  businessName String?      @map("business_name")
+  incomeRange  String?      @map("income_range")
+  feedback     String?
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  alumni Alumni @relation(fields: [alumniId], references: [id], onDelete: Cascade)
+
+  @@index([alumniId])
+  @@index([year])
+  @@index([status])
+  @@map("tracer_studies")
 }

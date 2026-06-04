@@ -69,7 +69,15 @@ const navigation = [
   { href: "/admin/academic/grades", icon: Award, label: "Nilai", permission: "grades.view" },
   { href: "/admin/ppdb", icon: GraduationCap, label: "PPDB", permission: "ppdb.view" },
   { href: "/admin/ppdb/periods", icon: CalendarDays, label: "Periode PPDB", permission: "ppdb.view" },
-  { href: "/admin/ppdb/registrations", icon: Users, label: "Pendaftaran", permission: "ppdb.view" }
+  { href: "/admin/ppdb/registrations", icon: Users, label: "Pendaftaran", permission: "ppdb.view" },
+  { href: "/admin/industry-partners", icon: Building2, label: "Mitra Industri", permission: "industry-partners.view" },
+  { href: "/admin/internships", icon: BriefcaseBusiness, label: "Data PKL", permission: "internships.view" },
+  { href: "/admin/internships/logs", icon: ClipboardList, label: "Jurnal PKL", permission: "internship-logs.view" },
+  { href: "/admin/bkk", icon: BarChart3, label: "BKK", permission: "bkk.view" },
+  { href: "/admin/alumni", icon: GraduationCap, label: "Alumni", permission: "alumni.view" },
+  { href: "/admin/bkk/jobs", icon: Newspaper, label: "Lowongan Kerja", permission: "job-vacancies.view" },
+  { href: "/admin/bkk/applications", icon: FileText, label: "Lamaran", permission: "job-applications.view" },
+  { href: "/admin/bkk/tracer-studies", icon: ClipboardCheck, label: "Tracer Study", permission: "tracer-studies.view" }
 ];
 
 export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {

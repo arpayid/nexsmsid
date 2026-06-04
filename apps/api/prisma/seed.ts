@@ -84,7 +84,46 @@ const permissions = [
   "ppdb.approve",
   "ppdb.reject",
   "ppdb.convert",
-  "ppdb.export"
+  "ppdb.export",
+  "industry-partners.view",
+  "industry-partners.create",
+  "industry-partners.update",
+  "industry-partners.delete",
+  "internships.view",
+  "internships.create",
+  "internships.update",
+  "internships.delete",
+  "internships.start",
+  "internships.complete",
+  "internships.cancel",
+  "internships.score",
+  "internship-logs.view",
+  "internship-logs.create",
+  "internship-logs.update",
+  "internship-logs.approve",
+  "internship-logs.reject",
+  "alumni.view",
+  "alumni.create",
+  "alumni.update",
+  "alumni.delete",
+  "alumni.convert",
+  "job-vacancies.view",
+  "job-vacancies.create",
+  "job-vacancies.update",
+  "job-vacancies.delete",
+  "job-vacancies.publish",
+  "job-vacancies.close",
+  "job-applications.view",
+  "job-applications.update",
+  "job-applications.review",
+  "job-applications.accept",
+  "job-applications.reject",
+  "tracer-studies.view",
+  "tracer-studies.create",
+  "tracer-studies.update",
+  "tracer-studies.delete",
+  "bkk.view",
+  "bkk.export"
 ];
 
 const roles = [
@@ -107,7 +146,7 @@ const roles = [
 const rolePermissionMap: Record<string, string[]> = {
   "super-admin": permissions,
   "admin-sekolah": permissions.filter((permission) => !permission.endsWith(".delete")),
-  "kepala-sekolah": ["dashboard.view", "users.view", "roles.view", "permissions.view", "school-profile.view", "master-data.view", "students.view", "guardians.view", "teachers.view", "staffs.view", "teaching-assignments.view", "schedules.view", "attendance.view", "grades.view", "finance.view", "invoices.view", "payments.view", "expenses.view", "ppdb.view", "ppdb.approve", "ppdb.reject"],
+  "kepala-sekolah": ["dashboard.view", "users.view", "roles.view", "permissions.view", "school-profile.view", "master-data.view", "students.view", "guardians.view", "teachers.view", "staffs.view", "teaching-assignments.view", "schedules.view", "attendance.view", "grades.view", "finance.view", "invoices.view", "payments.view", "expenses.view", "ppdb.view", "ppdb.approve", "ppdb.reject", "industry-partners.view", "internships.view", "internship-logs.view", "alumni.view", "job-vacancies.view", "job-applications.view", "tracer-studies.view", "bkk.view"],
   "waka-kurikulum": ["dashboard.view", "users.view", "master-data.view", "master-data.create", "master-data.update", "students.view", "teachers.view", "teaching-assignments.view", "teaching-assignments.manage", "schedules.view", "schedules.manage", "attendance.view", "attendance.record", "attendance.update", "attendance.approve", "grades.view", "grades.input", "grades.update", "grades.approve", "grades.publish"],
   "waka-kesiswaan": ["dashboard.view", "users.view", "master-data.view", "students.view", "students.create", "students.update", "guardians.view", "guardians.create", "guardians.update"],
   "guru": ["dashboard.view", "master-data.view", "students.view", "teachers.view", "teaching-assignments.view", "schedules.view", "attendance.view", "attendance.record", "grades.view", "grades.input"],
@@ -117,8 +156,8 @@ const rolePermissionMap: Record<string, string[]> = {
   "bendahara": ["dashboard.view", "master-data.view", "staffs.view", "finance.view", "finance.export", "invoices.view", "invoices.create", "invoices.update", "payments.view", "payments.create", "expenses.view", "expenses.create", "expenses.approve", "expenses.pay"],
   "staff-tu": ["dashboard.view", "users.view", "users.create", "users.update", "master-data.view", "master-data.create", "master-data.update", "students.view", "students.create", "students.update", "students.import", "students.export", "guardians.view", "guardians.create", "guardians.update", "teachers.view", "teachers.create", "teachers.update", "teachers.import", "teachers.export", "staffs.view", "staffs.create", "staffs.update", "staffs.import", "staffs.export", "teaching-assignments.view", "teaching-assignments.manage", "schedules.view", "schedules.manage", "attendance.view", "attendance.record", "attendance.update", "grades.view", "grades.input", "grades.update"],
   "panitia-ppdb": ["dashboard.view", "users.view", "users.create", "users.update", "master-data.view", "students.view", "ppdb.view", "ppdb.create", "ppdb.update", "ppdb.verify", "ppdb.approve", "ppdb.reject", "ppdb.convert", "ppdb.export"],
-  "pembimbing-pkl": ["dashboard.view", "users.view", "master-data.view", "students.view", "teachers.view"],
-  "admin-bkk": ["dashboard.view", "users.view", "master-data.view", "students.view", "staffs.view"]
+  "pembimbing-pkl": ["dashboard.view", "users.view", "master-data.view", "students.view", "teachers.view", "industry-partners.view", "internships.view", "internships.create", "internships.update", "internships.start", "internships.complete", "internships.cancel", "internships.score", "internship-logs.view", "internship-logs.create", "internship-logs.update", "internship-logs.approve", "internship-logs.reject"],
+  "admin-bkk": ["dashboard.view", "users.view", "master-data.view", "students.view", "staffs.view", "industry-partners.view", "industry-partners.create", "industry-partners.update", "alumni.view", "alumni.create", "alumni.update", "alumni.convert", "job-vacancies.view", "job-vacancies.create", "job-vacancies.update", "job-vacancies.publish", "job-vacancies.close", "job-applications.view", "job-applications.update", "job-applications.review", "job-applications.accept", "job-applications.reject", "tracer-studies.view", "tracer-studies.create", "tracer-studies.update", "bkk.view", "bkk.export"]
 };
 
 function permissionGroup(key: string) {
@@ -239,6 +278,7 @@ async function main() {
   await seedPeopleManagement();
   await seedAcademicPhase7();
   await seedFinanceAndPpdb();
+  await seedPhase9PklBkk();
 
   await prisma.auditLog.create({
     data: {
@@ -990,6 +1030,118 @@ async function seedFinanceAndPpdb() {
   });
 
   console.log("Phase 8 finance and PPDB data seeded.");
+}
+
+async function seedPhase9PklBkk() {
+  const students = await prisma.student.findMany({ where: { deletedAt: null }, orderBy: { nis: "asc" } });
+  const teachers = await prisma.teacher.findMany({ where: { deletedAt: null }, orderBy: { name: "asc" } });
+
+  if (students.length < 2 || !teachers.length) {
+    console.log("Phase 9 seed: missing prerequisite data, skipping sample data.");
+    return;
+  }
+
+  const student1 = students[0];
+  const student2 = students[1];
+  const teacher = teachers[0];
+
+  await prisma.jobApplication.deleteMany({ where: { applicantEmail: "phase9-applicant@nexsmsid.dev" } });
+  await prisma.alumni.deleteMany({ where: { studentId: student2.id } });
+  await prisma.student.update({ where: { id: student2.id }, data: { status: "ACTIVE" } });
+
+  const partner1 = await prisma.industryPartner.upsert({
+    where: { id: "seed-industry-partner-1" },
+    update: { name: "PT Maju Motor Indonesia", type: "Otomotif", contactPerson: "Doni Setiawan", phone: "0215550101", email: "hrd@majumotor.test", address: "Kawasan Industri Pulogadung", website: "https://majumotor.test", status: "ACTIVE", note: "Mitra PKL utama jurusan TKR", deletedAt: null },
+    create: { id: "seed-industry-partner-1", name: "PT Maju Motor Indonesia", type: "Otomotif", contactPerson: "Doni Setiawan", phone: "0215550101", email: "hrd@majumotor.test", address: "Kawasan Industri Pulogadung", website: "https://majumotor.test", status: "ACTIVE", note: "Mitra PKL utama jurusan TKR" }
+  });
+
+  const partner2 = await prisma.industryPartner.upsert({
+    where: { id: "seed-industry-partner-2" },
+    update: { name: "CV Digital Nusantara", type: "Teknologi", contactPerson: "Rina Kurnia", phone: "0225550102", email: "career@digitalnusantara.test", address: "Jl. Teknologi No. 9 Bandung", website: "https://digitalnusantara.test", status: "ACTIVE", note: "Mitra lowongan kerja dan magang IT", deletedAt: null },
+    create: { id: "seed-industry-partner-2", name: "CV Digital Nusantara", type: "Teknologi", contactPerson: "Rina Kurnia", phone: "0225550102", email: "career@digitalnusantara.test", address: "Jl. Teknologi No. 9 Bandung", website: "https://digitalnusantara.test", status: "ACTIVE", note: "Mitra lowongan kerja dan magang IT" }
+  });
+
+  const internship1 = await prisma.internship.upsert({
+    where: { id: "seed-internship-1" },
+    update: { studentId: student1.id, industryPartnerId: partner1.id, supervisorTeacherId: teacher.id, title: "PKL Bengkel Otomotif", startDate: new Date("2026-01-12"), endDate: new Date("2026-04-12"), status: "PLANNED", finalScore: null, note: "Rencana PKL siswa di bengkel rekanan", deletedAt: null },
+    create: { id: "seed-internship-1", studentId: student1.id, industryPartnerId: partner1.id, supervisorTeacherId: teacher.id, title: "PKL Bengkel Otomotif", startDate: new Date("2026-01-12"), endDate: new Date("2026-04-12"), status: "PLANNED", note: "Rencana PKL siswa di bengkel rekanan" }
+  });
+
+  const internship2 = await prisma.internship.upsert({
+    where: { id: "seed-internship-2" },
+    update: { studentId: student2.id, industryPartnerId: partner2.id, supervisorTeacherId: teacher.id, title: "PKL Administrasi Digital", startDate: new Date("2026-02-01"), endDate: new Date("2026-05-01"), status: "ONGOING", finalScore: 86, note: "PKL berjalan di divisi operasional digital", deletedAt: null },
+    create: { id: "seed-internship-2", studentId: student2.id, industryPartnerId: partner2.id, supervisorTeacherId: teacher.id, title: "PKL Administrasi Digital", startDate: new Date("2026-02-01"), endDate: new Date("2026-05-01"), status: "ONGOING", finalScore: 86, note: "PKL berjalan di divisi operasional digital" }
+  });
+
+  await prisma.internshipLog.upsert({
+    where: { id: "seed-internship-log-1" },
+    update: { internshipId: internship1.id, date: new Date("2026-01-13"), activity: "Orientasi tempat PKL dan pengenalan SOP bengkel", obstacle: null, solution: null, status: "SUBMITTED", reviewedById: null, reviewedAt: null, note: null },
+    create: { id: "seed-internship-log-1", internshipId: internship1.id, date: new Date("2026-01-13"), activity: "Orientasi tempat PKL dan pengenalan SOP bengkel", status: "SUBMITTED" }
+  });
+
+  await prisma.internshipLog.upsert({
+    where: { id: "seed-internship-log-2" },
+    update: { internshipId: internship2.id, date: new Date("2026-02-08"), activity: "Membantu input data pelanggan dan arsip servis", obstacle: "Adaptasi aplikasi internal", solution: "Didampingi staf administrasi", status: "APPROVED", reviewedById: null, reviewedAt: new Date("2026-02-09"), note: "Aktivitas sesuai target" },
+    create: { id: "seed-internship-log-2", internshipId: internship2.id, date: new Date("2026-02-08"), activity: "Membantu input data pelanggan dan arsip servis", obstacle: "Adaptasi aplikasi internal", solution: "Didampingi staf administrasi", status: "APPROVED", reviewedAt: new Date("2026-02-09"), note: "Aktivitas sesuai target" }
+  });
+
+  await prisma.internshipScore.upsert({
+    where: { internshipId: internship2.id },
+    update: { disciplineScore: 88, skillScore: 84, attitudeScore: 90, reportScore: 82, finalScore: 86, assessedById: null, note: "Nilai sementara baik" },
+    create: { id: "seed-internship-score-1", internshipId: internship2.id, disciplineScore: 88, skillScore: 84, attitudeScore: 90, reportScore: 82, finalScore: 86, note: "Nilai sementara baik" }
+  });
+
+  await prisma.student.update({ where: { id: student1.id }, data: { status: "GRADUATED" } });
+
+  const alumni1 = await prisma.alumni.upsert({
+    where: { id: "seed-alumni-1" },
+    update: { studentId: student1.id, nis: student1.nis, name: student1.name, graduationYear: 2025, phone: student1.phone, email: student1.email, address: student1.address, status: "WORKING", currentCompany: partner1.name, currentPosition: "Junior Mechanic", university: null, businessName: null, deletedAt: null },
+    create: { id: "seed-alumni-1", studentId: student1.id, nis: student1.nis, name: student1.name, graduationYear: 2025, phone: student1.phone, email: student1.email, address: student1.address, status: "WORKING", currentCompany: partner1.name, currentPosition: "Junior Mechanic" }
+  });
+
+  const alumni2 = await prisma.alumni.upsert({
+    where: { id: "seed-alumni-2" },
+    update: { studentId: null, nis: "20240099", name: "Raka Pradipta", graduationYear: 2024, phone: "081299900111", email: "raka.pradipta@example.com", address: "Jl. Veteran No. 4", status: "STUDYING", currentCompany: null, currentPosition: null, university: "Politeknik Negeri Bandung", businessName: null, deletedAt: null },
+    create: { id: "seed-alumni-2", nis: "20240099", name: "Raka Pradipta", graduationYear: 2024, phone: "081299900111", email: "raka.pradipta@example.com", address: "Jl. Veteran No. 4", status: "STUDYING", university: "Politeknik Negeri Bandung" }
+  });
+
+  const job1 = await prisma.jobVacancy.upsert({
+    where: { id: "seed-job-vacancy-1" },
+    update: { industryPartnerId: partner1.id, title: "Teknisi Junior Otomotif", companyName: partner1.name, description: "Membantu perawatan kendaraan ringan dan servis berkala.", qualification: "Lulusan SMK otomotif, teliti, siap shift", location: "Jakarta Timur", employmentType: "Full Time", salaryRange: "Rp3.500.000 - Rp4.500.000", deadline: new Date("2026-08-31"), status: "DRAFT", publishedAt: null, deletedAt: null },
+    create: { id: "seed-job-vacancy-1", industryPartnerId: partner1.id, title: "Teknisi Junior Otomotif", companyName: partner1.name, description: "Membantu perawatan kendaraan ringan dan servis berkala.", qualification: "Lulusan SMK otomotif, teliti, siap shift", location: "Jakarta Timur", employmentType: "Full Time", salaryRange: "Rp3.500.000 - Rp4.500.000", deadline: new Date("2026-08-31"), status: "DRAFT" }
+  });
+
+  const job2 = await prisma.jobVacancy.upsert({
+    where: { id: "seed-job-vacancy-2" },
+    update: { industryPartnerId: partner2.id, title: "Staff Administrasi Digital", companyName: partner2.name, description: "Mengelola data operasional dan dokumentasi digital perusahaan.", qualification: "Terbiasa spreadsheet, komunikasi baik", location: "Bandung", employmentType: "Contract", salaryRange: "Rp3.000.000 - Rp4.000.000", deadline: new Date("2026-09-30"), status: "PUBLISHED", publishedAt: new Date("2026-06-15"), deletedAt: null },
+    create: { id: "seed-job-vacancy-2", industryPartnerId: partner2.id, title: "Staff Administrasi Digital", companyName: partner2.name, description: "Mengelola data operasional dan dokumentasi digital perusahaan.", qualification: "Terbiasa spreadsheet, komunikasi baik", location: "Bandung", employmentType: "Contract", salaryRange: "Rp3.000.000 - Rp4.000.000", deadline: new Date("2026-09-30"), status: "PUBLISHED", publishedAt: new Date("2026-06-15") }
+  });
+
+  await prisma.jobApplication.upsert({
+    where: { id: "seed-job-application-1" },
+    update: { jobVacancyId: job2.id, alumniId: alumni1.id, applicantName: alumni1.name, applicantEmail: alumni1.email, applicantPhone: alumni1.phone, cvUrl: "/uploads/cv/andi.pdf", status: "REVIEWED", note: "Profil sesuai kebutuhan" },
+    create: { id: "seed-job-application-1", jobVacancyId: job2.id, alumniId: alumni1.id, applicantName: alumni1.name, applicantEmail: alumni1.email, applicantPhone: alumni1.phone, cvUrl: "/uploads/cv/andi.pdf", status: "REVIEWED", note: "Profil sesuai kebutuhan" }
+  });
+
+  await prisma.jobApplication.upsert({
+    where: { id: "seed-job-application-2" },
+    update: { jobVacancyId: job2.id, alumniId: alumni2.id, applicantName: alumni2.name, applicantEmail: alumni2.email, applicantPhone: alumni2.phone, cvUrl: "/uploads/cv/raka.pdf", status: "SUBMITTED", note: null },
+    create: { id: "seed-job-application-2", jobVacancyId: job2.id, alumniId: alumni2.id, applicantName: alumni2.name, applicantEmail: alumni2.email, applicantPhone: alumni2.phone, cvUrl: "/uploads/cv/raka.pdf", status: "SUBMITTED" }
+  });
+
+  await prisma.tracerStudy.upsert({
+    where: { id: "seed-tracer-study-1" },
+    update: { alumniId: alumni1.id, year: 2026, status: "WORKING", companyName: partner1.name, position: "Junior Mechanic", university: null, major: null, businessName: null, incomeRange: "Rp3.000.000 - Rp5.000.000", feedback: "Kompetensi praktik sangat membantu pekerjaan" },
+    create: { id: "seed-tracer-study-1", alumniId: alumni1.id, year: 2026, status: "WORKING", companyName: partner1.name, position: "Junior Mechanic", incomeRange: "Rp3.000.000 - Rp5.000.000", feedback: "Kompetensi praktik sangat membantu pekerjaan" }
+  });
+
+  await prisma.tracerStudy.upsert({
+    where: { id: "seed-tracer-study-2" },
+    update: { alumniId: alumni2.id, year: 2026, status: "STUDYING", companyName: null, position: null, university: "Politeknik Negeri Bandung", major: "Teknik Informatika", businessName: null, incomeRange: null, feedback: "Perlu lebih banyak materi persiapan karier" },
+    create: { id: "seed-tracer-study-2", alumniId: alumni2.id, year: 2026, status: "STUDYING", university: "Politeknik Negeri Bandung", major: "Teknik Informatika", feedback: "Perlu lebih banyak materi persiapan karier" }
+  });
+
+  console.log("Phase 9 PKL, Alumni, and BKK data seeded.");
 }
 
 main()
