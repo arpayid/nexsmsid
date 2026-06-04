@@ -6,7 +6,9 @@
     "jsx": "preserve",
     "noEmit": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@nexsmsid/ui": ["../../packages/ui/src/index.ts"],
+      "@nexsmsid/ui/*": ["../../packages/ui/src/*"]
     },
     "plugins": [
       {
