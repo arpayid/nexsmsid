@@ -53,6 +53,21 @@ Phase 0 hanya berisi pondasi awal:
 
 Belum ada auth, modul siswa, guru, finance, PPDB, absensi, nilai, atau microservice.
 
+## Phase 2 API Core
+
+Phase 2 menambahkan pondasi backend standar:
+
+- Prisma schema awal di `apps/api/prisma/schema.prisma`
+- `DatabaseModule` dan `PrismaService` untuk koneksi PostgreSQL
+- `ConfigModule` global dengan validasi environment
+- API prefix `/api/v1`
+- response format standar: `success`, `message`, `data`, dan `meta`
+- global exception filter dan request logging minimal
+- health/version endpoint: `/health`, `/api/v1/health`, `/api/v1/version`
+- Redis baru divalidasi sebagai config, belum dipakai untuk queue
+
+Belum ada auth, users, roles, permissions, modul siswa, guru, finance, PPDB, absensi, nilai, atau microservice.
+
 ## Menjalankan Project
 
 ```bash
@@ -67,6 +82,8 @@ Default service lokal:
 - Web: `http://localhost:3000`
 - API: `http://localhost:4000`
 - API health check: `http://localhost:4000/health`
+- API v1 health check: `http://localhost:4000/api/v1/health`
+- API version: `http://localhost:4000/api/v1/version`
 - PostgreSQL: `localhost:5432`
 - Redis: `localhost:6379`
 

@@ -1,21 +1,16 @@
 import { Controller, Get } from "@nestjs/common";
 
+import { apiSuccess } from "./common/api-response";
+
 @Controller()
 export class AppController {
   @Get()
   getRoot() {
-    return {
+    return apiSuccess("NexSMSID API is running", {
       name: "NexSMSID API",
-      status: "ok"
-    };
-  }
-
-  @Get("health")
-  getHealth() {
-    return {
-      service: "api",
       status: "ok",
-      timestamp: new Date().toISOString()
-    };
+      health: "/api/v1/health",
+      version: "/api/v1/version"
+    });
   }
 }
