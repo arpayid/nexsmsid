@@ -7,6 +7,7 @@
     "noEmit": true,
     "paths": {
       "@/*": ["./src/*"],
+      "@nexsmsid/api-client": ["../../packages/api-client/src/index.ts"],
       "@nexsmsid/ui": ["../../packages/ui/src/index.ts"],
       "@nexsmsid/ui/*": ["../../packages/ui/src/*"]
     },

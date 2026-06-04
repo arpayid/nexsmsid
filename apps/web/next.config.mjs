@@ -1,5 +1,5 @@
 const nextConfig = {
-  transpilePackages: ["@nexsmsid/ui"]
+  transpilePackages: ["@nexsmsid/api-client", "@nexsmsid/ui"]
 };
 
 export default nextConfig;

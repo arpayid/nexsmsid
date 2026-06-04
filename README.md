@@ -68,6 +68,43 @@ Phase 2 menambahkan pondasi backend standar:
 
 Belum ada auth, users, roles, permissions, modul siswa, guru, finance, PPDB, absensi, nilai, atau microservice.
 
+## Phase 3 Auth RBAC Audit
+
+Phase 3 menambahkan pondasi autentikasi dan otorisasi:
+
+- Prisma model `User`, `Role`, `Permission`, `UserRole`, `RolePermission`, `RefreshToken`, dan `AuditLog`
+- JWT access token dan refresh token
+- refresh token disimpan hashed di database
+- `JwtAuthGuard`, `PermissionGuard`, `@CurrentUser()`, dan `@RequirePermissions()`
+- endpoint auth: login, refresh, logout, dan me
+- CRUD dasar users dan roles
+- list/read permissions
+- audit log untuk login, logout, user action, dan role action
+- login page development di `apps/web`
+- protected admin shell sederhana berbasis `/auth/me`
+
+Credential seed development:
+
+- Email: `superadmin@nexsmsid.dev`
+- Password: `ChangeMe123!`
+
+Command Phase 3:
+
+```bash
+pnpm --filter api prisma migrate dev
+pnpm --filter api prisma db seed
+pnpm dev
+```
+
+Endpoint auth utama:
+
+- `POST http://localhost:4000/api/v1/auth/login`
+- `POST http://localhost:4000/api/v1/auth/refresh`
+- `POST http://localhost:4000/api/v1/auth/logout`
+- `GET http://localhost:4000/api/v1/auth/me`
+
+Belum ada modul siswa, guru, finance, PPDB, absensi, nilai, atau microservice.
+
 ## Menjalankan Project
 
 ```bash
@@ -84,6 +121,8 @@ Default service lokal:
 - API health check: `http://localhost:4000/health`
 - API v1 health check: `http://localhost:4000/api/v1/health`
 - API version: `http://localhost:4000/api/v1/version`
+- Login admin: `http://localhost:3000/login`
+- Admin dashboard protected: `http://localhost:3000/admin`
 - PostgreSQL: `localhost:5432`
 - Redis: `localhost:6379`
 

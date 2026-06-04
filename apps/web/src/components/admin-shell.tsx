@@ -11,6 +11,8 @@ import {
   GraduationCap,
   Landmark,
   LayoutDashboard,
+  Loader2,
+  LogOut,
   Menu,
   Newspaper,
   PanelLeftClose,
@@ -21,32 +23,113 @@ import {
   X
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { type ReactNode, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { startTransition, type ReactNode, useEffect, useState } from "react";
 
+import type { AuthUser } from "@nexsmsid/api-client";
 import { Avatar, Badge, Button, Input, cn } from "@nexsmsid/ui";
 
+import { createBrowserApiClient } from "@/lib/api-client";
+import { clearAuthTokens, getAccessToken, getRefreshToken, getStoredUser, storeAuthTokens } from "@/lib/auth-storage";
+
 const navigation = [
-  { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "#", icon: UsersRound, label: "Siswa" },
-  { href: "#", icon: GraduationCap, label: "Guru & Staf" },
-  { href: "#", icon: ClipboardList, label: "Akademik" },
-  { href: "#", icon: Landmark, label: "Keuangan" },
-  { href: "#", icon: Building2, label: "PPDB" },
-  { href: "#", icon: BriefcaseBusiness, label: "Magang" },
-  { href: "#", icon: BarChart3, label: "BKK" },
-  { href: "#", icon: Newspaper, label: "Website CMS" },
-  { href: "#", icon: FileText, label: "Laporan" }
+  { href: "/admin", icon: LayoutDashboard, label: "Dashboard", permission: "dashboard.view" },
+  { href: "#", icon: UsersRound, label: "Siswa", permission: "users.view" },
+  { href: "#", icon: GraduationCap, label: "Guru & Staf", permission: "users.view" },
+  { href: "#", icon: ClipboardList, label: "Akademik", permission: "master-data.view" },
+  { href: "#", icon: Landmark, label: "Keuangan", permission: "master-data.view" },
+  { href: "#", icon: Building2, label: "PPDB", permission: "master-data.view" },
+  { href: "#", icon: BriefcaseBusiness, label: "Magang", permission: "master-data.view" },
+  { href: "#", icon: BarChart3, label: "BKK", permission: "master-data.view" },
+  { href: "#", icon: Newspaper, label: "Website CMS", permission: "school-profile.view" },
+  { href: "#", icon: FileText, label: "Laporan", permission: "dashboard.view" }
 ];
 
 export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const sidebarWidth = collapsed ? "lg:w-24" : "lg:w-72";
   const labelVisibility = collapsed ? "lg:hidden" : "lg:block";
   const currentPage = pathname === "/admin" ? "Dashboard" : "Dashboard";
+  const visibleNavigation = navigation.filter((item) => !item.permission || authUser?.permissions.includes(item.permission));
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCurrentUser() {
+      const accessToken = getAccessToken();
+
+      if (!accessToken) {
+        clearAuthTokens();
+        router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+        return;
+      }
+
+      setAuthUser(getStoredUser());
+
+      try {
+        const user = await createBrowserApiClient().me();
+        if (active) setAuthUser(user);
+      } catch {
+        const refreshToken = getRefreshToken();
+
+        if (!refreshToken) {
+          clearAuthTokens();
+          router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+          return;
+        }
+
+        try {
+          const tokens = await createBrowserApiClient().refresh(refreshToken);
+          storeAuthTokens(tokens);
+          if (active) setAuthUser(tokens.user);
+        } catch {
+          clearAuthTokens();
+          router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+          return;
+        }
+      } finally {
+        if (active) setCheckingAuth(false);
+      }
+    }
+
+    void loadCurrentUser();
+
+    return () => {
+      active = false;
+    };
+  }, [pathname, router]);
+
+  async function handleLogout() {
+    const refreshToken = getRefreshToken();
+
+    try {
+      await createBrowserApiClient().logout(refreshToken ?? undefined);
+    } catch {
+      // Local session cleanup still happens when the API call fails.
+    }
+
+    clearAuthTokens();
+    startTransition(() => router.replace("/login"));
+  }
+
+  if (checkingAuth) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-slate-50 px-4 text-center">
+        <div>
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-soft">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+          <p className="mt-5 text-sm font-bold text-slate-700">Memeriksa sesi admin...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
@@ -102,7 +185,7 @@ export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
           </div>
 
           <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
-            {navigation.map((item) => {
+            {visibleNavigation.map((item) => {
               const active = item.href === pathname;
               const Icon = item.icon;
 
@@ -132,7 +215,7 @@ export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
                 </span>
                 <div className={cn("min-w-0", labelVisibility)}>
                   <p className="truncate text-sm font-black text-slate-950">Phase 1 UI</p>
-                  <p className="truncate text-xs font-semibold text-muted-foreground">Static shell only</p>
+                  <p className="truncate text-xs font-semibold text-muted-foreground">Permission ready</p>
                 </div>
               </div>
             </div>
@@ -158,12 +241,15 @@ export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
                 <Bell className="h-5 w-5" />
               </Button>
               <div className="hidden items-center gap-3 sm:flex">
-                <Avatar fallback="AD" />
+                <Avatar fallback={getInitials(authUser?.name ?? "Admin")} />
                 <div className="hidden lg:block">
-                  <p className="text-sm font-black">Admin Sekolah</p>
-                  <p className="text-xs font-semibold text-muted-foreground">Operator</p>
+                  <p className="text-sm font-black">{authUser?.name ?? "Admin Sekolah"}</p>
+                  <p className="text-xs font-semibold text-muted-foreground">{authUser?.email ?? "Operator"}</p>
                 </div>
               </div>
+              <Button aria-label="Logout" onClick={handleLogout} size="icon" variant="outline">
+                <LogOut className="h-5 w-5" />
+              </Button>
             </div>
             <div className="border-t px-4 py-3 sm:hidden">
               <div className="relative">
@@ -185,4 +271,13 @@ export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
       </div>
     </div>
   );
+}
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "AD";
 }
