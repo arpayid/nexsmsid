@@ -1,0 +1,316 @@
+"use client";
+
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { AlertCircle, CheckCircle2, Eye, Loader2, Plus, RefreshCcw, Save, Search, X } from "lucide-react";
+
+import type { AttendanceSessionDetail, AttendanceSessionRecord, MasterDataRecord } from "@nexsmsid/api-client";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, Input, PageHeader } from "@nexsmsid/ui";
+
+import { createBrowserApiClient } from "@/lib/api-client";
+
+const STATUS_OPTIONS = [
+  { value: "PRESENT", label: "Hadir" },
+  { value: "SICK", label: "Sakit" },
+  { value: "PERMIT", label: "Izin" },
+  { value: "ABSENT", label: "Alpa" },
+  { value: "LATE", label: "Terlambat" }
+];
+
+const statusBadge: Record<string, "success" | "warning" | "info" | "outline" | "secondary"> = {
+  PRESENT: "success",
+  SICK: "warning",
+  PERMIT: "info",
+  ABSENT: "outline",
+  LATE: "secondary"
+};
+
+export default function AttendancePage() {
+  const api = useMemo(() => createBrowserApiClient(), []);
+  const [error, setError] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<AttendanceSessionRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [total, setTotal] = useState(0);
+  const [formOpen, setFormOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [selectedSession, setSelectedSession] = useState<AttendanceSessionDetail | null>(null);
+  const [sessionDetailLoading, setSessionDetailLoading] = useState(false);
+  const [studentStatuses, setStudentStatuses] = useState<Record<string, string>>({});
+  const [savingRecords, setSavingRecords] = useState(false);
+
+  const [schedules, setSchedules] = useState<MasterDataRecord[]>([]);
+
+  async function loadSchedules() {
+    try {
+      const res = await api.masterDataList("schedules", { limit: 500 });
+      setSchedules(res.data);
+    } catch { /* ignore */ }
+  }
+
+  async function loadData() {
+    setError(null);
+    setLoading(true);
+    try {
+      const response = await api.listAttendanceSessions({ limit: 50, page: 1, search: search || undefined });
+      setSessions(response.items);
+      setTotal(response.meta?.total ?? response.items.length);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Gagal memuat data");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadSchedules();
+    void loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await loadData();
+  }
+
+  async function openSessionDetail(id: string) {
+    setSessionDetailLoading(true);
+    setError(null);
+    try {
+      const session = await api.getAttendanceSession(id);
+      setSelectedSession(session);
+      const statuses: Record<string, string> = {};
+      for (const record of session.records) {
+        statuses[record.studentId] = record.status;
+      }
+      setStudentStatuses(statuses);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal memuat detail presensi");
+    } finally {
+      setSessionDetailLoading(false);
+    }
+  }
+
+  async function handleSaveRecords() {
+    if (!selectedSession) return;
+    setSavingRecords(true);
+    setError(null);
+    try {
+      const records = Object.entries(studentStatuses).map(([studentId, status]) => ({ studentId, status, note: "" }));
+      await api.recordAttendance(selectedSession.id, { records });
+      await openSessionDetail(selectedSession.id);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menyimpan presensi");
+    } finally {
+      setSavingRecords(false);
+    }
+  }
+
+  async function handleCreateSession(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    const formData = new FormData(event.currentTarget);
+    const payload: Record<string, unknown> = {
+      scheduleId: formData.get("scheduleId"),
+      date: formData.get("date")
+    };
+    try {
+      const session = await api.createAttendanceSession(payload);
+      setFormOpen(false);
+      await loadData();
+      await openSessionDetail(session.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal membuat sesi presensi");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="space-y-8">
+      <PageHeader
+        actions={
+          <>
+            <Button onClick={loadData} variant="outline"><RefreshCcw className="h-4 w-4" /> Refresh</Button>
+            <Button onClick={() => setFormOpen(true)}><Plus className="h-4 w-4" /> Sesi Baru</Button>
+          </>
+        }
+        breadcrumb={["Admin", "Akademik", "Presensi"]}
+        description="Kelola presensi siswa per sesi pertemuan."
+        eyebrow="Phase 7 Akademik"
+        title="Presensi Siswa"
+      />
+
+      {error ? (
+        <div className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+          <AlertCircle className="h-5 w-5" /> {error}
+        </div>
+      ) : null}
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <CardTitle>Sesi Presensi</CardTitle>
+              <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Total: {total} sesi</p>
+            </div>
+            <form className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-center" onSubmit={handleSearch}>
+              <div className="relative w-full lg:max-w-sm">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input className="pl-11" onChange={(event) => setSearch(event.target.value)} placeholder="Cari mapel, topik..." value={search} />
+              </div>
+              <Button type="submit" variant="soft">Cari</Button>
+            </form>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="grid min-h-48 place-items-center rounded-3xl border border-dashed bg-slate-50 text-sm font-bold text-slate-600">
+              <span className="inline-flex items-center gap-2"><Loader2 className="h-5 w-5 animate-spin text-primary" /> Memuat data...</span>
+            </div>
+          ) : sessions.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[650px] text-left text-sm">
+                <thead>
+                  <tr className="border-b text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    <th className="px-4 py-3 font-black">Tanggal</th>
+                    <th className="px-4 py-3 font-black">Mapel</th>
+                    <th className="px-4 py-3 font-black">Kelas</th>
+                    <th className="px-4 py-3 font-black">Jam</th>
+                    <th className="px-4 py-3 font-black">Records</th>
+                    <th className="px-4 py-3 text-right font-black">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sessions.map((session) => (
+                    <tr className="border-b last:border-0" key={session.id}>
+                      <td className="px-4 py-4 font-semibold text-slate-700">{new Date(session.date).toLocaleDateString("id-ID")}</td>
+                      <td className="px-4 py-4 font-semibold text-slate-700">{session.schedule?.teachingAssignment?.subject?.name ?? "-"}</td>
+                      <td className="px-4 py-4 font-semibold text-slate-700">{session.schedule?.teachingAssignment?.classroom?.name ?? "-"}</td>
+                      <td className="px-4 py-4 font-semibold text-slate-700">{session.schedule?.lessonHour?.name ?? "-"}</td>
+                      <td className="px-4 py-4"><Badge variant="secondary">{session._count?.records ?? 0}</Badge></td>
+                      <td className="px-4 py-4">
+                        <div className="flex justify-end gap-2">
+                          <Button onClick={() => openSessionDetail(session.id)} size="sm" variant="outline"><Eye className="h-4 w-4" /> Detail</Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <EmptyState
+              action={<Button onClick={() => setFormOpen(true)} variant="soft">Buat sesi pertama</Button>}
+              description="Belum ada sesi presensi."
+              title="Data masih kosong"
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {formOpen ? (
+        <Card className="border-primary/20">
+          <CardHeader>
+            <div className="flex items-start justify-between gap-4">
+              <div><CardTitle>Buat Sesi Presensi Baru</CardTitle></div>
+              <Button onClick={() => setFormOpen(false)} size="icon" variant="ghost"><X className="h-5 w-5" /></Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <form className="grid gap-4 md:grid-cols-2" onSubmit={handleCreateSession}>
+              <label className="space-y-2">
+                <span className="text-sm font-bold text-slate-700">Jadwal</span>
+                <select className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  name="scheduleId" required>
+                  <option value="" disabled>Pilih Jadwal</option>
+                  {schedules.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </label>
+              <label className="space-y-2">
+                <span className="text-sm font-bold text-slate-700">Tanggal</span>
+                <Input name="date" required type="date" />
+              </label>
+              <div className="flex gap-3 md:col-span-2">
+                <Button disabled={submitting} type="submit">
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Buat Sesi
+                </Button>
+                <Button onClick={() => setFormOpen(false)} type="button" variant="outline">Batal</Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {sessionDetailLoading ? (
+        <Card><CardContent><div className="grid min-h-32 place-items-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div></CardContent></Card>
+      ) : selectedSession ? (
+        <Card className="border-emerald-200">
+          <CardHeader>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle>
+                  Detail Presensi - {selectedSession.schedule?.teachingAssignment?.subject?.name ?? "Mapel"} / {selectedSession.schedule?.teachingAssignment?.classroom?.name ?? "Kelas"}
+                </CardTitle>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {new Date(selectedSession.date).toLocaleDateString("id-ID")} &middot; {selectedSession.schedule?.lessonHour?.name ?? ""} &middot; Guru: {selectedSession.schedule?.teachingAssignment?.teacher?.name ?? ""}
+                </p>
+                <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Total: {selectedSession.records.length} siswa
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSaveRecords} disabled={savingRecords}>
+                  {savingRecords ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Simpan Presensi
+                </Button>
+                <Button onClick={() => setSelectedSession(null)} variant="outline">Tutup</Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[500px] text-left text-sm">
+                <thead>
+                  <tr className="border-b text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    <th className="px-4 py-3 font-black">NIS</th>
+                    <th className="px-4 py-3 font-black">Nama</th>
+                    <th className="px-4 py-3 font-black">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedSession.records.map((record) => (
+                    <tr className="border-b last:border-0" key={record.studentId}>
+                      <td className="px-4 py-4 font-mono text-xs font-semibold text-slate-700">{record.student.nis}</td>
+                      <td className="px-4 py-4 font-semibold text-slate-700">{record.student.name}</td>
+                      <td className="px-4 py-4">
+                        <select
+                          className="rounded-2xl border border-input bg-white px-3 py-1.5 text-sm font-semibold shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                          value={studentStatuses[record.studentId] ?? "PRESENT"}
+                          onChange={(e) => setStudentStatuses((prev) => ({ ...prev, [record.studentId]: e.target.value }))}
+                        >
+                          {STATUS_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                        <Badge className="ml-2" variant={statusBadge[studentStatuses[record.studentId] ?? "PRESENT"]}>
+                          {STATUS_OPTIONS.find((o) => o.value === (studentStatuses[record.studentId] ?? "PRESENT"))?.label}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <Button onClick={handleSaveRecords} disabled={savingRecords}>
+                {savingRecords ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Simpan Semua
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+    </div>
+  );
+}

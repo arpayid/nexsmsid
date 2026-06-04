@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Award,
   BarChart3,
   Bell,
   BookOpenCheck,
@@ -8,6 +9,7 @@ import {
   Building2,
   CalendarDays,
   ChevronRight,
+  ClipboardCheck,
   ClipboardList,
   Clock,
   DoorOpen,
@@ -58,6 +60,10 @@ const navigation = [
   { href: "/admin/master-data/lesson-hours", icon: Clock, label: "Jam Pelajaran", permission: "master-data.view" },
   { href: "/admin/master-data/payment-categories", icon: WalletCards, label: "Kategori Pembayaran", permission: "master-data.view" },
   { href: "#", icon: Landmark, label: "Keuangan", permission: "master-data.view" },
+  { href: "/admin/academic/teaching-assignments", icon: ClipboardList, label: "Mengajar", permission: "teaching-assignments.view" },
+  { href: "/admin/academic/schedules", icon: CalendarDays, label: "Jadwal", permission: "schedules.view" },
+  { href: "/admin/academic/attendance", icon: ClipboardCheck, label: "Presensi", permission: "attendance.view" },
+  { href: "/admin/academic/grades", icon: Award, label: "Nilai", permission: "grades.view" },
   { href: "#", icon: BriefcaseBusiness, label: "Magang", permission: "master-data.view" },
   { href: "#", icon: BarChart3, label: "BKK", permission: "master-data.view" },
   { href: "#", icon: Newspaper, label: "Website CMS", permission: "school-profile.view" },
@@ -310,6 +316,10 @@ function getCurrentPageLabel(pathname: string) {
 
   if (pathname.startsWith("/admin/master-data/")) {
     return "Master Data";
+  }
+
+  if (pathname.startsWith("/admin/academic/")) {
+    return "Akademik";
   }
 
   if (pathname.startsWith("/admin/")) {
