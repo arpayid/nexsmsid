@@ -14,25 +14,33 @@ enum UserStatus {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  username      String?        @unique
-  name          String
-  passwordHash  String         @map("password_hash")
-  status        UserStatus     @default(ACTIVE)
-  lastLoginAt   DateTime?      @map("last_login_at")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
-  deletedAt     DateTime?      @map("deleted_at")
-  roles                UserRole[]
-  refreshTokens        RefreshToken[]
-  auditLogs            AuditLog[]            @relation("AuditActor")
-  verifiedPayments     Payment[]             @relation("VerifiedPayments")
-  approvedExpenses     Expense[]             @relation("ApprovedExpenses")
-  ppdbRegistrations    PpdbRegistration[]    @relation("PpdbVerifier")
-  ppdbStatusChanges    PpdbStatusHistory[]   @relation("PpdbStatusChanger")
-  reviewedInternshipLogs InternshipLog[]      @relation("InternshipLogReviewer")
-  assessedInternshipScores InternshipScore[]  @relation("InternshipScoreAssessor")
+  id                           String                 @id @default(cuid())
+  email                        String                 @unique
+  username                     String?                @unique
+  name                         String
+  passwordHash                 String                 @map("password_hash")
+  status                       UserStatus             @default(ACTIVE)
+  lastLoginAt                  DateTime?              @map("last_login_at")
+  createdAt                    DateTime               @default(now()) @map("created_at")
+  updatedAt                    DateTime               @updatedAt @map("updated_at")
+  deletedAt                    DateTime?              @map("deleted_at")
+  roles                        UserRole[]
+  refreshTokens                RefreshToken[]
+  auditLogs                    AuditLog[]             @relation("AuditActor")
+  verifiedPayments             Payment[]              @relation("VerifiedPayments")
+  approvedExpenses             Expense[]              @relation("ApprovedExpenses")
+  ppdbRegistrations            PpdbRegistration[]     @relation("PpdbVerifier")
+  ppdbStatusChanges            PpdbStatusHistory[]    @relation("PpdbStatusChanger")
+  reviewedInternshipLogs       InternshipLog[]        @relation("InternshipLogReviewer")
+  assessedInternshipScores     InternshipScore[]      @relation("InternshipScoreAssessor")
+  createdAnnouncements         Announcement[]         @relation("AnnouncementCreator")
+  sentMessages                 InternalMessage[]      @relation("InternalMessageSender")
+  receivedMessages             InternalMessage[]      @relation("InternalMessageRecipient")
+  readMessages                 InternalMessage[]      @relation("InternalMessageReader")
+  notifications                Notification[]
+  createdNotificationTemplates NotificationTemplate[] @relation("NotificationTemplateCreator")
+  reportJobs                   ReportJob[]            @relation("ReportJobRequester")
+  exportHistories              ExportHistory[]        @relation("ExportHistoryRequester")
 
   @@map("users")
 }
@@ -141,18 +149,18 @@ model SchoolProfile {
 }
 
 model AcademicYear {
-  id        String     @id @default(cuid())
-  name      String
-  startDate DateTime   @map("start_date")
-  endDate   DateTime   @map("end_date")
-  isActive  Boolean    @default(false) @map("is_active")
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
-  deletedAt DateTime?  @map("deleted_at")
-  semesters Semester[]
+  id                  String               @id @default(cuid())
+  name                String
+  startDate           DateTime             @map("start_date")
+  endDate             DateTime             @map("end_date")
+  isActive            Boolean              @default(false) @map("is_active")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  deletedAt           DateTime?            @map("deleted_at")
+  semesters           Semester[]
   teachingAssignments TeachingAssignment[]
-  invoices Invoice[]
-  ppdbPeriods PpdbPeriod[]
+  invoices            Invoice[]
+  ppdbPeriods         PpdbPeriod[]
 
   @@index([isActive])
   @@index([deletedAt])
@@ -160,19 +168,19 @@ model AcademicYear {
 }
 
 model Semester {
-  id             String       @id @default(cuid())
-  academicYearId String       @map("academic_year_id")
-  name           String
-  order          Int
-  startDate      DateTime     @map("start_date")
-  endDate        DateTime     @map("end_date")
-  isActive       Boolean      @default(false) @map("is_active")
-  createdAt      DateTime     @default(now()) @map("created_at")
-  updatedAt      DateTime     @updatedAt @map("updated_at")
-  deletedAt      DateTime?    @map("deleted_at")
-  academicYear   AcademicYear        @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
+  id                  String               @id @default(cuid())
+  academicYearId      String               @map("academic_year_id")
+  name                String
+  order               Int
+  startDate           DateTime             @map("start_date")
+  endDate             DateTime             @map("end_date")
+  isActive            Boolean              @default(false) @map("is_active")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  deletedAt           DateTime?            @map("deleted_at")
+  academicYear        AcademicYear         @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
   teachingAssignments TeachingAssignment[]
-  invoices Invoice[]
+  invoices            Invoice[]
 
   @@index([academicYearId])
   @@index([isActive])
@@ -181,15 +189,15 @@ model Semester {
 }
 
 model Department {
-  id           String       @id @default(cuid())
-  code         String       @unique
-  name         String
-  description  String?
-  isActive     Boolean      @default(true) @map("is_active")
-  createdAt    DateTime     @default(now()) @map("created_at")
-  updatedAt    DateTime     @updatedAt @map("updated_at")
-  deletedAt    DateTime?    @map("deleted_at")
-  competencies Competency[]
+  id                String             @id @default(cuid())
+  code              String             @unique
+  name              String
+  description       String?
+  isActive          Boolean            @default(true) @map("is_active")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  deletedAt         DateTime?          @map("deleted_at")
+  competencies      Competency[]
   ppdbRegistrations PpdbRegistration[] @relation("PpdbDepartment")
 
   @@index([isActive])
@@ -198,17 +206,17 @@ model Department {
 }
 
 model Competency {
-  id           String      @id @default(cuid())
-  departmentId String      @map("department_id")
-  code         String      @unique
-  name         String
-  description  String?
-  isActive     Boolean     @default(true) @map("is_active")
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
-  deletedAt    DateTime?   @map("deleted_at")
-  department   Department  @relation(fields: [departmentId], references: [id], onDelete: Restrict)
-  classrooms   Classroom[]
+  id                String             @id @default(cuid())
+  departmentId      String             @map("department_id")
+  code              String             @unique
+  name              String
+  description       String?
+  isActive          Boolean            @default(true) @map("is_active")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  deletedAt         DateTime?          @map("deleted_at")
+  department        Department         @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  classrooms        Classroom[]
   ppdbRegistrations PpdbRegistration[] @relation("PpdbCompetency")
 
   @@index([departmentId])
@@ -218,17 +226,17 @@ model Competency {
 }
 
 model Classroom {
-  id           String     @id @default(cuid())
-  competencyId String     @map("competency_id")
-  code         String     @unique
-  name         String
-  level        Int
-  isActive     Boolean    @default(true) @map("is_active")
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-  deletedAt    DateTime?  @map("deleted_at")
-  competency   Competency @relation(fields: [competencyId], references: [id], onDelete: Restrict)
-  students     Student[]
+  id                  String               @id @default(cuid())
+  competencyId        String               @map("competency_id")
+  code                String               @unique
+  name                String
+  level               Int
+  isActive            Boolean              @default(true) @map("is_active")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  deletedAt           DateTime?            @map("deleted_at")
+  competency          Competency           @relation(fields: [competencyId], references: [id], onDelete: Restrict)
+  students            Student[]
   teachingAssignments TeachingAssignment[]
 
   @@index([competencyId])
@@ -238,15 +246,15 @@ model Classroom {
 }
 
 model Room {
-  id        String    @id @default(cuid())
-  code      String    @unique
+  id        String     @id @default(cuid())
+  code      String     @unique
   name      String
   type      String?
   capacity  Int?
-  isActive  Boolean   @default(true) @map("is_active")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
+  isActive  Boolean    @default(true) @map("is_active")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  deletedAt DateTime?  @map("deleted_at")
   schedules Schedule[]
 
   @@index([isActive])
@@ -255,14 +263,14 @@ model Room {
 }
 
 model Subject {
-  id        String    @id @default(cuid())
-  code      String    @unique
-  name      String
-  group     String?
-  isActive  Boolean   @default(true) @map("is_active")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
+  id                  String               @id @default(cuid())
+  code                String               @unique
+  name                String
+  group               String?
+  isActive            Boolean              @default(true) @map("is_active")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  deletedAt           DateTime?            @map("deleted_at")
   teachingAssignments TeachingAssignment[]
 
   @@index([isActive])
@@ -271,15 +279,15 @@ model Subject {
 }
 
 model LessonHour {
-  id        String    @id @default(cuid())
+  id        String     @id @default(cuid())
   name      String
   order     Int
-  startTime String    @map("start_time")
-  endTime   String    @map("end_time")
-  isActive  Boolean   @default(true) @map("is_active")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
+  startTime String     @map("start_time")
+  endTime   String     @map("end_time")
+  isActive  Boolean    @default(true) @map("is_active")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  deletedAt DateTime?  @map("deleted_at")
   schedules Schedule[]
 
   @@index([order])
@@ -289,15 +297,15 @@ model LessonHour {
 }
 
 model PaymentCategory {
-  id            String    @id @default(cuid())
-  code          String    @unique
+  id            String        @id @default(cuid())
+  code          String        @unique
   name          String
   description   String?
-  defaultAmount Int       @default(0) @map("default_amount")
-  isActive      Boolean   @default(true) @map("is_active")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  deletedAt     DateTime? @map("deleted_at")
+  defaultAmount Int           @default(0) @map("default_amount")
+  isActive      Boolean       @default(true) @map("is_active")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  deletedAt     DateTime?     @map("deleted_at")
   invoiceItems  InvoiceItem[]
 
   @@index([isActive])
@@ -370,18 +378,18 @@ model TeachingAssignment {
 }
 
 model Schedule {
-  id                   String             @id @default(cuid())
-  teachingAssignmentId String             @map("teaching_assignment_id")
-  roomId               String             @map("room_id")
-  lessonHourId         String             @map("lesson_hour_id")
-  dayOfWeek            DayOfWeek          @map("day_of_week")
-  isActive             Boolean            @default(true) @map("is_active")
-  createdAt            DateTime           @default(now()) @map("created_at")
-  updatedAt            DateTime           @updatedAt @map("updated_at")
-  deletedAt            DateTime?          @map("deleted_at")
-  teachingAssignment   TeachingAssignment @relation(fields: [teachingAssignmentId], references: [id], onDelete: Cascade)
-  room                 Room               @relation(fields: [roomId], references: [id], onDelete: Restrict)
-  lessonHour           LessonHour         @relation(fields: [lessonHourId], references: [id], onDelete: Restrict)
+  id                   String              @id @default(cuid())
+  teachingAssignmentId String              @map("teaching_assignment_id")
+  roomId               String              @map("room_id")
+  lessonHourId         String              @map("lesson_hour_id")
+  dayOfWeek            DayOfWeek           @map("day_of_week")
+  isActive             Boolean             @default(true) @map("is_active")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+  deletedAt            DateTime?           @map("deleted_at")
+  teachingAssignment   TeachingAssignment  @relation(fields: [teachingAssignmentId], references: [id], onDelete: Cascade)
+  room                 Room                @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  lessonHour           LessonHour          @relation(fields: [lessonHourId], references: [id], onDelete: Restrict)
   attendanceSessions   AttendanceSession[]
 
   @@unique([roomId, dayOfWeek, lessonHourId])
@@ -395,17 +403,17 @@ model Schedule {
 }
 
 model AttendanceSession {
-  id          String             @id @default(cuid())
-  scheduleId  String             @map("schedule_id")
-  date        DateTime           @map("date")
-  topic       String?
-  notes       String?
-  isActive    Boolean            @default(true) @map("is_active")
-  createdAt   DateTime           @default(now()) @map("created_at")
-  updatedAt   DateTime           @updatedAt @map("updated_at")
-  deletedAt   DateTime?          @map("deleted_at")
-  schedule    Schedule           @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-  records     AttendanceRecord[]
+  id         String             @id @default(cuid())
+  scheduleId String             @map("schedule_id")
+  date       DateTime           @map("date")
+  topic      String?
+  notes      String?
+  isActive   Boolean            @default(true) @map("is_active")
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+  deletedAt  DateTime?          @map("deleted_at")
+  schedule   Schedule           @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  records    AttendanceRecord[]
 
   @@unique([scheduleId, date])
   @@index([scheduleId])
@@ -415,15 +423,15 @@ model AttendanceSession {
 }
 
 model AttendanceRecord {
-  id               String           @id @default(cuid())
-  sessionId        String           @map("session_id")
-  studentId        String           @map("student_id")
-  status           AttendanceStatus @default(PRESENT)
-  note             String?
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
-  session          AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  student          Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  id        String            @id @default(cuid())
+  sessionId String            @map("session_id")
+  studentId String            @map("student_id")
+  status    AttendanceStatus  @default(PRESENT)
+  note      String?
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+  session   AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student   Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([sessionId, studentId])
   @@index([sessionId])
@@ -432,18 +440,18 @@ model AttendanceRecord {
 }
 
 model Assessment {
-  id                   String         @id @default(cuid())
-  teachingAssignmentId String         @map("teaching_assignment_id")
+  id                   String             @id @default(cuid())
+  teachingAssignmentId String             @map("teaching_assignment_id")
   name                 String
-  type                 AssessmentType @default(DAILY)
-  maxScore             Int            @default(100) @map("max_score")
-  weight               Int            @default(1)
+  type                 AssessmentType     @default(DAILY)
+  maxScore             Int                @default(100) @map("max_score")
+  weight               Int                @default(1)
   description          String?
-  dueDate              DateTime?      @map("due_date")
-  isActive             Boolean        @default(true) @map("is_active")
-  createdAt            DateTime       @default(now()) @map("created_at")
-  updatedAt            DateTime       @updatedAt @map("updated_at")
-  deletedAt            DateTime?      @map("deleted_at")
+  dueDate              DateTime?          @map("due_date")
+  isActive             Boolean            @default(true) @map("is_active")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+  deletedAt            DateTime?          @map("deleted_at")
   teachingAssignment   TeachingAssignment @relation(fields: [teachingAssignmentId], references: [id], onDelete: Cascade)
   grades               Grade[]
 
@@ -453,20 +461,20 @@ model Assessment {
 }
 
 model Grade {
-  id           String       @id @default(cuid())
-  assessmentId String       @map("assessment_id")
-  studentId    String       @map("student_id")
+  id           String      @id @default(cuid())
+  assessmentId String      @map("assessment_id")
+  studentId    String      @map("student_id")
   score        Int
-  status       GradeStatus  @default(DRAFT)
+  status       GradeStatus @default(DRAFT)
   notes        String?
-  gradedById   String?      @map("graded_by_id")
-  gradedAt     DateTime?    @map("graded_at")
-  approvedById String?      @map("approved_by_id")
-  approvedAt   DateTime?    @map("approved_at")
-  createdAt    DateTime     @default(now()) @map("created_at")
-  updatedAt    DateTime     @updatedAt @map("updated_at")
-  assessment   Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  gradedById   String?     @map("graded_by_id")
+  gradedAt     DateTime?   @map("graded_at")
+  approvedById String?     @map("approved_by_id")
+  approvedAt   DateTime?   @map("approved_at")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  assessment   Assessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  student      Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([assessmentId, studentId])
   @@index([assessmentId])
@@ -505,31 +513,31 @@ enum GuardianRelation {
 }
 
 model Student {
-  id           String      @id @default(cuid())
-  nis          String      @unique
-  nisn         String?     @unique
-  name         String
-  gender       Gender
-  birthPlace   String?     @map("birth_place")
-  birthDate    DateTime?   @map("birth_date")
-  address      String?
-  phone        String?
-  email        String?     @unique
-  classroomId  String?     @map("classroom_id")
-  status       PersonStatus @default(ACTIVE)
-  photoUrl     String?     @map("photo_url")
-  enrolledAt   DateTime?   @map("enrolled_at")
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
-  deletedAt    DateTime?   @map("deleted_at")
-  classroom            Classroom?         @relation(fields: [classroomId], references: [id], onDelete: SetNull)
-  guardians            StudentGuardian[]
-  attendanceRecords    AttendanceRecord[]
-  grades               Grade[]
-  invoices             Invoice[]
-  ppdbRegistrations    PpdbRegistration[] @relation("ConvertedStudent")
-  internships          Internship[]
-  alumni               Alumni?          @relation("StudentAlumni")
+  id                String             @id @default(cuid())
+  nis               String             @unique
+  nisn              String?            @unique
+  name              String
+  gender            Gender
+  birthPlace        String?            @map("birth_place")
+  birthDate         DateTime?          @map("birth_date")
+  address           String?
+  phone             String?
+  email             String?            @unique
+  classroomId       String?            @map("classroom_id")
+  status            PersonStatus       @default(ACTIVE)
+  photoUrl          String?            @map("photo_url")
+  enrolledAt        DateTime?          @map("enrolled_at")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  deletedAt         DateTime?          @map("deleted_at")
+  classroom         Classroom?         @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  guardians         StudentGuardian[]
+  attendanceRecords AttendanceRecord[]
+  grades            Grade[]
+  invoices          Invoice[]
+  ppdbRegistrations PpdbRegistration[] @relation("ConvertedStudent")
+  internships       Internship[]
+  alumni            Alumni?            @relation("StudentAlumni")
 
   @@index([classroomId])
   @@index([status])
@@ -539,16 +547,16 @@ model Student {
 }
 
 model Guardian {
-  id          String      @id @default(cuid())
-  name        String
-  relation    GuardianRelation
-  phone       String
-  email       String?     @unique
-  occupation  String?
-  address     String?
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
-  students    StudentGuardian[]
+  id         String            @id @default(cuid())
+  name       String
+  relation   GuardianRelation
+  phone      String
+  email      String?           @unique
+  occupation String?
+  address    String?
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+  students   StudentGuardian[]
 
   @@index([name])
   @@map("guardians")
@@ -568,24 +576,24 @@ model StudentGuardian {
 }
 
 model Teacher {
-  id              String      @id @default(cuid())
-  nip             String?     @unique
-  nuptk           String?     @unique
-  name            String
-  gender          Gender
-  birthPlace      String?     @map("birth_place")
-  birthDate       DateTime?   @map("birth_date")
-  phone           String?
-  email           String?     @unique
-  address         String?
-  employmentStatus EmploymentStatus @default(PERMANENT) @map("employment_status")
-  status          PersonStatus @default(ACTIVE)
-  photoUrl        String?     @map("photo_url")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
-  deletedAt       DateTime?   @map("deleted_at")
-  teachingAssignments TeachingAssignment[]
-  supervisedInternships Internship[] @relation("InternshipSupervisor")
+  id                    String               @id @default(cuid())
+  nip                   String?              @unique
+  nuptk                 String?              @unique
+  name                  String
+  gender                Gender
+  birthPlace            String?              @map("birth_place")
+  birthDate             DateTime?            @map("birth_date")
+  phone                 String?
+  email                 String?              @unique
+  address               String?
+  employmentStatus      EmploymentStatus     @default(PERMANENT) @map("employment_status")
+  status                PersonStatus         @default(ACTIVE)
+  photoUrl              String?              @map("photo_url")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+  deletedAt             DateTime?            @map("deleted_at")
+  teachingAssignments   TeachingAssignment[]
+  supervisedInternships Internship[]         @relation("InternshipSupervisor")
 
   @@index([status])
   @@index([deletedAt])
@@ -594,21 +602,21 @@ model Teacher {
 }
 
 model Staff {
-  id              String      @id @default(cuid())
-  nip             String?     @unique
-  name            String
-  gender          Gender
-  phone           String?
-  email           String?     @unique
-  address         String?
-  position        String
-  department      String?
+  id               String           @id @default(cuid())
+  nip              String?          @unique
+  name             String
+  gender           Gender
+  phone            String?
+  email            String?          @unique
+  address          String?
+  position         String
+  department       String?
   employmentStatus EmploymentStatus @default(PERMANENT) @map("employment_status")
-  status          PersonStatus @default(ACTIVE)
-  photoUrl        String?     @map("photo_url")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
-  deletedAt       DateTime?   @map("deleted_at")
+  status           PersonStatus     @default(ACTIVE)
+  photoUrl         String?          @map("photo_url")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  deletedAt        DateTime?        @map("deleted_at")
 
   @@index([status])
   @@index([deletedAt])
@@ -649,29 +657,29 @@ enum ExpenseStatus {
 }
 
 model Invoice {
-  id              String        @id @default(cuid())
-  invoiceNumber   String        @unique @map("invoice_number")
-  studentId       String        @map("student_id")
-  academicYearId  String?       @map("academic_year_id")
-  semesterId      String?       @map("semester_id")
-  issueDate       DateTime      @map("issue_date")
-  dueDate         DateTime?     @map("due_date")
-  subtotal        Decimal       @default(0) @map("subtotal")
-  discount        Decimal       @default(0) @map("discount")
-  penalty         Decimal       @default(0) @map("penalty")
-  total           Decimal       @default(0) @map("total")
-  paidAmount      Decimal       @default(0) @map("paid_amount")
-  status          InvoiceStatus @default(DRAFT)
-  note            String?
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
-  deletedAt       DateTime?     @map("deleted_at")
+  id             String        @id @default(cuid())
+  invoiceNumber  String        @unique @map("invoice_number")
+  studentId      String        @map("student_id")
+  academicYearId String?       @map("academic_year_id")
+  semesterId     String?       @map("semester_id")
+  issueDate      DateTime      @map("issue_date")
+  dueDate        DateTime?     @map("due_date")
+  subtotal       Decimal       @default(0) @map("subtotal")
+  discount       Decimal       @default(0) @map("discount")
+  penalty        Decimal       @default(0) @map("penalty")
+  total          Decimal       @default(0) @map("total")
+  paidAmount     Decimal       @default(0) @map("paid_amount")
+  status         InvoiceStatus @default(DRAFT)
+  note           String?
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  deletedAt      DateTime?     @map("deleted_at")
 
-  student        Student        @relation(fields: [studentId], references: [id])
-  academicYear   AcademicYear?  @relation(fields: [academicYearId], references: [id])
-  semester       Semester?      @relation(fields: [semesterId], references: [id])
-  items          InvoiceItem[]
-  payments       Payment[]
+  student      Student       @relation(fields: [studentId], references: [id])
+  academicYear AcademicYear? @relation(fields: [academicYearId], references: [id])
+  semester     Semester?     @relation(fields: [semesterId], references: [id])
+  items        InvoiceItem[]
+  payments     Payment[]
 
   @@index([studentId])
   @@index([status])
@@ -680,37 +688,37 @@ model Invoice {
 }
 
 model InvoiceItem {
-  id                 String          @id @default(cuid())
-  invoiceId          String          @map("invoice_id")
-  paymentCategoryId  String?         @map("payment_category_id")
-  name               String
-  quantity           Int             @default(1)
-  unitPrice          Decimal         @map("unit_price")
-  total              Decimal         @map("total")
-  createdAt          DateTime        @default(now()) @map("created_at")
-  updatedAt          DateTime        @updatedAt @map("updated_at")
+  id                String   @id @default(cuid())
+  invoiceId         String   @map("invoice_id")
+  paymentCategoryId String?  @map("payment_category_id")
+  name              String
+  quantity          Int      @default(1)
+  unitPrice         Decimal  @map("unit_price")
+  total             Decimal  @map("total")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
-  invoice          Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  paymentCategory  PaymentCategory? @relation(fields: [paymentCategoryId], references: [id])
+  invoice         Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  paymentCategory PaymentCategory? @relation(fields: [paymentCategoryId], references: [id])
 
   @@index([invoiceId])
   @@map("invoice_items")
 }
 
 model Payment {
-  id              String        @id @default(cuid())
-  paymentNumber   String        @unique @map("payment_number")
-  invoiceId       String        @map("invoice_id")
-  amount          Decimal       @map("amount")
-  method          PaymentMethod @default(CASH)
-  status          PaymentStatus @default(PENDING)
-  paidAt          DateTime      @default(now()) @map("paid_at")
-  verifiedAt      DateTime?     @map("verified_at")
-  verifiedById    String?       @map("verified_by_id")
-  proofUrl        String?       @map("proof_url")
-  note            String?
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+  id            String        @id @default(cuid())
+  paymentNumber String        @unique @map("payment_number")
+  invoiceId     String        @map("invoice_id")
+  amount        Decimal       @map("amount")
+  method        PaymentMethod @default(CASH)
+  status        PaymentStatus @default(PENDING)
+  paidAt        DateTime      @default(now()) @map("paid_at")
+  verifiedAt    DateTime?     @map("verified_at")
+  verifiedById  String?       @map("verified_by_id")
+  proofUrl      String?       @map("proof_url")
+  note          String?
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
 
   invoice    Invoice @relation(fields: [invoiceId], references: [id])
   verifiedBy User?   @relation("VerifiedPayments", fields: [verifiedById], references: [id])
@@ -765,17 +773,17 @@ enum PpdbSelectionStatus {
 }
 
 model PpdbPeriod {
-  id              String    @id @default(cuid())
-  name            String
-  academicYearId  String?   @map("academic_year_id")
-  startDate       DateTime  @map("start_date")
-  endDate         DateTime  @map("end_date")
-  isActive        Boolean   @default(true) @map("is_active")
-  quota           Int?
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  id             String   @id @default(cuid())
+  name           String
+  academicYearId String?  @map("academic_year_id")
+  startDate      DateTime @map("start_date")
+  endDate        DateTime @map("end_date")
+  isActive       Boolean  @default(true) @map("is_active")
+  quota          Int?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  academicYear AcademicYear?        @relation(fields: [academicYearId], references: [id])
+  academicYear  AcademicYear?      @relation(fields: [academicYearId], references: [id])
   registrations PpdbRegistration[]
 
   @@index([isActive])
@@ -783,27 +791,27 @@ model PpdbPeriod {
 }
 
 model PpdbRegistration {
-  id                   String                  @id @default(cuid())
-  registrationNumber   String                  @unique @map("registration_number")
-  periodId             String                  @map("period_id")
+  id                   String                 @id @default(cuid())
+  registrationNumber   String                 @unique @map("registration_number")
+  periodId             String                 @map("period_id")
   name                 String
   gender               Gender
-  birthPlace           String?                 @map("birth_place")
-  birthDate            DateTime?               @map("birth_date")
+  birthPlace           String?                @map("birth_place")
+  birthDate            DateTime?              @map("birth_date")
   address              String?
   phone                String
   email                String?
-  previousSchool       String?                 @map("previous_school")
-  selectedDepartmentId String?                 @map("selected_department_id")
-  selectedCompetencyId String?                 @map("selected_competency_id")
-  status               PpdbRegistrationStatus  @default(DRAFT)
-  selectionStatus      PpdbSelectionStatus     @default(PENDING) @map("selection_status")
-  verifiedAt           DateTime?               @map("verified_at")
-  verifiedById         String?                 @map("verified_by_id")
-  convertedStudentId   String?                 @map("converted_student_id")
+  previousSchool       String?                @map("previous_school")
+  selectedDepartmentId String?                @map("selected_department_id")
+  selectedCompetencyId String?                @map("selected_competency_id")
+  status               PpdbRegistrationStatus @default(DRAFT)
+  selectionStatus      PpdbSelectionStatus    @default(PENDING) @map("selection_status")
+  verifiedAt           DateTime?              @map("verified_at")
+  verifiedById         String?                @map("verified_by_id")
+  convertedStudentId   String?                @map("converted_student_id")
   note                 String?
-  createdAt            DateTime                @default(now()) @map("created_at")
-  updatedAt            DateTime                @updatedAt @map("updated_at")
+  createdAt            DateTime               @default(now()) @map("created_at")
+  updatedAt            DateTime               @updatedAt @map("updated_at")
 
   period             PpdbPeriod          @relation(fields: [periodId], references: [id])
   selectedDepartment Department?         @relation("PpdbDepartment", fields: [selectedDepartmentId], references: [id])
@@ -820,14 +828,14 @@ model PpdbRegistration {
 }
 
 model PpdbDocument {
-  id             String              @id @default(cuid())
-  registrationId String              @map("registration_id")
+  id             String             @id @default(cuid())
+  registrationId String             @map("registration_id")
   name           String
-  fileUrl        String              @map("file_url")
-  status         PpdbDocumentStatus  @default(PENDING)
+  fileUrl        String             @map("file_url")
+  status         PpdbDocumentStatus @default(PENDING)
   note           String?
-  createdAt      DateTime            @default(now()) @map("created_at")
-  updatedAt      DateTime            @updatedAt @map("updated_at")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
 
   registration PpdbRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
 
@@ -935,9 +943,9 @@ model Internship {
   updatedAt           DateTime         @updatedAt @map("updated_at")
   deletedAt           DateTime?        @map("deleted_at")
 
-  student         Student         @relation(fields: [studentId], references: [id])
-  industryPartner IndustryPartner @relation(fields: [industryPartnerId], references: [id])
-  supervisor      Teacher?        @relation("InternshipSupervisor", fields: [supervisorTeacherId], references: [id])
+  student         Student          @relation(fields: [studentId], references: [id])
+  industryPartner IndustryPartner  @relation(fields: [industryPartnerId], references: [id])
+  supervisor      Teacher?         @relation("InternshipSupervisor", fields: [supervisorTeacherId], references: [id])
   logs            InternshipLog[]
   score           InternshipScore?
 
@@ -950,18 +958,18 @@ model Internship {
 }
 
 model InternshipLog {
-  id            String              @id @default(cuid())
-  internshipId  String              @map("internship_id")
-  date          DateTime
-  activity      String
-  obstacle      String?
-  solution      String?
-  status        InternshipLogStatus @default(DRAFT)
-  reviewedById  String?             @map("reviewed_by_id")
-  reviewedAt    DateTime?           @map("reviewed_at")
-  note          String?
-  createdAt     DateTime            @default(now()) @map("created_at")
-  updatedAt     DateTime            @updatedAt @map("updated_at")
+  id           String              @id @default(cuid())
+  internshipId String              @map("internship_id")
+  date         DateTime
+  activity     String
+  obstacle     String?
+  solution     String?
+  status       InternshipLogStatus @default(DRAFT)
+  reviewedById String?             @map("reviewed_by_id")
+  reviewedAt   DateTime?           @map("reviewed_at")
+  note         String?
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
 
   internship Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
   reviewedBy User?      @relation("InternshipLogReviewer", fields: [reviewedById], references: [id])
@@ -1021,21 +1029,21 @@ model Alumni {
 }
 
 model JobVacancy {
-  id                String     @id @default(cuid())
-  industryPartnerId String?    @map("industry_partner_id")
+  id                String    @id @default(cuid())
+  industryPartnerId String?   @map("industry_partner_id")
   title             String
-  companyName       String     @map("company_name")
+  companyName       String    @map("company_name")
   description       String
   qualification     String?
   location          String?
-  employmentType    String?    @map("employment_type")
-  salaryRange       String?    @map("salary_range")
+  employmentType    String?   @map("employment_type")
+  salaryRange       String?   @map("salary_range")
   deadline          DateTime?
-  status            JobStatus  @default(DRAFT)
-  publishedAt       DateTime?  @map("published_at")
-  createdAt         DateTime   @default(now()) @map("created_at")
-  updatedAt         DateTime   @updatedAt @map("updated_at")
-  deletedAt         DateTime?  @map("deleted_at")
+  status            JobStatus @default(DRAFT)
+  publishedAt       DateTime? @map("published_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
 
   industryPartner IndustryPartner? @relation(fields: [industryPartnerId], references: [id])
   applications    JobApplication[]
@@ -1091,4 +1099,202 @@ model TracerStudy {
   @@index([year])
   @@index([status])
   @@map("tracer_studies")
+}
+
+// Phase 10 - Communication, Notifications, Reports
+enum AnnouncementStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AnnouncementAudience {
+  ALL
+  STUDENTS
+  PARENTS
+  TEACHERS
+  STAFF
+}
+
+enum MessageStatus {
+  SENT
+  READ
+  DELETED
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  WHATSAPP
+}
+
+enum ReportJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ReportFormat {
+  CSV
+  XLSX
+  PDF
+  JSON
+}
+
+model Announcement {
+  id          String               @id @default(cuid())
+  title       String
+  content     String
+  audience    AnnouncementAudience @default(ALL)
+  status      AnnouncementStatus   @default(DRAFT)
+  publishedAt DateTime?            @map("published_at")
+  archivedAt  DateTime?            @map("archived_at")
+  createdById String?              @map("created_by_id")
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+  deletedAt   DateTime?            @map("deleted_at")
+
+  createdBy  User?                   @relation("AnnouncementCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  recipients AnnouncementRecipient[]
+
+  @@index([audience])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([deletedAt])
+  @@map("announcements")
+}
+
+model AnnouncementRecipient {
+  id             String    @id @default(cuid())
+  announcementId String    @map("announcement_id")
+  userId         String?   @map("user_id")
+  name           String?
+  email          String?
+  readAt         DateTime? @map("read_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@index([announcementId])
+  @@index([userId])
+  @@map("announcement_recipients")
+}
+
+model InternalMessage {
+  id          String        @id @default(cuid())
+  senderId    String        @map("sender_id")
+  recipientId String        @map("recipient_id")
+  subject     String
+  body        String
+  status      MessageStatus @default(SENT)
+  readAt      DateTime?     @map("read_at")
+  readById    String?       @map("read_by_id")
+  deletedAt   DateTime?     @map("deleted_at")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  sender    User  @relation("InternalMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User  @relation("InternalMessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  readBy    User? @relation("InternalMessageReader", fields: [readById], references: [id], onDelete: SetNull)
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("internal_messages")
+}
+
+model Notification {
+  id        String              @id @default(cuid())
+  userId    String              @map("user_id")
+  title     String
+  body      String
+  channel   NotificationChannel @default(IN_APP)
+  status    NotificationStatus  @default(UNREAD)
+  readAt    DateTime?           @map("read_at")
+  metadata  Json?
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([channel])
+  @@map("notifications")
+}
+
+model NotificationTemplate {
+  id          String              @id @default(cuid())
+  code        String              @unique
+  name        String
+  channel     NotificationChannel @default(IN_APP)
+  subject     String?
+  body        String
+  isActive    Boolean             @default(true) @map("is_active")
+  createdById String?             @map("created_by_id")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+  deletedAt   DateTime?           @map("deleted_at")
+
+  createdBy User? @relation("NotificationTemplateCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([channel])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("notification_templates")
+}
+
+model ReportJob {
+  id            String          @id @default(cuid())
+  type          String
+  title         String
+  format        ReportFormat    @default(CSV)
+  status        ReportJobStatus @default(PENDING)
+  parameters    Json?
+  resultUrl     String?         @map("result_url")
+  errorMessage  String?         @map("error_message")
+  requestedById String?         @map("requested_by_id")
+  queuedAt      DateTime        @default(now()) @map("queued_at")
+  startedAt     DateTime?       @map("started_at")
+  completedAt   DateTime?       @map("completed_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  requestedBy     User?           @relation("ReportJobRequester", fields: [requestedById], references: [id], onDelete: SetNull)
+  exportHistories ExportHistory[]
+
+  @@index([type])
+  @@index([status])
+  @@index([requestedById])
+  @@map("report_jobs")
+}
+
+model ExportHistory {
+  id            String       @id @default(cuid())
+  reportJobId   String?      @map("report_job_id")
+  entity        String
+  format        ReportFormat @default(CSV)
+  fileName      String       @map("file_name")
+  fileUrl       String?      @map("file_url")
+  rowCount      Int?         @map("row_count")
+  requestedById String?      @map("requested_by_id")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  reportJob   ReportJob? @relation(fields: [reportJobId], references: [id], onDelete: SetNull)
+  requestedBy User?      @relation("ExportHistoryRequester", fields: [requestedById], references: [id], onDelete: SetNull)
+
+  @@index([reportJobId])
+  @@index([entity])
+  @@index([requestedById])
+  @@map("export_histories")
 }

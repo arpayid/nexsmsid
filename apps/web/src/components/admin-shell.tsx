@@ -77,7 +77,14 @@ const navigation = [
   { href: "/admin/alumni", icon: GraduationCap, label: "Alumni", permission: "alumni.view" },
   { href: "/admin/bkk/jobs", icon: Newspaper, label: "Lowongan Kerja", permission: "job-vacancies.view" },
   { href: "/admin/bkk/applications", icon: FileText, label: "Lamaran", permission: "job-applications.view" },
-  { href: "/admin/bkk/tracer-studies", icon: ClipboardCheck, label: "Tracer Study", permission: "tracer-studies.view" }
+  { href: "/admin/bkk/tracer-studies", icon: ClipboardCheck, label: "Tracer Study", permission: "tracer-studies.view" },
+  { href: "/admin/communication/announcements", icon: Newspaper, label: "Pengumuman", permission: "announcements.view" },
+  { href: "/admin/communication/messages", icon: FileText, label: "Pesan Internal", permission: "messages.view" },
+  { href: "/admin/communication/notifications", icon: Bell, label: "Notifikasi", permission: "notifications.view" },
+  { href: "/admin/communication/templates", icon: ClipboardList, label: "Template Notif", permission: "notification-templates.view" },
+  { href: "/admin/reports", icon: BarChart3, label: "Report Center", permission: "reports.view" },
+  { href: "/admin/reports/jobs", icon: FileText, label: "Report Jobs", permission: "report-jobs.view" },
+  { href: "/admin/reports/exports", icon: ClipboardCheck, label: "Export History", permission: "export-history.view" }
 ];
 
 export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {

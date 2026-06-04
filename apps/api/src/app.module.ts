@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 
 import { AcademicYearsModule } from "./academic-years/academic-years.module";
 import { AlumniModule } from "./alumni/alumni.module";
+import { AnnouncementsModule } from "./announcements/announcements.module";
 import { AppController } from "./app.controller";
 import { AttendanceModule } from "./attendance/attendance.module";
 import { AuditModule } from "./audit/audit.module";
@@ -13,6 +14,7 @@ import { AppConfigModule } from "./config/app-config.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { DatabaseModule } from "./database/database.module";
 import { DepartmentsModule } from "./departments/departments.module";
+import { ExportHistoryModule } from "./export-history/export-history.module";
 import { ExpensesModule } from "./expenses/expenses.module";
 import { FinanceDashboardModule } from "./finance-dashboard/finance-dashboard.module";
 import { GradesModule } from "./grades/grades.module";
@@ -20,11 +22,14 @@ import { GuardiansModule } from "./guardians/guardians.module";
 import { HealthModule } from "./health/health.module";
 import { IndustryPartnersModule } from "./industry-partners/industry-partners.module";
 import { InvoicesModule } from "./invoices/invoices.module";
+import { InternalMessagesModule } from "./internal-messages/internal-messages.module";
 import { InternshipLogsModule } from "./internship-logs/internship-logs.module";
 import { InternshipsModule } from "./internships/internships.module";
 import { JobApplicationsModule } from "./job-applications/job-applications.module";
 import { JobVacanciesModule } from "./job-vacancies/job-vacancies.module";
 import { LessonHoursModule } from "./lesson-hours/lesson-hours.module";
+import { NotificationTemplatesModule } from "./notification-templates/notification-templates.module";
+import { NotificationsModule } from "./notifications/notifications.module";
 import { PaymentCategoriesModule } from "./payment-categories/payment-categories.module";
 import { PaymentsModule } from "./payments/payments.module";
 import { PermissionsModule } from "./permissions/permissions.module";
@@ -32,6 +37,8 @@ import { PpdbDashboardModule } from "./ppdb-dashboard/ppdb-dashboard.module";
 import { PpdbPeriodsModule } from "./ppdb-periods/ppdb-periods.module";
 import { PpdbRegistrationsModule } from "./ppdb-registrations/ppdb-registrations.module";
 import { PublicPpdbModule } from "./public-ppdb/public-ppdb.module";
+import { ReportCenterModule } from "./report-center/report-center.module";
+import { ReportJobsModule } from "./report-jobs/report-jobs.module";
 import { RolesModule } from "./roles/roles.module";
 import { RoomsModule } from "./rooms/rooms.module";
 import { SchedulesModule } from "./schedules/schedules.module";
@@ -89,7 +96,14 @@ import { UsersModule } from "./users/users.module";
     JobVacanciesModule,
     JobApplicationsModule,
     TracerStudiesModule,
-    BkkDashboardModule
+    BkkDashboardModule,
+    AnnouncementsModule,
+    InternalMessagesModule,
+    NotificationsModule,
+    NotificationTemplatesModule,
+    ReportJobsModule,
+    ExportHistoryModule,
+    ReportCenterModule
   ],
   controllers: [AppController]
 })

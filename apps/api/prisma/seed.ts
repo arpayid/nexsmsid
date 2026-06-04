@@ -123,7 +123,31 @@ const permissions = [
   "tracer-studies.update",
   "tracer-studies.delete",
   "bkk.view",
-  "bkk.export"
+  "bkk.export",
+  "announcements.view",
+  "announcements.create",
+  "announcements.update",
+  "announcements.delete",
+  "announcements.publish",
+  "announcements.archive",
+  "messages.view",
+  "messages.send",
+  "messages.read",
+  "messages.delete",
+  "notifications.view",
+  "notifications.create",
+  "notifications.read",
+  "notifications.archive",
+  "notification-templates.view",
+  "notification-templates.create",
+  "notification-templates.update",
+  "notification-templates.delete",
+  "reports.view",
+  "reports.generate",
+  "report-jobs.view",
+  "report-jobs.create",
+  "report-jobs.cancel",
+  "export-history.view"
 ];
 
 const roles = [
@@ -146,7 +170,7 @@ const roles = [
 const rolePermissionMap: Record<string, string[]> = {
   "super-admin": permissions,
   "admin-sekolah": permissions.filter((permission) => !permission.endsWith(".delete")),
-  "kepala-sekolah": ["dashboard.view", "users.view", "roles.view", "permissions.view", "school-profile.view", "master-data.view", "students.view", "guardians.view", "teachers.view", "staffs.view", "teaching-assignments.view", "schedules.view", "attendance.view", "grades.view", "finance.view", "invoices.view", "payments.view", "expenses.view", "ppdb.view", "ppdb.approve", "ppdb.reject", "industry-partners.view", "internships.view", "internship-logs.view", "alumni.view", "job-vacancies.view", "job-applications.view", "tracer-studies.view", "bkk.view"],
+  "kepala-sekolah": ["dashboard.view", "users.view", "roles.view", "permissions.view", "school-profile.view", "master-data.view", "students.view", "guardians.view", "teachers.view", "staffs.view", "teaching-assignments.view", "schedules.view", "attendance.view", "grades.view", "finance.view", "invoices.view", "payments.view", "expenses.view", "ppdb.view", "ppdb.approve", "ppdb.reject", "industry-partners.view", "internships.view", "internship-logs.view", "alumni.view", "job-vacancies.view", "job-applications.view", "tracer-studies.view", "bkk.view", "announcements.view", "messages.view", "notifications.view", "notification-templates.view", "reports.view", "report-jobs.view", "export-history.view"],
   "waka-kurikulum": ["dashboard.view", "users.view", "master-data.view", "master-data.create", "master-data.update", "students.view", "teachers.view", "teaching-assignments.view", "teaching-assignments.manage", "schedules.view", "schedules.manage", "attendance.view", "attendance.record", "attendance.update", "attendance.approve", "grades.view", "grades.input", "grades.update", "grades.approve", "grades.publish"],
   "waka-kesiswaan": ["dashboard.view", "users.view", "master-data.view", "students.view", "students.create", "students.update", "guardians.view", "guardians.create", "guardians.update"],
   "guru": ["dashboard.view", "master-data.view", "students.view", "teachers.view", "teaching-assignments.view", "schedules.view", "attendance.view", "attendance.record", "grades.view", "grades.input"],
@@ -154,10 +178,10 @@ const rolePermissionMap: Record<string, string[]> = {
   "siswa": ["dashboard.view", "students.view"],
   "orang-tua-wali": ["dashboard.view", "students.view", "guardians.view"],
   "bendahara": ["dashboard.view", "master-data.view", "staffs.view", "finance.view", "finance.export", "invoices.view", "invoices.create", "invoices.update", "payments.view", "payments.create", "expenses.view", "expenses.create", "expenses.approve", "expenses.pay"],
-  "staff-tu": ["dashboard.view", "users.view", "users.create", "users.update", "master-data.view", "master-data.create", "master-data.update", "students.view", "students.create", "students.update", "students.import", "students.export", "guardians.view", "guardians.create", "guardians.update", "teachers.view", "teachers.create", "teachers.update", "teachers.import", "teachers.export", "staffs.view", "staffs.create", "staffs.update", "staffs.import", "staffs.export", "teaching-assignments.view", "teaching-assignments.manage", "schedules.view", "schedules.manage", "attendance.view", "attendance.record", "attendance.update", "grades.view", "grades.input", "grades.update"],
+  "staff-tu": ["dashboard.view", "users.view", "users.create", "users.update", "master-data.view", "master-data.create", "master-data.update", "students.view", "students.create", "students.update", "students.import", "students.export", "guardians.view", "guardians.create", "guardians.update", "teachers.view", "teachers.create", "teachers.update", "teachers.import", "teachers.export", "staffs.view", "staffs.create", "staffs.update", "staffs.import", "staffs.export", "teaching-assignments.view", "teaching-assignments.manage", "schedules.view", "schedules.manage", "attendance.view", "attendance.record", "attendance.update", "grades.view", "grades.input", "grades.update", "announcements.view", "announcements.create", "announcements.update", "announcements.publish", "announcements.archive", "messages.view", "messages.send", "messages.read", "notifications.view", "notifications.create", "notifications.read", "notification-templates.view", "reports.view", "reports.generate", "report-jobs.view", "report-jobs.create", "export-history.view"],
   "panitia-ppdb": ["dashboard.view", "users.view", "users.create", "users.update", "master-data.view", "students.view", "ppdb.view", "ppdb.create", "ppdb.update", "ppdb.verify", "ppdb.approve", "ppdb.reject", "ppdb.convert", "ppdb.export"],
   "pembimbing-pkl": ["dashboard.view", "users.view", "master-data.view", "students.view", "teachers.view", "industry-partners.view", "internships.view", "internships.create", "internships.update", "internships.start", "internships.complete", "internships.cancel", "internships.score", "internship-logs.view", "internship-logs.create", "internship-logs.update", "internship-logs.approve", "internship-logs.reject"],
-  "admin-bkk": ["dashboard.view", "users.view", "master-data.view", "students.view", "staffs.view", "industry-partners.view", "industry-partners.create", "industry-partners.update", "alumni.view", "alumni.create", "alumni.update", "alumni.convert", "job-vacancies.view", "job-vacancies.create", "job-vacancies.update", "job-vacancies.publish", "job-vacancies.close", "job-applications.view", "job-applications.update", "job-applications.review", "job-applications.accept", "job-applications.reject", "tracer-studies.view", "tracer-studies.create", "tracer-studies.update", "bkk.view", "bkk.export"]
+  "admin-bkk": ["dashboard.view", "users.view", "master-data.view", "students.view", "staffs.view", "industry-partners.view", "industry-partners.create", "industry-partners.update", "alumni.view", "alumni.create", "alumni.update", "alumni.convert", "job-vacancies.view", "job-vacancies.create", "job-vacancies.update", "job-vacancies.publish", "job-vacancies.close", "job-applications.view", "job-applications.update", "job-applications.review", "job-applications.accept", "job-applications.reject", "tracer-studies.view", "tracer-studies.create", "tracer-studies.update", "bkk.view", "bkk.export", "reports.view", "reports.generate", "report-jobs.view", "report-jobs.create", "export-history.view"]
 };
 
 function permissionGroup(key: string) {
@@ -279,6 +303,7 @@ async function main() {
   await seedAcademicPhase7();
   await seedFinanceAndPpdb();
   await seedPhase9PklBkk();
+  await seedPhase10CommunicationReports();
 
   await prisma.auditLog.create({
     data: {
@@ -1142,6 +1167,162 @@ async function seedPhase9PklBkk() {
   });
 
   console.log("Phase 9 PKL, Alumni, and BKK data seeded.");
+}
+
+async function seedPhase10CommunicationReports() {
+  const superAdmin = await prisma.user.findFirst({ where: { email: process.env.SEED_SUPER_ADMIN_EMAIL ?? "superadmin@nexsmsid.dev", deletedAt: null } });
+
+  if (!superAdmin) {
+    console.log("Phase 10 seed: missing super admin user, skipping sample data.");
+    return;
+  }
+
+  await prisma.announcement.upsert({
+    where: { id: "seed-announcement-1" },
+    update: {
+      title: "Jadwal Ujian Akhir Semester",
+      content: "Ujian akhir semester dimulai Senin, 15 Juni 2026. Peserta didik wajib hadir 30 menit lebih awal.",
+      audience: "STUDENTS",
+      status: "PUBLISHED",
+      publishedAt: new Date("2026-06-01"),
+      archivedAt: null,
+      createdById: superAdmin.id,
+      deletedAt: null
+    },
+    create: {
+      id: "seed-announcement-1",
+      title: "Jadwal Ujian Akhir Semester",
+      content: "Ujian akhir semester dimulai Senin, 15 Juni 2026. Peserta didik wajib hadir 30 menit lebih awal.",
+      audience: "STUDENTS",
+      status: "PUBLISHED",
+      publishedAt: new Date("2026-06-01"),
+      createdById: superAdmin.id
+    }
+  });
+
+  await prisma.announcement.upsert({
+    where: { id: "seed-announcement-2" },
+    update: {
+      title: "Rapat Koordinasi Orang Tua",
+      content: "Rapat koordinasi orang tua/wali kelas X dilaksanakan Jumat, 19 Juni 2026 pukul 09.00 WIB.",
+      audience: "PARENTS",
+      status: "DRAFT",
+      publishedAt: null,
+      archivedAt: null,
+      createdById: superAdmin.id,
+      deletedAt: null
+    },
+    create: {
+      id: "seed-announcement-2",
+      title: "Rapat Koordinasi Orang Tua",
+      content: "Rapat koordinasi orang tua/wali kelas X dilaksanakan Jumat, 19 Juni 2026 pukul 09.00 WIB.",
+      audience: "PARENTS",
+      status: "DRAFT",
+      createdById: superAdmin.id
+    }
+  });
+
+  await prisma.internalMessage.upsert({
+    where: { id: "seed-message-1" },
+    update: {
+      senderId: superAdmin.id,
+      recipientId: superAdmin.id,
+      subject: "Koordinasi publikasi pengumuman",
+      body: "Mohon cek kembali konten pengumuman sebelum dipublikasikan ke portal publik.",
+      status: "SENT",
+      readAt: null,
+      readById: null,
+      deletedAt: null
+    },
+    create: {
+      id: "seed-message-1",
+      senderId: superAdmin.id,
+      recipientId: superAdmin.id,
+      subject: "Koordinasi publikasi pengumuman",
+      body: "Mohon cek kembali konten pengumuman sebelum dipublikasikan ke portal publik.",
+      status: "SENT"
+    }
+  });
+
+  await prisma.internalMessage.upsert({
+    where: { id: "seed-message-2" },
+    update: {
+      senderId: superAdmin.id,
+      recipientId: superAdmin.id,
+      subject: "Laporan bulanan siap diekspor",
+      body: "Laporan rekap keuangan dan PPDB bulan ini sudah siap untuk dicek.",
+      status: "READ",
+      readAt: new Date("2026-06-05"),
+      readById: superAdmin.id,
+      deletedAt: null
+    },
+    create: {
+      id: "seed-message-2",
+      senderId: superAdmin.id,
+      recipientId: superAdmin.id,
+      subject: "Laporan bulanan siap diekspor",
+      body: "Laporan rekap keuangan dan PPDB bulan ini sudah siap untuk dicek.",
+      status: "READ",
+      readAt: new Date("2026-06-05"),
+      readById: superAdmin.id
+    }
+  });
+
+  await prisma.notification.upsert({
+    where: { id: "seed-notification-1" },
+    update: { userId: superAdmin.id, title: "Pengumuman baru terbit", body: "Jadwal ujian akhir semester sudah dipublikasikan.", channel: "IN_APP", status: "UNREAD", readAt: null, metadata: { module: "announcements" } },
+    create: { id: "seed-notification-1", userId: superAdmin.id, title: "Pengumuman baru terbit", body: "Jadwal ujian akhir semester sudah dipublikasikan.", channel: "IN_APP", status: "UNREAD", metadata: { module: "announcements" } }
+  });
+
+  await prisma.notification.upsert({
+    where: { id: "seed-notification-2" },
+    update: { userId: superAdmin.id, title: "Laporan selesai", body: "Export laporan siswa berhasil dibuat.", channel: "IN_APP", status: "READ", readAt: new Date("2026-06-04"), metadata: { module: "reports" } },
+    create: { id: "seed-notification-2", userId: superAdmin.id, title: "Laporan selesai", body: "Export laporan siswa berhasil dibuat.", channel: "IN_APP", status: "READ", readAt: new Date("2026-06-04"), metadata: { module: "reports" } }
+  });
+
+  await prisma.notification.upsert({
+    where: { id: "seed-notification-3" },
+    update: { userId: superAdmin.id, title: "Template pesan aktif", body: "Template notifikasi pembayaran sudah aktif.", channel: "EMAIL", status: "UNREAD", readAt: null, metadata: { module: "templates" } },
+    create: { id: "seed-notification-3", userId: superAdmin.id, title: "Template pesan aktif", body: "Template notifikasi pembayaran sudah aktif.", channel: "EMAIL", status: "UNREAD", metadata: { module: "templates" } }
+  });
+
+  await prisma.notificationTemplate.upsert({
+    where: { code: "ANNOUNCEMENT_PUBLISHED" },
+    update: { name: "Pengumuman Dipublikasikan", channel: "IN_APP", subject: "Pengumuman baru", body: "Pengumuman {{title}} telah dipublikasikan.", isActive: true, createdById: superAdmin.id, deletedAt: null },
+    create: { id: "seed-template-1", code: "ANNOUNCEMENT_PUBLISHED", name: "Pengumuman Dipublikasikan", channel: "IN_APP", subject: "Pengumuman baru", body: "Pengumuman {{title}} telah dipublikasikan.", isActive: true, createdById: superAdmin.id }
+  });
+
+  await prisma.notificationTemplate.upsert({
+    where: { code: "REPORT_COMPLETED" },
+    update: { name: "Laporan Selesai", channel: "EMAIL", subject: "Laporan {{title}} selesai", body: "Laporan yang Anda minta sudah selesai diproses.", isActive: true, createdById: superAdmin.id, deletedAt: null },
+    create: { id: "seed-template-2", code: "REPORT_COMPLETED", name: "Laporan Selesai", channel: "EMAIL", subject: "Laporan {{title}} selesai", body: "Laporan yang Anda minta sudah selesai diproses.", isActive: true, createdById: superAdmin.id }
+  });
+
+  const reportJob1 = await prisma.reportJob.upsert({
+    where: { id: "seed-report-job-1" },
+    update: { type: "STUDENTS", title: "Rekap Data Siswa", format: "CSV", status: "COMPLETED", parameters: { status: "ACTIVE" }, resultUrl: "/exports/students-seed-report-job-1.csv", errorMessage: null, requestedById: superAdmin.id, queuedAt: new Date("2026-06-03"), startedAt: new Date("2026-06-03T01:00:00Z"), completedAt: new Date("2026-06-03T01:01:00Z") },
+    create: { id: "seed-report-job-1", type: "STUDENTS", title: "Rekap Data Siswa", format: "CSV", status: "COMPLETED", parameters: { status: "ACTIVE" }, resultUrl: "/exports/students-seed-report-job-1.csv", requestedById: superAdmin.id, queuedAt: new Date("2026-06-03"), startedAt: new Date("2026-06-03T01:00:00Z"), completedAt: new Date("2026-06-03T01:01:00Z") }
+  });
+
+  const reportJob2 = await prisma.reportJob.upsert({
+    where: { id: "seed-report-job-2" },
+    update: { type: "FINANCE", title: "Rekap Keuangan Juni", format: "XLSX", status: "PENDING", parameters: { month: "2026-06" }, resultUrl: null, errorMessage: null, requestedById: superAdmin.id, queuedAt: new Date("2026-06-04"), startedAt: null, completedAt: null },
+    create: { id: "seed-report-job-2", type: "FINANCE", title: "Rekap Keuangan Juni", format: "XLSX", status: "PENDING", parameters: { month: "2026-06" }, requestedById: superAdmin.id, queuedAt: new Date("2026-06-04") }
+  });
+
+  await prisma.exportHistory.upsert({
+    where: { id: "seed-export-history-1" },
+    update: { reportJobId: reportJob1.id, entity: "STUDENTS", format: "CSV", fileName: "students-seed-report-job-1.csv", fileUrl: "/exports/students-seed-report-job-1.csv", rowCount: 2, requestedById: superAdmin.id },
+    create: { id: "seed-export-history-1", reportJobId: reportJob1.id, entity: "STUDENTS", format: "CSV", fileName: "students-seed-report-job-1.csv", fileUrl: "/exports/students-seed-report-job-1.csv", rowCount: 2, requestedById: superAdmin.id }
+  });
+
+  await prisma.exportHistory.upsert({
+    where: { id: "seed-export-history-2" },
+    update: { reportJobId: reportJob2.id, entity: "FINANCE", format: "XLSX", fileName: "finance-june-preview.xlsx", fileUrl: "/exports/finance-june-preview.xlsx", rowCount: 2, requestedById: superAdmin.id },
+    create: { id: "seed-export-history-2", reportJobId: reportJob2.id, entity: "FINANCE", format: "XLSX", fileName: "finance-june-preview.xlsx", fileUrl: "/exports/finance-june-preview.xlsx", rowCount: 2, requestedById: superAdmin.id }
+  });
+
+  console.log("Phase 10 communication, notification, and report data seeded.");
 }
 
 main()

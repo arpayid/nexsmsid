@@ -364,6 +364,13 @@ export type JobVacancyRecord = Record<string, unknown>;
 export type JobApplicationRecord = Record<string, unknown>;
 export type TracerStudyRecord = Record<string, unknown>;
 export type BkkSummary = Record<string, unknown>;
+export type AnnouncementRecord = Record<string, unknown>;
+export type InternalMessageRecord = Record<string, unknown>;
+export type NotificationRecord = Record<string, unknown>;
+export type NotificationTemplateRecord = Record<string, unknown>;
+export type ReportJobRecord = Record<string, unknown>;
+export type ExportHistoryRecord = Record<string, unknown>;
+export type ReportCenterSummary = Record<string, unknown>;
 
 export type ApiClientOptions = {
   accessToken?: string | (() => string | null | undefined);
@@ -1173,6 +1180,176 @@ export function createApiClient(options: ApiClientOptions = {}) {
     async getBkkAlumniStatusChart() {
       const response = await request<Array<Record<string, unknown>>>("/bkk/alumni-status-chart");
       return response.data;
+    },
+
+    // Phase 10 - Communication, Notifications, Reports
+    async listAnnouncements(options: { page?: number; limit?: number; search?: string; status?: string; audience?: string } = {}) {
+      const params = new URLSearchParams();
+      if (options.page) params.set("page", String(options.page));
+      if (options.limit) params.set("limit", String(options.limit));
+      if (options.search) params.set("search", options.search);
+      if (options.status) params.set("status", options.status);
+      if (options.audience) params.set("audience", options.audience);
+      const query = params.toString();
+      const response = await request<AnnouncementRecord[]>(`/announcements${query ? `?${query}` : ""}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async createAnnouncement(input: Record<string, unknown>) {
+      const response = await request<AnnouncementRecord>("/announcements", { method: "POST", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async updateAnnouncement(id: string, input: Record<string, unknown>) {
+      const response = await request<AnnouncementRecord>(`/announcements/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async deleteAnnouncement(id: string) {
+      const response = await request<{ deleted: boolean; id: string }>(`/announcements/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async publishAnnouncement(id: string) {
+      const response = await request<AnnouncementRecord>(`/announcements/${id}/publish`, { method: "POST" });
+      return response.data;
+    },
+    async archiveAnnouncement(id: string) {
+      const response = await request<AnnouncementRecord>(`/announcements/${id}/archive`, { method: "POST" });
+      return response.data;
+    },
+    async publicAnnouncements(options: { page?: number; limit?: number; search?: string; audience?: string } = {}) {
+      const params = new URLSearchParams();
+      if (options.page) params.set("page", String(options.page));
+      if (options.limit) params.set("limit", String(options.limit));
+      if (options.search) params.set("search", options.search);
+      if (options.audience) params.set("audience", options.audience);
+      const query = params.toString();
+      const response = await request<AnnouncementRecord[]>(`/public/announcements${query ? `?${query}` : ""}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async publicAnnouncement(id: string) {
+      const response = await request<AnnouncementRecord>(`/public/announcements/${id}`);
+      return response.data;
+    },
+    async inboxMessages(options: { page?: number; limit?: number; search?: string; status?: string } = {}) {
+      const params = new URLSearchParams();
+      if (options.page) params.set("page", String(options.page));
+      if (options.limit) params.set("limit", String(options.limit));
+      if (options.search) params.set("search", options.search);
+      if (options.status) params.set("status", options.status);
+      const query = params.toString();
+      const response = await request<InternalMessageRecord[]>(`/internal-messages/inbox${query ? `?${query}` : ""}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async sentMessages(options: { page?: number; limit?: number; search?: string; status?: string } = {}) {
+      const params = new URLSearchParams();
+      if (options.page) params.set("page", String(options.page));
+      if (options.limit) params.set("limit", String(options.limit));
+      if (options.search) params.set("search", options.search);
+      if (options.status) params.set("status", options.status);
+      const query = params.toString();
+      const response = await request<InternalMessageRecord[]>(`/internal-messages/sent${query ? `?${query}` : ""}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async sendMessage(input: Record<string, unknown>) {
+      const response = await request<InternalMessageRecord>("/internal-messages", { method: "POST", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async markMessageRead(id: string) {
+      const response = await request<InternalMessageRecord>(`/internal-messages/${id}/read`, { method: "POST" });
+      return response.data;
+    },
+    async deleteMessage(id: string) {
+      const response = await request<{ deleted: boolean; id: string }>(`/internal-messages/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async listNotifications(options: { page?: number; limit?: number; search?: string; status?: string; channel?: string } = {}) {
+      const params = new URLSearchParams();
+      if (options.page) params.set("page", String(options.page));
+      if (options.limit) params.set("limit", String(options.limit));
+      if (options.search) params.set("search", options.search);
+      if (options.status) params.set("status", options.status);
+      if (options.channel) params.set("channel", options.channel);
+      const query = params.toString();
+      const response = await request<NotificationRecord[]>(`/notifications${query ? `?${query}` : ""}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async unreadNotificationCount() {
+      const response = await request<{ total: number }>("/notifications/unread-count");
+      return response.data;
+    },
+    async createNotification(input: Record<string, unknown>) {
+      const response = await request<NotificationRecord>("/notifications", { method: "POST", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async markNotificationRead(id: string) {
+      const response = await request<NotificationRecord>(`/notifications/${id}/read`, { method: "POST" });
+      return response.data;
+    },
+    async markAllNotificationsRead() {
+      const response = await request<{ updated: number }>("/notifications/read-all", { method: "POST" });
+      return response.data;
+    },
+    async archiveNotification(id: string) {
+      const response = await request<NotificationRecord>(`/notifications/${id}/archive`, { method: "POST" });
+      return response.data;
+    },
+    async listNotificationTemplates(options: { page?: number; limit?: number; search?: string; channel?: string } = {}) {
+      const params = new URLSearchParams();
+      if (options.page) params.set("page", String(options.page));
+      if (options.limit) params.set("limit", String(options.limit));
+      if (options.search) params.set("search", options.search);
+      if (options.channel) params.set("channel", options.channel);
+      const query = params.toString();
+      const response = await request<NotificationTemplateRecord[]>(`/notification-templates${query ? `?${query}` : ""}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async createNotificationTemplate(input: Record<string, unknown>) {
+      const response = await request<NotificationTemplateRecord>("/notification-templates", { method: "POST", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async updateNotificationTemplate(id: string, input: Record<string, unknown>) {
+      const response = await request<NotificationTemplateRecord>(`/notification-templates/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async deleteNotificationTemplate(id: string) {
+      const response = await request<{ deleted: boolean; id: string }>(`/notification-templates/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async getReportSummary() {
+      const response = await request<ReportCenterSummary>("/reports/summary");
+      return response.data;
+    },
+    async generateReport(input: Record<string, unknown>) {
+      const response = await request<ReportJobRecord>("/reports/generate", { method: "POST", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async listReportJobs(options: { page?: number; limit?: number; search?: string; status?: string; type?: string } = {}) {
+      const params = new URLSearchParams();
+      if (options.page) params.set("page", String(options.page));
+      if (options.limit) params.set("limit", String(options.limit));
+      if (options.search) params.set("search", options.search);
+      if (options.status) params.set("status", options.status);
+      if (options.type) params.set("type", options.type);
+      const query = params.toString();
+      const response = await request<ReportJobRecord[]>(`/report-jobs${query ? `?${query}` : ""}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async createReportJob(input: Record<string, unknown>) {
+      const response = await request<ReportJobRecord>("/report-jobs", { method: "POST", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async cancelReportJob(id: string) {
+      const response = await request<ReportJobRecord>(`/report-jobs/${id}/cancel`, { method: "POST" });
+      return response.data;
+    },
+    async listExportHistory(options: { page?: number; limit?: number; search?: string; entity?: string; format?: string } = {}) {
+      const params = new URLSearchParams();
+      if (options.page) params.set("page", String(options.page));
+      if (options.limit) params.set("limit", String(options.limit));
+      if (options.search) params.set("search", options.search);
+      if (options.entity) params.set("entity", options.entity);
+      if (options.format) params.set("format", options.format);
+      const query = params.toString();
+      const response = await request<ExportHistoryRecord[]>(`/export-history${query ? `?${query}` : ""}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
     }
   };
 }

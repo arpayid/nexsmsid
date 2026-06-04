@@ -1,0 +1,28 @@
+"use client";
+
+import { Phase9ResourcePage, options, statusMap } from "@/components/phase9-resource-page";
+
+const statuses = ["PENDING", "PROCESSING", "COMPLETED", "FAILED", "CANCELLED"];
+const formats = ["CSV", "XLSX", "PDF", "JSON"];
+
+export default function AdminReportJobsPage() {
+  return (
+    <Phase9ResourcePage
+      breadcrumb={["Admin", "Laporan", "Jobs"]}
+      columns={[{ key: "title", label: "Judul" }, { key: "type", label: "Tipe" }, { key: "format", label: "Format" }, { key: "status", label: "Status" }, { key: "resultUrl", label: "Hasil" }]}
+      create={(api, input) => api.createReportJob(input)}
+      description="Pantau antrian reportQueue dan status dummy processing."
+      eyebrow="Phase 10 Report"
+      fields={[
+        { name: "type", label: "Tipe", required: true },
+        { name: "title", label: "Judul" },
+        { name: "format", label: "Format", type: "select", options: options(formats), required: true }
+      ]}
+      load={(api, params) => api.listReportJobs(params)}
+      rowActions={[{ label: "Cancel", run: (api, row) => api.cancelReportJob(row.id as string), show: (row) => row.status === "PENDING" || row.status === "PROCESSING", variant: "outline" }]}
+      statusMap={statusMap(statuses)}
+      statusOptions={options(statuses)}
+      title="Report Jobs"
+    />
+  );
+}
