@@ -1,0 +1,100 @@
+# NexSMSID
+
+NexSMSID adalah School Management System modern untuk SMK/sekolah.
+
+## Arsitektur
+
+```text
+nexsmsid/
+├── apps/
+│   ├── api/      # NestJS backend API
+│   └── web/      # Next.js public website + admin dashboard
+├── packages/
+│   ├── ui/
+│   ├── types/
+│   ├── validators/
+│   ├── api-client/
+│   └── config/
+├── docker/
+├── docker-compose.yml
+├── pnpm-workspace.yaml
+├── turbo.json
+└── README.md
+```
+
+## Stack
+
+- NestJS
+- Next.js App Router
+- pnpm workspace
+- Turborepo
+- PostgreSQL
+- Prisma
+- Redis
+- BullMQ
+- TailwindCSS
+- shadcn/ui
+- Lucide React
+- Recharts
+- TanStack Table
+- React Hook Form
+- Zod
+- Docker Compose
+
+## Target UI
+
+- Public homepage modern
+- Admin dashboard SaaS-style
+- Soft violet-blue theme
+- Clean white dashboard
+- Rounded cards
+- Sidebar collapsible
+- Topbar search
+- Statistic cards
+- Chart cards
+- Module shortcut cards
+- Recent activity
+- PPDB summary
+- Responsive mobile-first
+
+## Roadmap Singkat
+
+1. Phase 0 — Monorepo foundation
+2. Phase 1 — UI design system dan static shell
+3. Phase 2 — API core, Prisma, config, health check
+4. Phase 3 — Auth, user, role, permission, audit
+5. Phase 4 — Dashboard API integration
+6. Phase 5 — School profile dan master data
+7. Phase 6 — People management: siswa, wali, guru, staff
+8. Phase 7 — Academic, schedule, attendance, grades
+9. Phase 8 — Finance dan PPDB
+10. Phase 9 — PKL, BKK, alumni
+11. Phase 10 — Communication, notification, report builder
+12. Phase 11 — Production hardening
+
+## Prompt Awal AI CLI
+
+```text
+Kamu bekerja pada project baru bernama NexSMSID.
+
+Bangun monorepo dengan arsitektur:
+- apps/api sebagai NestJS backend
+- apps/web sebagai Next.js public website dan admin dashboard
+- packages/ui untuk shared UI component
+- packages/types untuk shared TypeScript types
+- packages/validators untuk shared schema
+- packages/api-client untuk API client
+- packages/config untuk shared config
+
+Gunakan pnpm workspace, Turborepo, PostgreSQL, Prisma, Redis, TailwindCSS, shadcn/ui, Lucide React, Recharts, TanStack Table, React Hook Form, dan Zod.
+
+Tugas pertama:
+1. Setup monorepo foundation.
+2. Setup apps/api minimal.
+3. Setup apps/web minimal.
+4. Setup packages awal.
+5. Setup docker-compose PostgreSQL dan Redis.
+6. Setup README.
+7. Jangan buat semua modul SMS dulu.
+8. Pastikan pnpm install, pnpm dev, pnpm build, dan docker compose up -d berjalan.
+```
