@@ -144,6 +144,93 @@ export type MasterDataListOptions = {
   search?: string;
 };
 
+export type PersonStatus = "ACTIVE" | "INACTIVE" | "GRADUATED" | "TRANSFERRED" | "RESIGNED";
+export type Gender = "MALE" | "FEMALE";
+export type EmploymentStatus = "PERMANENT" | "CONTRACT" | "HONORARY" | "PROBATION";
+export type GuardianRelation = "FATHER" | "MOTHER" | "GUARDIAN" | "GRANDPARENT" | "SIBLING" | "OTHER";
+
+export type ClassroomReference = {
+  id: string;
+  code: string;
+  name: string;
+  level: number;
+};
+
+export type StudentRecord = {
+  id: string;
+  nis: string;
+  nisn: string | null;
+  name: string;
+  gender: Gender;
+  birthPlace: string | null;
+  birthDate: string | null;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  classroomId: string | null;
+  classroom?: ClassroomReference | null;
+  status: PersonStatus;
+  photoUrl: string | null;
+  enrolledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type GuardianRecord = {
+  id: string;
+  name: string;
+  relation: GuardianRelation;
+  phone: string;
+  email: string | null;
+  occupation: string | null;
+  address: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TeacherRecord = {
+  id: string;
+  nip: string | null;
+  nuptk: string | null;
+  name: string;
+  gender: Gender;
+  birthPlace: string | null;
+  birthDate: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  employmentStatus: EmploymentStatus;
+  status: PersonStatus;
+  photoUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type StaffRecord = {
+  id: string;
+  nip: string | null;
+  name: string;
+  gender: Gender;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  position: string;
+  department: string | null;
+  employmentStatus: EmploymentStatus;
+  status: PersonStatus;
+  photoUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PeopleListOptions = {
+  classroomId?: string;
+  limit?: number;
+  page?: number;
+  search?: string;
+  status?: string;
+};
+
 export type ApiClientOptions = {
   accessToken?: string | (() => string | null | undefined);
   baseUrl?: string;
@@ -271,6 +358,150 @@ export function createApiClient(options: ApiClientOptions = {}) {
     },
     async masterDataDelete(resource: string, id: string) {
       const response = await request<{ deleted: boolean; id: string }>(`/${resource}/${id}`, {
+        method: "DELETE"
+      });
+      return response.data;
+    },
+    async listStudents(options: PeopleListOptions = {}) {
+      const params = new URLSearchParams();
+
+      if (options.page) params.set("page", String(options.page));
+      if (options.limit) params.set("limit", String(options.limit));
+      if (options.search) params.set("search", options.search);
+      if (options.status) params.set("status", options.status);
+      if (options.classroomId) params.set("classroomId", options.classroomId);
+
+      const query = params.toString();
+      const response = await request<StudentRecord[]>(`/students${query ? `?${query}` : ""}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async getStudent(id: string) {
+      const response = await request<StudentRecord>(`/students/${id}`);
+      return response.data;
+    },
+    async createStudent(input: Record<string, unknown>) {
+      const response = await request<StudentRecord>("/students", {
+        method: "POST",
+        body: JSON.stringify(input)
+      });
+      return response.data;
+    },
+    async updateStudent(id: string, input: Record<string, unknown>) {
+      const response = await request<StudentRecord>(`/students/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(input)
+      });
+      return response.data;
+    },
+    async deleteStudent(id: string) {
+      const response = await request<{ deleted: boolean; id: string }>(`/students/${id}`, {
+        method: "DELETE"
+      });
+      return response.data;
+    },
+    async listGuardians(options: PeopleListOptions = {}) {
+      const params = new URLSearchParams();
+
+      if (options.page) params.set("page", String(options.page));
+      if (options.limit) params.set("limit", String(options.limit));
+      if (options.search) params.set("search", options.search);
+
+      const query = params.toString();
+      const response = await request<GuardianRecord[]>(`/guardians${query ? `?${query}` : ""}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async getGuardian(id: string) {
+      const response = await request<GuardianRecord>(`/guardians/${id}`);
+      return response.data;
+    },
+    async createGuardian(input: Record<string, unknown>) {
+      const response = await request<GuardianRecord>("/guardians", {
+        method: "POST",
+        body: JSON.stringify(input)
+      });
+      return response.data;
+    },
+    async updateGuardian(id: string, input: Record<string, unknown>) {
+      const response = await request<GuardianRecord>(`/guardians/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(input)
+      });
+      return response.data;
+    },
+    async deleteGuardian(id: string) {
+      const response = await request<{ deleted: boolean; id: string }>(`/guardians/${id}`, {
+        method: "DELETE"
+      });
+      return response.data;
+    },
+    async listTeachers(options: PeopleListOptions = {}) {
+      const params = new URLSearchParams();
+
+      if (options.page) params.set("page", String(options.page));
+      if (options.limit) params.set("limit", String(options.limit));
+      if (options.search) params.set("search", options.search);
+      if (options.status) params.set("status", options.status);
+
+      const query = params.toString();
+      const response = await request<TeacherRecord[]>(`/teachers${query ? `?${query}` : ""}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async getTeacher(id: string) {
+      const response = await request<TeacherRecord>(`/teachers/${id}`);
+      return response.data;
+    },
+    async createTeacher(input: Record<string, unknown>) {
+      const response = await request<TeacherRecord>("/teachers", {
+        method: "POST",
+        body: JSON.stringify(input)
+      });
+      return response.data;
+    },
+    async updateTeacher(id: string, input: Record<string, unknown>) {
+      const response = await request<TeacherRecord>(`/teachers/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(input)
+      });
+      return response.data;
+    },
+    async deleteTeacher(id: string) {
+      const response = await request<{ deleted: boolean; id: string }>(`/teachers/${id}`, {
+        method: "DELETE"
+      });
+      return response.data;
+    },
+    async listStaffs(options: PeopleListOptions = {}) {
+      const params = new URLSearchParams();
+
+      if (options.page) params.set("page", String(options.page));
+      if (options.limit) params.set("limit", String(options.limit));
+      if (options.search) params.set("search", options.search);
+      if (options.status) params.set("status", options.status);
+
+      const query = params.toString();
+      const response = await request<StaffRecord[]>(`/staffs${query ? `?${query}` : ""}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async getStaff(id: string) {
+      const response = await request<StaffRecord>(`/staffs/${id}`);
+      return response.data;
+    },
+    async createStaff(input: Record<string, unknown>) {
+      const response = await request<StaffRecord>("/staffs", {
+        method: "POST",
+        body: JSON.stringify(input)
+      });
+      return response.data;
+    },
+    async updateStaff(id: string, input: Record<string, unknown>) {
+      const response = await request<StaffRecord>(`/staffs/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(input)
+      });
+      return response.data;
+    },
+    async deleteStaff(id: string) {
+      const response = await request<{ deleted: boolean; id: string }>(`/staffs/${id}`, {
         method: "DELETE"
       });
       return response.data;

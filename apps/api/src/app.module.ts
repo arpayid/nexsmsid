@@ -10,6 +10,7 @@ import { AppConfigModule } from "./config/app-config.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { DatabaseModule } from "./database/database.module";
 import { DepartmentsModule } from "./departments/departments.module";
+import { GuardiansModule } from "./guardians/guardians.module";
 import { HealthModule } from "./health/health.module";
 import { LessonHoursModule } from "./lesson-hours/lesson-hours.module";
 import { PaymentCategoriesModule } from "./payment-categories/payment-categories.module";
@@ -18,7 +19,10 @@ import { RolesModule } from "./roles/roles.module";
 import { RoomsModule } from "./rooms/rooms.module";
 import { SchoolProfileModule } from "./school-profile/school-profile.module";
 import { SemestersModule } from "./semesters/semesters.module";
+import { StaffsModule } from "./staffs/staffs.module";
+import { StudentsModule } from "./students/students.module";
 import { SubjectsModule } from "./subjects/subjects.module";
+import { TeachersModule } from "./teachers/teachers.module";
 import { UsersModule } from "./users/users.module";
 
 @Module({
@@ -41,7 +45,11 @@ import { UsersModule } from "./users/users.module";
     PaymentCategoriesModule,
     UsersModule,
     RolesModule,
-    PermissionsModule
+    PermissionsModule,
+    StudentsModule,
+    GuardiansModule,
+    TeachersModule,
+    StaffsModule
   ],
   controllers: [AppController]
 })

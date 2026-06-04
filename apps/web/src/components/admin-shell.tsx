@@ -13,6 +13,7 @@ import {
   DoorOpen,
   FileText,
   GraduationCap,
+  HeartHandshake,
   Landmark,
   LayoutDashboard,
   Loader2,
@@ -24,6 +25,8 @@ import {
   School,
   Search,
   Settings,
+  UserCog,
+  Users,
   WalletCards,
   UsersRound,
   X
@@ -41,6 +44,10 @@ import { clearAuthTokens, getAccessToken, getRefreshToken, getStoredUser, storeA
 const navigation = [
   { href: "/admin", icon: LayoutDashboard, label: "Dashboard", permission: "dashboard.view" },
   { href: "/admin/school-profile", icon: School, label: "Profil Sekolah", permission: "school-profile.view" },
+  { href: "/admin/students", icon: Users, label: "Data Siswa", permission: "students.view" },
+  { href: "/admin/guardians", icon: HeartHandshake, label: "Wali/Orang Tua", permission: "guardians.view" },
+  { href: "/admin/teachers", icon: UserCog, label: "Guru", permission: "teachers.view" },
+  { href: "/admin/staffs", icon: BriefcaseBusiness, label: "Staff", permission: "staffs.view" },
   { href: "/admin/master-data/academic-years", icon: CalendarDays, label: "Tahun Ajaran", permission: "master-data.view" },
   { href: "/admin/master-data/semesters", icon: ClipboardList, label: "Semester", permission: "master-data.view" },
   { href: "/admin/master-data/departments", icon: Building2, label: "Jurusan", permission: "master-data.view" },
@@ -67,7 +74,7 @@ export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
 
   const sidebarWidth = collapsed ? "lg:w-24" : "lg:w-72";
   const labelVisibility = collapsed ? "lg:hidden" : "lg:block";
-  const currentPage = pathname === "/admin" ? "Dashboard" : "Dashboard";
+  const currentPage = getCurrentPageLabel(pathname);
   const visibleNavigation = navigation.filter((item) => !item.permission || authUser?.permissions.includes(item.permission));
 
   useEffect(() => {
@@ -292,4 +299,22 @@ function getInitials(name: string) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("") || "AD";
+}
+
+function getCurrentPageLabel(pathname: string) {
+  const match = navigation.find((item) => item.href === pathname);
+
+  if (match) {
+    return match.label;
+  }
+
+  if (pathname.startsWith("/admin/master-data/")) {
+    return "Master Data";
+  }
+
+  if (pathname.startsWith("/admin/")) {
+    return "Admin";
+  }
+
+  return "Dashboard";
 }

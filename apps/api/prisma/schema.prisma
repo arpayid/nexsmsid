@@ -215,6 +215,7 @@ model Classroom {
   updatedAt    DateTime   @updatedAt @map("updated_at")
   deletedAt    DateTime?  @map("deleted_at")
   competency   Competency @relation(fields: [competencyId], references: [id], onDelete: Restrict)
+  students     Student[]
 
   @@index([competencyId])
   @@index([isActive])
@@ -284,4 +285,138 @@ model PaymentCategory {
   @@index([isActive])
   @@index([deletedAt])
   @@map("payment_categories")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum PersonStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  TRANSFERRED
+  RESIGNED
+}
+
+enum EmploymentStatus {
+  PERMANENT
+  CONTRACT
+  HONORARY
+  PROBATION
+}
+
+enum GuardianRelation {
+  FATHER
+  MOTHER
+  GUARDIAN
+  GRANDPARENT
+  SIBLING
+  OTHER
+}
+
+model Student {
+  id           String      @id @default(cuid())
+  nis          String      @unique
+  nisn         String?     @unique
+  name         String
+  gender       Gender
+  birthPlace   String?     @map("birth_place")
+  birthDate    DateTime?   @map("birth_date")
+  address      String?
+  phone        String?
+  email        String?     @unique
+  classroomId  String?     @map("classroom_id")
+  status       PersonStatus @default(ACTIVE)
+  photoUrl     String?     @map("photo_url")
+  enrolledAt   DateTime?   @map("enrolled_at")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  deletedAt    DateTime?   @map("deleted_at")
+  classroom    Classroom?  @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  guardians    StudentGuardian[]
+
+  @@index([classroomId])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([name])
+  @@map("students")
+}
+
+model Guardian {
+  id          String      @id @default(cuid())
+  name        String
+  relation    GuardianRelation
+  phone       String
+  email       String?     @unique
+  occupation  String?
+  address     String?
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  students    StudentGuardian[]
+
+  @@index([name])
+  @@map("guardians")
+}
+
+model StudentGuardian {
+  studentId  String   @map("student_id")
+  guardianId String   @map("guardian_id")
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  createdAt  DateTime @default(now()) @map("created_at")
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  guardian   Guardian @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+
+  @@id([studentId, guardianId])
+  @@index([guardianId])
+  @@map("student_guardians")
+}
+
+model Teacher {
+  id              String      @id @default(cuid())
+  nip             String?     @unique
+  nuptk           String?     @unique
+  name            String
+  gender          Gender
+  birthPlace      String?     @map("birth_place")
+  birthDate       DateTime?   @map("birth_date")
+  phone           String?
+  email           String?     @unique
+  address         String?
+  employmentStatus EmploymentStatus @default(PERMANENT) @map("employment_status")
+  status          PersonStatus @default(ACTIVE)
+  photoUrl        String?     @map("photo_url")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  deletedAt       DateTime?   @map("deleted_at")
+
+  @@index([status])
+  @@index([deletedAt])
+  @@index([name])
+  @@map("teachers")
+}
+
+model Staff {
+  id              String      @id @default(cuid())
+  nip             String?     @unique
+  name            String
+  gender          Gender
+  phone           String?
+  email           String?     @unique
+  address         String?
+  position        String
+  department      String?
+  employmentStatus EmploymentStatus @default(PERMANENT) @map("employment_status")
+  status          PersonStatus @default(ACTIVE)
+  photoUrl        String?     @map("photo_url")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  deletedAt       DateTime?   @map("deleted_at")
+
+  @@index([status])
+  @@index([deletedAt])
+  @@index([name])
+  @@index([position])
+  @@map("staffs")
 }
