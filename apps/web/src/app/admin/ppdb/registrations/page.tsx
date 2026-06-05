@@ -10,6 +10,7 @@ import {
   Download,
   Eye,
   Loader2,
+  Printer,
   RefreshCcw,
   Search,
   ThumbsUp,
@@ -75,6 +76,7 @@ export default function PpdbRegistrationsPage() {
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
+  const [printingId, setPrintingId] = useState<string | null>(null);
 
   async function loadData() {
     setError(null);
@@ -121,6 +123,21 @@ export default function PpdbRegistrationsPage() {
     }
     setExpandedId(id);
     await loadDetail(id);
+  }
+
+  async function handlePrintProof(id: string) {
+    setError(null);
+    setPrintingId(id);
+    try {
+      const blob = await api.downloadPpdbProofPdf(id);
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (printError) {
+      setError(printError instanceof Error ? printError.message : "Gagal membuat bukti pendaftaran");
+    } finally {
+      setPrintingId(null);
+    }
   }
 
   async function handleVerify(id: string) {
@@ -243,7 +260,20 @@ export default function PpdbRegistrationsPage() {
                         </td>
                         <td className="px-4 py-4 text-slate-600"><FormatDate date={reg.createdAt as string} /></td>
                         <td className="px-4 py-4">
-                          <div className="flex justify-end">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              disabled={printingId === (item.id as string)}
+                              onClick={() => handlePrintProof(item.id as string)}
+                              size="sm"
+                              variant="soft"
+                            >
+                              {printingId === (item.id as string) ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Printer className="h-4 w-4" />
+                              )}
+                              Bukti
+                            </Button>
                             <Button onClick={() => toggleExpand(item.id as string)} size="sm" variant="ghost">
                               {expandedId === (item.id as string) ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                             </Button>

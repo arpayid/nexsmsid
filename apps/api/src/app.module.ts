@@ -33,6 +33,7 @@ import { NotificationTemplatesModule } from "./notification-templates/notificati
 import { NotificationsModule } from "./notifications/notifications.module";
 import { PaymentCategoriesModule } from "./payment-categories/payment-categories.module";
 import { PaymentsModule } from "./payments/payments.module";
+import { PdfModule } from "./pdf/pdf.module";
 import { PermissionsModule } from "./permissions/permissions.module";
 import { PpdbDashboardModule } from "./ppdb-dashboard/ppdb-dashboard.module";
 import { PpdbPeriodsModule } from "./ppdb-periods/ppdb-periods.module";
@@ -59,6 +60,7 @@ import { UsersModule } from "./users/users.module";
     DatabaseModule,
     AuditModule,
     ExcelModule,
+    PdfModule,
     AuthModule,
     DashboardModule,
     HealthModule,

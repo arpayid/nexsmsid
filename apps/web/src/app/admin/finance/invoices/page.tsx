@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Edit3, FileText, Loader2, Plus, RefreshCcw, Search, Trash2, X } from "lucide-react";
+import { AlertCircle, Edit3, FileText, Loader2, Plus, Printer, RefreshCcw, Search, Trash2, X } from "lucide-react";
 
 import type { InvoiceRecord, MasterDataRecord, StudentRecord } from "@nexsmsid/api-client";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, Input, PageHeader } from "@nexsmsid/ui";
@@ -28,6 +28,7 @@ export default function InvoicesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [total, setTotal] = useState(0);
   const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [printingId, setPrintingId] = useState<string | null>(null);
 
   async function loadReferenceData() {
     try {
@@ -105,6 +106,22 @@ export default function InvoicesPage() {
       await loadData();
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Gagal menghapus invoice");
+    }
+  }
+
+  async function handlePrintInvoice(item: InvoiceRecord) {
+    const id = (item as Record<string, unknown>).id as string;
+    setError(null);
+    setPrintingId(id);
+    try {
+      const blob = await api.downloadInvoicePdf(id);
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (printError) {
+      setError(printError instanceof Error ? printError.message : "Gagal membuat PDF invoice");
+    } finally {
+      setPrintingId(null);
     }
   }
 
@@ -233,6 +250,19 @@ export default function InvoicesPage() {
                                 <Button onClick={() => handleDelete(item)} size="sm" variant="ghost"><Trash2 className="h-4 w-4" /> Hapus</Button>
                               </>
                             ) : null}
+                            <Button
+                              disabled={printingId === ((row as Record<string, unknown>).id as string)}
+                              onClick={() => handlePrintInvoice(item)}
+                              size="sm"
+                              variant="soft"
+                            >
+                              {printingId === ((row as Record<string, unknown>).id as string) ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Printer className="h-4 w-4" />
+                              )}
+                              Cetak PDF
+                            </Button>
                             {(status === "ISSUED" || status === "PARTIAL") ? (
                               <Button onClick={() => handleCancel(item)} size="sm" variant="ghost"><X className="h-4 w-4" /> Batalkan</Button>
                             ) : null}

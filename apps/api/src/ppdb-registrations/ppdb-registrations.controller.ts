@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Header, Inject, Param, Patch, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
+import type { Response } from "express";
 
 import { AuthenticatedUser, getRequestMeta, RequestWithUser } from "../auth/auth.types";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
@@ -6,12 +7,16 @@ import { RequirePermissions } from "../auth/decorators/require-permissions.decor
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { PermissionGuard } from "../auth/guards/permission.guard";
 import { apiSuccess } from "../common/api-response";
+import { PrintDocumentService } from "../pdf/print-document.service";
 import { PpdbRegistrationsService } from "./ppdb-registrations.service";
 
 @Controller("ppdb/registrations")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class PpdbRegistrationsController {
-  constructor(@Inject(PpdbRegistrationsService) private readonly service: PpdbRegistrationsService) {}
+  constructor(
+    @Inject(PpdbRegistrationsService) private readonly service: PpdbRegistrationsService,
+    @Inject(PrintDocumentService) private readonly printService: PrintDocumentService
+  ) {}
 
   @Get()
   @RequirePermissions("ppdb.view")
@@ -84,5 +89,25 @@ export class PpdbRegistrationsController {
   @RequirePermissions("ppdb.create")
   async createDocument(@Param("id") id: string, @Body() body: unknown, @CurrentUser() user: AuthenticatedUser, @Req() request: RequestWithUser) {
     return apiSuccess("Document added", await this.service.createDocument(id, body, user, getRequestMeta(request)));
+  }
+
+  @Get(":id/proof.pdf")
+  @Header("Content-Type", "application/pdf")
+  @RequirePermissions("ppdb.print")
+  async downloadProof(
+    @Param("id") id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: RequestWithUser,
+    @Res() res: Response
+  ) {
+    const reg = await this.service.findById(id);
+    const buffer = await this.printService.renderPpdbProof(id);
+    await this.printService.logPrint("ppdb.proof.print", "ppdb_registration", id, user, getRequestMeta(request), {
+      registrationNumber: reg.registrationNumber
+    });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="ppdb-${reg.registrationNumber}.pdf"`);
+    res.setHeader("Content-Length", buffer.length.toString());
+    res.end(buffer);
   }
 }

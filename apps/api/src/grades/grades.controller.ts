@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Header, Inject, Param, Patch, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
+import type { Response } from "express";
 
 import { AuthenticatedUser, getRequestMeta, RequestWithUser } from "../auth/auth.types";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
@@ -6,12 +7,16 @@ import { RequirePermissions } from "../auth/decorators/require-permissions.decor
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { PermissionGuard } from "../auth/guards/permission.guard";
 import { apiSuccess } from "../common/api-response";
+import { PrintDocumentService } from "../pdf/print-document.service";
 import { GradesService } from "./grades.service";
 
 @Controller()
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class GradesController {
-  constructor(@Inject(GradesService) private readonly service: GradesService) {}
+  constructor(
+    @Inject(GradesService) private readonly service: GradesService,
+    @Inject(PrintDocumentService) private readonly printService: PrintDocumentService
+  ) {}
 
   @Get("grades/assessments")
   @RequirePermissions("grades.view")
@@ -60,5 +65,30 @@ export class GradesController {
   @RequirePermissions("grades.view")
   async getClassroomSummary(@Param("classroomId") classroomId: string) {
     return apiSuccess("Grade summary retrieved", await this.service.getClassroomSummary(classroomId));
+  }
+
+  @Get("grades/classrooms/:classroomId/recap.pdf")
+  @Header("Content-Type", "application/pdf")
+  @RequirePermissions("grades.print")
+  async downloadClassroomRecap(
+    @Param("classroomId") classroomId: string,
+    @Query("semesterId") semesterId: string | undefined,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: RequestWithUser,
+    @Res() res: Response
+  ) {
+    const buffer = await this.printService.renderGradeRecap(classroomId, semesterId);
+    await this.printService.logPrint(
+      "grades.recap.print",
+      "classroom",
+      classroomId,
+      user,
+      getRequestMeta(request),
+      { semesterId: semesterId ?? null }
+    );
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="grade-recap-${classroomId}.pdf"`);
+    res.setHeader("Content-Length", buffer.length.toString());
+    res.end(buffer);
   }
 }

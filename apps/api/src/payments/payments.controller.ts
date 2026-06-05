@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Header, Inject, Param, Patch, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
+import type { Response } from "express";
 
 import { AuthenticatedUser, getRequestMeta, RequestWithUser } from "../auth/auth.types";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
@@ -6,12 +7,16 @@ import { RequirePermissions } from "../auth/decorators/require-permissions.decor
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { PermissionGuard } from "../auth/guards/permission.guard";
 import { apiSuccess } from "../common/api-response";
+import { PrintDocumentService } from "../pdf/print-document.service";
 import { PaymentsService } from "./payments.service";
 
 @Controller("payments")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class PaymentsController {
-  constructor(@Inject(PaymentsService) private readonly service: PaymentsService) {}
+  constructor(
+    @Inject(PaymentsService) private readonly service: PaymentsService,
+    @Inject(PrintDocumentService) private readonly printService: PrintDocumentService
+  ) {}
 
   @Get()
   @RequirePermissions("payments.view")
@@ -54,5 +59,25 @@ export class PaymentsController {
   @RequirePermissions("payments.cancel")
   async cancel(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser, @Req() request: RequestWithUser) {
     return apiSuccess("Payment cancelled", await this.service.cancel(id, user, getRequestMeta(request)));
+  }
+
+  @Get(":id/receipt.pdf")
+  @Header("Content-Type", "application/pdf")
+  @RequirePermissions("payments.print")
+  async downloadReceipt(
+    @Param("id") id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: RequestWithUser,
+    @Res() res: Response
+  ) {
+    const payment = await this.service.findById(id);
+    const buffer = await this.printService.renderPaymentReceipt(id);
+    await this.printService.logPrint("payment.receipt.print", "payment", id, user, getRequestMeta(request), {
+      paymentNumber: payment.paymentNumber
+    });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="receipt-${payment.paymentNumber}.pdf"`);
+    res.setHeader("Content-Length", buffer.length.toString());
+    res.end(buffer);
   }
 }

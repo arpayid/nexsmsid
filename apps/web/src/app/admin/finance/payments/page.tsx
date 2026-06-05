@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AlertCircle, CheckCircle, Loader2, Plus, RefreshCcw, Search, X, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, Loader2, Plus, Printer, RefreshCcw, Search, X, XCircle } from "lucide-react";
 
 import type { InvoiceRecord, PaymentRecord, StudentRecord } from "@nexsmsid/api-client";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, Input, PageHeader } from "@nexsmsid/ui";
@@ -26,6 +26,7 @@ export default function PaymentsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [total, setTotal] = useState(0);
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
+  const [printingId, setPrintingId] = useState<string | null>(null);
 
   async function loadReferenceData() {
     try {
@@ -108,6 +109,22 @@ export default function PaymentsPage() {
 
   function getItemId(item: PaymentRecord): string {
     return (item as Record<string, unknown>).id as string;
+  }
+
+  async function handlePrintReceipt(item: PaymentRecord) {
+    const id = getItemId(item);
+    setError(null);
+    setPrintingId(id);
+    try {
+      const blob = await api.downloadPaymentReceiptPdf(id);
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (printError) {
+      setError(printError instanceof Error ? printError.message : "Gagal membuat bukti pembayaran");
+    } finally {
+      setPrintingId(null);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -218,6 +235,19 @@ export default function PaymentsPage() {
                             {(status === "PENDING" || status === "VERIFIED") ? (
                               <Button onClick={() => handleCancel(item)} size="sm" variant="ghost"><XCircle className="h-4 w-4" /> Batalkan</Button>
                             ) : null}
+                            <Button
+                              disabled={printingId === getItemId(item)}
+                              onClick={() => handlePrintReceipt(item)}
+                              size="sm"
+                              variant="soft"
+                            >
+                              {printingId === getItemId(item) ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Printer className="h-4 w-4" />
+                              )}
+                              Bukti
+                            </Button>
                           </div>
                         </td>
                       </tr>

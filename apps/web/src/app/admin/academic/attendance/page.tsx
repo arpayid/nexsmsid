@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AlertCircle, CheckCircle2, Eye, Loader2, Plus, RefreshCcw, Save, Search, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, Loader2, Plus, Printer, RefreshCcw, Save, Search, X } from "lucide-react";
 
 import type { AttendanceSessionDetail, AttendanceSessionRecord, MasterDataRecord } from "@nexsmsid/api-client";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, Input, PageHeader } from "@nexsmsid/ui";
@@ -40,6 +40,12 @@ export default function AttendancePage() {
   const [savingRecords, setSavingRecords] = useState(false);
 
   const [schedules, setSchedules] = useState<MasterDataRecord[]>([]);
+  const [classrooms, setClassrooms] = useState<MasterDataRecord[]>([]);
+  const [recapOpen, setRecapOpen] = useState(false);
+  const [recapClassroomId, setRecapClassroomId] = useState<string>("");
+  const [recapStart, setRecapStart] = useState<string>("");
+  const [recapEnd, setRecapEnd] = useState<string>("");
+  const [recapBusy, setRecapBusy] = useState(false);
 
   async function loadSchedules() {
     try {
@@ -64,9 +70,41 @@ export default function AttendancePage() {
 
   useEffect(() => {
     void loadSchedules();
+    void loadClassrooms();
     void loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function loadClassrooms() {
+    try {
+      const res = await api.masterDataList("classrooms", { limit: 500 });
+      setClassrooms(res.data);
+    } catch { /* ignore */ }
+  }
+
+  async function handleDownloadRecap() {
+    if (!recapClassroomId) {
+      setError("Pilih kelas terlebih dahulu");
+      return;
+    }
+    if (!recapStart || !recapEnd) {
+      setError("Isi tanggal mulai dan tanggal akhir");
+      return;
+    }
+    setError(null);
+    setRecapBusy(true);
+    try {
+      const blob = await api.downloadAttendanceRecapPdf(recapClassroomId, { startDate: recapStart, endDate: recapEnd });
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setRecapOpen(false);
+    } catch (recapError) {
+      setError(recapError instanceof Error ? recapError.message : "Gagal membuat rekap presensi");
+    } finally {
+      setRecapBusy(false);
+    }
+  }
 
   async function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -134,6 +172,7 @@ export default function AttendancePage() {
         actions={
           <>
             <Button onClick={loadData} variant="outline"><RefreshCcw className="h-4 w-4" /> Refresh</Button>
+            <Button onClick={() => setRecapOpen(true)} variant="soft"><Printer className="h-4 w-4" /> Cetak Rekap</Button>
             <Button onClick={() => setFormOpen(true)}><Plus className="h-4 w-4" /> Sesi Baru</Button>
           </>
         }
@@ -210,6 +249,59 @@ export default function AttendancePage() {
           )}
         </CardContent>
       </Card>
+
+      {recapOpen ? (
+        <Card className="border-primary/20">
+          <CardHeader>
+            <div className="flex items-start justify-between gap-4">
+              <div><CardTitle>Cetak Rekap Presensi</CardTitle></div>
+              <Button onClick={() => setRecapOpen(false)} size="icon" variant="ghost"><X className="h-5 w-5" /></Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <form className="grid gap-4 md:grid-cols-3" onSubmit={(e) => { e.preventDefault(); void handleDownloadRecap(); }}>
+              <label className="space-y-2">
+                <span className="text-sm font-bold text-slate-700">Kelas</span>
+                <select
+                  className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  name="classroomId"
+                  onChange={(e) => setRecapClassroomId(e.target.value)}
+                  required
+                  value={recapClassroomId}
+                >
+                  <option value="" disabled>Pilih Kelas</option>
+                  {classrooms.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </label>
+              <label className="space-y-2">
+                <span className="text-sm font-bold text-slate-700">Tanggal Mulai</span>
+                <Input
+                  onChange={(e) => setRecapStart(e.target.value)}
+                  required
+                  type="date"
+                  value={recapStart}
+                />
+              </label>
+              <label className="space-y-2">
+                <span className="text-sm font-bold text-slate-700">Tanggal Akhir</span>
+                <Input
+                  onChange={(e) => setRecapEnd(e.target.value)}
+                  required
+                  type="date"
+                  value={recapEnd}
+                />
+              </label>
+              <div className="md:col-span-3 flex justify-end gap-2">
+                <Button onClick={() => setRecapOpen(false)} type="button" variant="outline">Batal</Button>
+                <Button disabled={recapBusy} type="submit">
+                  {recapBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+                  Cetak PDF
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {formOpen ? (
         <Card className="border-primary/20">

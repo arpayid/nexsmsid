@@ -1468,6 +1468,30 @@ export function createApiClient(options: ApiClientOptions = {}) {
       const query = params.toString();
       const response = await request<ExportHistoryRecord[]>(`/export-history${query ? `?${query}` : ""}`);
       return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async downloadInvoicePdf(id: string): Promise<Blob> {
+      return downloadFile(`/invoices/${id}/pdf`, `invoice-${id}.pdf`);
+    },
+    async downloadPaymentReceiptPdf(id: string): Promise<Blob> {
+      return downloadFile(`/payments/${id}/receipt.pdf`, `receipt-${id}.pdf`);
+    },
+    async downloadPpdbProofPdf(id: string): Promise<Blob> {
+      return downloadFile(`/ppdb/registrations/${id}/proof.pdf`, `ppdb-${id}.pdf`);
+    },
+    async downloadAttendanceRecapPdf(classroomId: string, input: { startDate: string; endDate: string }): Promise<Blob> {
+      const params = new URLSearchParams();
+      params.set("startDate", input.startDate);
+      params.set("endDate", input.endDate);
+      return downloadFile(`/attendance/classrooms/${classroomId}/recap.pdf?${params.toString()}`, `attendance-recap-${classroomId}.pdf`);
+    },
+    async downloadGradeRecapPdf(classroomId: string, input: { semesterId?: string } = {}): Promise<Blob> {
+      const params = new URLSearchParams();
+      if (input.semesterId) params.set("semesterId", input.semesterId);
+      const query = params.toString();
+      return downloadFile(`/grades/classrooms/${classroomId}/recap.pdf${query ? `?${query}` : ""}`, `grade-recap-${classroomId}.pdf`);
+    },
+    savePdfBlob(blob: Blob, filename: string) {
+      triggerBrowserDownload(blob, filename);
     }
   };
 }

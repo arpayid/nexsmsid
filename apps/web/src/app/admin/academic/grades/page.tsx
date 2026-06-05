@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AlertCircle, CheckCircle2, Eye, Loader2, Plus, RefreshCcw, Save, Search, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, Loader2, Plus, Printer, RefreshCcw, Save, Search, X } from "lucide-react";
 
 import type { AssessmentDetail, AssessmentRecord, MasterDataRecord } from "@nexsmsid/api-client";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, Input, PageHeader } from "@nexsmsid/ui";
@@ -42,11 +42,25 @@ export default function GradesPage() {
   const [savingScores, setSavingScores] = useState(false);
 
   const [teachingAssignments, setTeachingAssignments] = useState<MasterDataRecord[]>([]);
+  const [classrooms, setClassrooms] = useState<MasterDataRecord[]>([]);
+  const [semesters, setSemesters] = useState<MasterDataRecord[]>([]);
+  const [recapOpen, setRecapOpen] = useState(false);
+  const [recapClassroomId, setRecapClassroomId] = useState<string>("");
+  const [recapSemesterId, setRecapSemesterId] = useState<string>("");
+  const [recapBusy, setRecapBusy] = useState(false);
 
   async function loadReferences() {
     try {
-      const res = await api.masterDataList("teaching-assignments", { limit: 500 });
-      setTeachingAssignments(res.data);
+      const [taRes, clsRes, semRes] = await Promise.all([
+        api.masterDataList("teaching-assignments", { limit: 500 }),
+        api.masterDataList("classrooms", { limit: 500 }),
+        api.masterDataList("semesters", { limit: 100 })
+      ]);
+      setTeachingAssignments(taRes.data);
+      setClassrooms(clsRes.data);
+      setSemesters(semRes.data);
+      const active = semRes.data.find((s) => s.isActive);
+      if (active) setRecapSemesterId(active.id);
     } catch { /* ignore */ }
   }
 
@@ -61,6 +75,26 @@ export default function GradesPage() {
       setError(loadError instanceof Error ? loadError.message : "Gagal memuat data");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDownloadRecap() {
+    if (!recapClassroomId) {
+      setError("Pilih kelas terlebih dahulu");
+      return;
+    }
+    setError(null);
+    setRecapBusy(true);
+    try {
+      const blob = await api.downloadGradeRecapPdf(recapClassroomId, { semesterId: recapSemesterId || undefined });
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setRecapOpen(false);
+    } catch (recapError) {
+      setError(recapError instanceof Error ? recapError.message : "Gagal membuat rekap nilai");
+    } finally {
+      setRecapBusy(false);
     }
   }
 
@@ -165,6 +199,7 @@ export default function GradesPage() {
         actions={
           <>
             <Button onClick={loadData} variant="outline"><RefreshCcw className="h-4 w-4" /> Refresh</Button>
+            <Button onClick={() => setRecapOpen(true)} variant="soft"><Printer className="h-4 w-4" /> Cetak Rekap</Button>
             <Button onClick={openCreate}><Plus className="h-4 w-4" /> Assessment Baru</Button>
           </>
         }
@@ -248,6 +283,53 @@ export default function GradesPage() {
           )}
         </CardContent>
       </Card>
+
+      {recapOpen ? (
+        <Card className="border-primary/20">
+          <CardHeader>
+            <div className="flex items-start justify-between gap-4">
+              <div><CardTitle>Cetak Rekap Nilai</CardTitle></div>
+              <Button onClick={() => setRecapOpen(false)} size="icon" variant="ghost"><X className="h-5 w-5" /></Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <form className="grid gap-4 md:grid-cols-2" onSubmit={(e) => { e.preventDefault(); void handleDownloadRecap(); }}>
+              <label className="space-y-2">
+                <span className="text-sm font-bold text-slate-700">Kelas</span>
+                <select
+                  className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  name="classroomId"
+                  onChange={(e) => setRecapClassroomId(e.target.value)}
+                  required
+                  value={recapClassroomId}
+                >
+                  <option value="" disabled>Pilih Kelas</option>
+                  {classrooms.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </label>
+              <label className="space-y-2">
+                <span className="text-sm font-bold text-slate-700">Semester (opsional)</span>
+                <select
+                  className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  name="semesterId"
+                  onChange={(e) => setRecapSemesterId(e.target.value)}
+                  value={recapSemesterId}
+                >
+                  <option value="">— Semester Aktif —</option>
+                  {semesters.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </label>
+              <div className="md:col-span-2 flex justify-end gap-2">
+                <Button onClick={() => setRecapOpen(false)} type="button" variant="outline">Batal</Button>
+                <Button disabled={recapBusy} type="submit">
+                  {recapBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+                  Cetak PDF
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {formOpen ? (
         <Card className="border-primary/20">
