@@ -380,6 +380,10 @@ function getInitials(name: string) {
     .join("") || "AD";
 }
 
+function formatCount(value: number) {
+  return value > 99 ? "99+" : String(value);
+}
+
 function getCurrentPageLabel(pathname: string) {
   const match = navigation.find((item) => item.href === pathname);
 

@@ -5,13 +5,15 @@ import { AuditService } from "../audit/audit.service";
 import { AuthenticatedUser, RequestMeta } from "../auth/auth.types";
 import { parseWithSchema } from "../common/validation";
 import { PrismaService } from "../database/prisma.service";
+import { NotificationEventService } from "../notifications/notification-event.service";
 import { announcementListQuerySchema, createAnnouncementSchema, updateAnnouncementSchema } from "./announcements.dto";
 
 @Injectable()
 export class AnnouncementsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(AuditService) private readonly auditService: AuditService
+    @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(NotificationEventService) private readonly notificationEvents: NotificationEventService
   ) {}
 
   async list(query: unknown) {
@@ -72,6 +74,7 @@ export class AnnouncementsService {
     });
 
     await this.auditService.record({ ...meta, actorId: actor.id, action: "announcement.create", entity: "announcement", entityId: item.id, metadata: { title: item.title } });
+    if (item.status === "PUBLISHED") await this.notificationEvents.announcementPublished(item, actor, meta);
     return item;
   }
 
@@ -85,6 +88,7 @@ export class AnnouncementsService {
 
     const item = await this.prisma.announcement.update({ where: { id }, data: updateData });
     await this.auditService.record({ ...meta, actorId: actor.id, action: "announcement.update", entity: "announcement", entityId: id, metadata: data });
+    if (item.status === "PUBLISHED" && existing.status !== "PUBLISHED") await this.notificationEvents.announcementPublished(item, actor, meta);
     return item;
   }
 
@@ -100,6 +104,7 @@ export class AnnouncementsService {
     if (existing.status === "PUBLISHED") throw new BadRequestException("Announcement is already published");
     const item = await this.prisma.announcement.update({ where: { id }, data: { status: "PUBLISHED", publishedAt: new Date(), archivedAt: null } });
     await this.auditService.record({ ...meta, actorId: actor.id, action: "announcement.publish", entity: "announcement", entityId: id, metadata: {} });
+    await this.notificationEvents.announcementPublished(item, actor, meta);
     return item;
   }
 

@@ -4,13 +4,15 @@ import { AuditService } from "../audit/audit.service";
 import { AuthenticatedUser, RequestMeta } from "../auth/auth.types";
 import { parseWithSchema } from "../common/validation";
 import { PrismaService } from "../database/prisma.service";
+import { NotificationEventService } from "../notifications/notification-event.service";
 import { jobApplicationListQuerySchema, jobApplicationNoteSchema, updateJobApplicationSchema } from "./job-applications.dto";
 
 @Injectable()
 export class JobApplicationsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(AuditService) private readonly auditService: AuditService
+    @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(NotificationEventService) private readonly notificationEvents: NotificationEventService
   ) {}
 
   async list(query: unknown) {
@@ -46,6 +48,7 @@ export class JobApplicationsService {
     if (data.status && !this.canTransition(existing.status, data.status)) throw new BadRequestException(`Cannot transition from ${existing.status} to ${data.status}`);
     const item = await this.prisma.jobApplication.update({ where: { id }, data: this.cleanOptional(data), include: { jobVacancy: true, alumni: true } });
     await this.auditService.record({ ...meta, actorId: actor.id, action: "job-application.update", entity: "job_application", entityId: id, metadata: data });
+    if (data.status && data.status !== existing.status) await this.notificationEvents.jobApplicationStatusChanged(item, actor, meta);
     return item;
   }
 
@@ -68,6 +71,7 @@ export class JobApplicationsService {
     if (!this.canTransition(existing.status, status)) throw new BadRequestException(`Cannot transition from ${existing.status} to ${status}`);
     const item = await this.prisma.jobApplication.update({ where: { id }, data: { status, note: note || existing.note }, include: { jobVacancy: true, alumni: true } });
     await this.auditService.record({ ...meta, actorId: actor.id, action, entity: "job_application", entityId: id, metadata: { status } });
+    await this.notificationEvents.jobApplicationStatusChanged(item, actor, meta);
     return item;
   }
 

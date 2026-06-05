@@ -4,13 +4,15 @@ import { AuditService } from "../audit/audit.service";
 import { AuthenticatedUser, RequestMeta } from "../auth/auth.types";
 import { parseWithSchema } from "../common/validation";
 import { PrismaService } from "../database/prisma.service";
+import { NotificationEventService } from "../notifications/notification-event.service";
 import { createInternshipLogSchema, internshipLogListQuerySchema, rejectInternshipLogSchema, updateInternshipLogSchema } from "./internship-logs.dto";
 
 @Injectable()
 export class InternshipLogsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(AuditService) private readonly auditService: AuditService
+    @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(NotificationEventService) private readonly notificationEvents: NotificationEventService
   ) {}
 
   async list(internshipId: string, query: unknown) {
@@ -54,8 +56,9 @@ export class InternshipLogsService {
   async approve(id: string, actor: AuthenticatedUser, meta: RequestMeta) {
     const existing = await this.findById(id);
     if (existing.status !== "SUBMITTED") throw new BadRequestException("Only SUBMITTED logs can be approved");
-    const item = await this.prisma.internshipLog.update({ where: { id }, data: { status: "APPROVED", reviewedById: actor.id, reviewedAt: new Date() } });
+    const item = await this.prisma.internshipLog.update({ where: { id }, data: { status: "APPROVED", reviewedById: actor.id, reviewedAt: new Date() }, include: { internship: true } });
     await this.auditService.record({ ...meta, actorId: actor.id, action: "internship-log.approve", entity: "internship_log", entityId: id, metadata: {} });
+    await this.notificationEvents.internshipLogReviewed(item, actor, meta);
     return item;
   }
 
@@ -63,8 +66,9 @@ export class InternshipLogsService {
     const existing = await this.findById(id);
     if (existing.status !== "SUBMITTED") throw new BadRequestException("Only SUBMITTED logs can be rejected");
     const data = parseWithSchema(rejectInternshipLogSchema, input);
-    const item = await this.prisma.internshipLog.update({ where: { id }, data: { status: "REJECTED", note: data.note, reviewedById: actor.id, reviewedAt: new Date() } });
+    const item = await this.prisma.internshipLog.update({ where: { id }, data: { status: "REJECTED", note: data.note, reviewedById: actor.id, reviewedAt: new Date() }, include: { internship: true } });
     await this.auditService.record({ ...meta, actorId: actor.id, action: "internship-log.reject", entity: "internship_log", entityId: id, metadata: { note: data.note } });
+    await this.notificationEvents.internshipLogReviewed(item, actor, meta);
     return item;
   }
 

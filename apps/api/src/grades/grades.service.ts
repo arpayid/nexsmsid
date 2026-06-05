@@ -6,13 +6,15 @@ import { AuthenticatedUser, RequestMeta } from "../auth/auth.types";
 import { parseWithSchema } from "../common/validation";
 import { PrismaService } from "../database/prisma.service";
 import { listQuerySchema } from "../master-data/base-master-data.service";
+import { NotificationEventService } from "../notifications/notification-event.service";
 import { approveScoreSchema, createAssessmentSchema, inputScoresSchema, updateAssessmentSchema, updateScoreSchema } from "./grades.dto";
 
 @Injectable()
 export class GradesService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(AuditService) private readonly auditService: AuditService
+    @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(NotificationEventService) private readonly notificationEvents: NotificationEventService
   ) {}
 
   async listAssessments(query: unknown) {
@@ -133,8 +135,9 @@ export class GradesService {
   }
 
   async approveScores(assessmentId: string, input: unknown, actor: AuthenticatedUser, meta: RequestMeta) {
-    await this.findAssessmentById(assessmentId);
+    const assessment = await this.findAssessmentById(assessmentId);
     const data = parseWithSchema(approveScoreSchema, input);
+    const submittedGrades = await this.prisma.grade.findMany({ where: { assessmentId, status: "SUBMITTED" } });
 
     await this.prisma.grade.updateMany({
       where: { assessmentId, status: "SUBMITTED" },
@@ -142,6 +145,16 @@ export class GradesService {
     });
 
     await this.auditService.record({ ...meta, actorId: actor.id, action: "grades.approve", entity: "assessment", entityId: assessmentId, metadata: { status: data.status } });
+    for (const grade of submittedGrades) {
+      await this.notificationEvents.gradePublished({
+        assessmentName: assessment.name,
+        id: grade.id,
+        score: grade.score,
+        status: data.status,
+        studentId: grade.studentId,
+        subject: assessment.teachingAssignment.subject.name
+      }, actor, meta);
+    }
     return { approved: true, status: data.status };
   }
 

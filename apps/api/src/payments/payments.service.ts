@@ -5,13 +5,15 @@ import { AuthenticatedUser, RequestMeta } from "../auth/auth.types";
 import { parseWithSchema } from "../common/validation";
 import { PrismaService } from "../database/prisma.service";
 import { listQuerySchema } from "../master-data/base-master-data.service";
+import { NotificationEventService } from "../notifications/notification-event.service";
 import { createPaymentSchema, rejectPaymentSchema, updatePaymentSchema, verifyPaymentSchema } from "./payments.dto";
 
 @Injectable()
 export class PaymentsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(AuditService) private readonly auditService: AuditService
+    @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(NotificationEventService) private readonly notificationEvents: NotificationEventService
   ) {}
 
   async list(query: unknown) {
@@ -117,6 +119,7 @@ export class PaymentsService {
     ]);
 
     await this.auditService.record({ ...meta, actorId: actor.id, action: "payment.verify", entity: "payment", entityId: id, metadata: { invoiceStatus } });
+    await this.notificationEvents.paymentStatusChanged(updatedPayment, actor, meta);
     return updatedPayment;
   }
 
@@ -132,6 +135,7 @@ export class PaymentsService {
     });
 
     await this.auditService.record({ ...meta, actorId: actor.id, action: "payment.reject", entity: "payment", entityId: id, metadata: { note: data.note } });
+    await this.notificationEvents.paymentStatusChanged(updated, actor, meta);
     return updated;
   }
 

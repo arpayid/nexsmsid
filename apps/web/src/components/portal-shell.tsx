@@ -74,6 +74,9 @@ export function PortalShell({ children, expectedPortal }: PortalShellProps) {
   const [ready, setReady] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const canViewNotifications = user?.permissions.includes("notifications.view") ?? false;
+  const notificationPath = `${portalHomePath(expectedPortal)}/notifications`;
 
   useEffect(() => {
     const access = getAccessToken();
@@ -127,6 +130,32 @@ export function PortalShell({ children, expectedPortal }: PortalShellProps) {
     };
   }, [ready, router]);
 
+  useEffect(() => {
+    let active = true;
+
+    if (!ready || !canViewNotifications) {
+      setUnreadNotifications(0);
+      return () => {
+        active = false;
+      };
+    }
+
+    async function loadUnreadNotifications() {
+      try {
+        const result = await createBrowserApiClient().unreadNotificationCount();
+        if (active) setUnreadNotifications(result.total);
+      } catch {
+        if (active) setUnreadNotifications(0);
+      }
+    }
+
+    void loadUnreadNotifications();
+
+    return () => {
+      active = false;
+    };
+  }, [canViewNotifications, ready, user?.id]);
+
   function handleLogout() {
     clearAuthTokens();
     startTransition(() => router.replace("/login"));
@@ -163,6 +192,14 @@ export function PortalShell({ children, expectedPortal }: PortalShellProps) {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {canViewNotifications ? (
+              <Button asChild className="relative" size="icon" variant="outline">
+                <Link href={notificationPath}>
+                  <Bell className="h-4 w-4" />
+                  {unreadNotifications > 0 ? <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-black leading-none text-white">{formatCount(unreadNotifications)}</span> : null}
+                </Link>
+              </Button>
+            ) : null}
             <div className="hidden text-right sm:block">
               <p className="text-sm font-semibold leading-tight text-slate-900">{user.name}</p>
               <p className="text-xs text-muted-foreground">{user.roles.join(", ") || "Tanpa role"}</p>
@@ -186,6 +223,7 @@ export function PortalShell({ children, expectedPortal }: PortalShellProps) {
               {items.map((item) => {
                 const active = pathname === item.href || (item.href !== portalHomePath(expectedPortal) && pathname?.startsWith(item.href));
                 const Icon = item.icon;
+                const notificationItem = item.href === notificationPath;
                 return (
                   <Link
                     className={cn(
@@ -199,6 +237,7 @@ export function PortalShell({ children, expectedPortal }: PortalShellProps) {
                   >
                     <Icon className="h-4 w-4" />
                     {!collapsed ? <span>{item.label}</span> : null}
+                    {notificationItem && unreadNotifications > 0 ? <span className="ml-auto rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-black text-white">{formatCount(unreadNotifications)}</span> : null}
                   </Link>
                 );
               })}
@@ -229,6 +268,7 @@ export function PortalShell({ children, expectedPortal }: PortalShellProps) {
                 {items.map((item) => {
                   const active = pathname === item.href || (item.href !== portalHomePath(expectedPortal) && pathname?.startsWith(item.href));
                   const Icon = item.icon;
+                  const notificationItem = item.href === notificationPath;
                   return (
                     <Link
                       className={cn(
@@ -243,6 +283,7 @@ export function PortalShell({ children, expectedPortal }: PortalShellProps) {
                     >
                       <Icon className="h-4 w-4" />
                       <span>{item.label}</span>
+                      {notificationItem && unreadNotifications > 0 ? <span className="ml-auto rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-black text-white">{formatCount(unreadNotifications)}</span> : null}
                     </Link>
                   );
                 })}
@@ -261,4 +302,8 @@ export function PortalShell({ children, expectedPortal }: PortalShellProps) {
       </footer>
     </div>
   );
+}
+
+function formatCount(value: number) {
+  return value > 99 ? "99+" : String(value);
 }

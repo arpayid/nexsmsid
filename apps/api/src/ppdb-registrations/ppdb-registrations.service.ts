@@ -5,13 +5,15 @@ import { AuthenticatedUser, RequestMeta } from "../auth/auth.types";
 import { parseWithSchema } from "../common/validation";
 import { PrismaService } from "../database/prisma.service";
 import { listQuerySchema } from "../master-data/base-master-data.service";
+import { NotificationEventService } from "../notifications/notification-event.service";
 import { createPpdbDocumentSchema, createPpdbRegistrationSchema, updatePpdbRegistrationSchema } from "./ppdb-registrations.dto";
 
 @Injectable()
 export class PpdbRegistrationsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(AuditService) private readonly auditService: AuditService
+    @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(NotificationEventService) private readonly notificationEvents: NotificationEventService
   ) {}
 
   async list(query: unknown) {
@@ -135,13 +137,16 @@ export class PpdbRegistrationsService {
 
   async requestRevision(id: string, input: unknown, actor: AuthenticatedUser, meta: RequestMeta) {
     const parsed = input as Record<string, unknown>;
-    return this.changeStatus(id, "REVISION", actor, meta, { note: (parsed.note as string) || null });
+    const result = await this.changeStatus(id, "REVISION", actor, meta, { note: (parsed.note as string) || null });
+    await this.notificationEvents.ppdbStatusChanged(result, actor, meta);
+    return result;
   }
 
   async accept(id: string, input: unknown, actor: AuthenticatedUser, meta: RequestMeta) {
     const parsed = input as Record<string, unknown>;
     const result = await this.changeStatus(id, "ACCEPTED", actor, meta, { note: (parsed.note as string) || null, selectionStatus: "PASSED" });
     await this.auditService.record({ ...meta, actorId: actor.id, action: "ppdb.accept", entity: "ppdb_registration", entityId: id, metadata: {} });
+    await this.notificationEvents.ppdbStatusChanged(result, actor, meta);
     return result;
   }
 
@@ -149,6 +154,7 @@ export class PpdbRegistrationsService {
     const parsed = input as Record<string, unknown>;
     const result = await this.changeStatus(id, "REJECTED", actor, meta, { note: (parsed.note as string) || null, selectionStatus: "FAILED" });
     await this.auditService.record({ ...meta, actorId: actor.id, action: "ppdb.reject", entity: "ppdb_registration", entityId: id, metadata: {} });
+    await this.notificationEvents.ppdbStatusChanged(result, actor, meta);
     return result;
   }
 

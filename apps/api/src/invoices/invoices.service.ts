@@ -6,13 +6,15 @@ import { AuthenticatedUser, RequestMeta } from "../auth/auth.types";
 import { parseWithSchema } from "../common/validation";
 import { PrismaService } from "../database/prisma.service";
 import { listQuerySchema } from "../master-data/base-master-data.service";
+import { NotificationEventService } from "../notifications/notification-event.service";
 import { createInvoiceSchema, updateInvoiceSchema } from "./invoices.dto";
 
 @Injectable()
 export class InvoicesService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(AuditService) private readonly auditService: AuditService
+    @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(NotificationEventService) private readonly notificationEvents: NotificationEventService
   ) {}
 
   async list(query: unknown) {
@@ -128,6 +130,7 @@ export class InvoicesService {
 
     const invoice = await this.prisma.invoice.update({ where: { id }, data: { status: "ISSUED" }, include: { student: true, items: true } });
     await this.auditService.record({ ...meta, actorId: actor.id, action: "invoice.issue", entity: "invoice", entityId: id, metadata: {} });
+    await this.notificationEvents.invoiceIssued(invoice, actor, meta);
     return invoice;
   }
 

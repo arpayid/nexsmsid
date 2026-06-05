@@ -5,13 +5,15 @@ import { AuthenticatedUser, RequestMeta } from "../auth/auth.types";
 import { parseWithSchema } from "../common/validation";
 import { PrismaService } from "../database/prisma.service";
 import { listQuerySchema } from "../master-data/base-master-data.service";
+import { NotificationEventService } from "../notifications/notification-event.service";
 import { createSessionSchema, recordAttendanceSchema, updateAttendanceRecordSchema, updateSessionSchema } from "./attendance.dto";
 
 @Injectable()
 export class AttendanceService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(AuditService) private readonly auditService: AuditService
+    @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(NotificationEventService) private readonly notificationEvents: NotificationEventService
   ) {}
 
   async listSessions(query: unknown) {
@@ -112,6 +114,9 @@ export class AttendanceService {
     }
 
     await this.auditService.record({ ...meta, actorId: actor.id, action: "attendance.record", entity: "attendance_session", entityId: sessionId, metadata: { recordCount: data.records.length } });
+    for (const record of results) {
+      await this.notificationEvents.attendanceFlagged(record, { date: session.date, subject: session.schedule.teachingAssignment.subject.name }, actor, meta);
+    }
     return results;
   }
 
