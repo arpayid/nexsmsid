@@ -1,0 +1,88 @@
+name: NexSMSID CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-validation:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: nexsmsid
+          POSTGRES_PASSWORD: nexsmsid
+          POSTGRES_DB: nexsmsid_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://nexsmsid:nexsmsid@localhost:5432/nexsmsid_test
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      # Strong secrets for CI (64+ chars)
+      JWT_ACCESS_SECRET: CI_TEST_SECRET_KEY_FOR_NEXSMSID_ACCESS_TOKEN_MUST_BE_LONG_ENOUGH_64_CHARS_MIN
+      JWT_REFRESH_SECRET: CI_TEST_SECRET_KEY_FOR_NEXSMSID_REFRESH_TOKEN_MUST_BE_LONG_ENOUGH_64_CHARS_MIN
+      WEB_ORIGIN: http://localhost:3000
+      CORS_ORIGIN: http://localhost:3000
+      API_PORT: 4000
+      API_PREFIX: api/v1
+      NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
+      RATE_LIMIT_TTL: 60
+      RATE_LIMIT_LIMIT: 100
+      STORAGE_PATH: /tmp/nexsmsid/storage
+      REPORT_STORAGE_PATH: /tmp/nexsmsid/storage/reports
+      LOG_LEVEL: error
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @nexsmsid/api prisma generate
+
+      - name: Run Prisma migrations (Deploy)
+        run: pnpm --filter @nexsmsid/api prisma migrate deploy
+
+      - name: Build API
+        run: pnpm --filter @nexsmsid/api build
+
+      - name: Build Web
+        run: pnpm --filter @nexsmsid/web build
+
+      - name: Build Full Workspace
+        run: pnpm build
