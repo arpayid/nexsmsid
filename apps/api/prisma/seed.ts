@@ -174,7 +174,75 @@ const permissions = [
   "report-jobs.create",
   "report-jobs.cancel",
   "export-history.view",
-  "export-history.export"
+  "export-history.export",
+  "counseling.view",
+  "counseling.create",
+  "counseling.update",
+  "counseling.delete",
+  "discipline.view",
+  "discipline.create",
+  "discipline.update",
+  "discipline.delete",
+  "discipline.report",
+  "discipline.notify-guardian",
+  "discipline.print",
+  "letters.view",
+  "letters.create",
+  "letters.update",
+  "letters.delete",
+  "letters.approve",
+  "letters.print",
+  "letters.export",
+  "inventory.view",
+  "inventory.create",
+  "inventory.update",
+  "inventory.delete",
+  "inventory.borrow",
+  "inventory.return",
+  "inventory.maintenance",
+  "inventory.export",
+  "inventory.print",
+  "library.view",
+  "library.create",
+  "library.update",
+  "library.delete",
+  "library.borrow",
+  "library.return",
+  "library.fine",
+  "library.export",
+  "library.print",
+  "payroll.view",
+  "payroll.create",
+  "payroll.update",
+  "payroll.approve",
+  "payroll.pay",
+  "payroll.print",
+  "payroll.export",
+  "exams.view",
+  "exams.create",
+  "exams.update",
+  "exams.delete",
+  "exams.schedule",
+  "exams.participants",
+  "exams.print-card",
+  "exams.export",
+  "learning.view",
+  "learning.create",
+  "learning.update",
+  "learning.delete",
+  "learning.assignments",
+  "learning.submissions",
+  "learning.grade",
+  "approvals.view",
+  "approvals.approve",
+  "approvals.reject",
+  "approvals.delegate",
+  "approvals.history",
+  "calendar.view",
+  "calendar.create",
+  "calendar.update",
+  "calendar.delete",
+  "calendar.publish"
 ];
 
 const roles = [
@@ -191,7 +259,15 @@ const roles = [
   { name: "Staff TU", slug: "staff-tu", description: "Akses administrasi tata usaha." },
   { name: "Panitia PPDB", slug: "panitia-ppdb", description: "Akses operasional PPDB." },
   { name: "Pembimbing PKL", slug: "pembimbing-pkl", description: "Akses pembimbing PKL." },
-  { name: "Admin BKK", slug: "admin-bkk", description: "Akses bursa kerja khusus." }
+  { name: "Admin BKK", slug: "admin-bkk", description: "Akses bursa kerja khusus." },
+  { name: "Konselor BK", slug: "konselor-bk", description: "Untuk modul BK, konseling, pelanggaran, prestasi, tindak lanjut." },
+  { name: "Petugas Tata Tertib", slug: "petugas-tata-tertib", description: "Untuk pelanggaran, poin, sanksi, dan disiplin." },
+  { name: "Petugas Surat", slug: "petugas-surat", description: "Untuk Letter Management / surat menyurat." },
+  { name: "Petugas Sarpras", slug: "petugas-sarpras", description: "Untuk Inventory / Asset Management." },
+  { name: "Petugas Perpustakaan", slug: "petugas-perpustakaan", description: "Untuk Library." },
+  { name: "HR Payroll", slug: "hr-payroll", description: "Untuk Payroll/slip gaji." },
+  { name: "Petugas Ujian", slug: "petugas-ujian", description: "Untuk Exam Management." },
+  { name: "Approver", slug: "approver", description: "Untuk Approval Center umum." }
 ];
 
 const rolePermissionMap: Record<string, string[]> = {
@@ -208,7 +284,15 @@ const rolePermissionMap: Record<string, string[]> = {
   "staff-tu": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "users.create", "users.update", "users.reset-password", "users.unlock", "users.force-change-password", "master-data.view", "master-data.create", "master-data.update", "master-data.import", "master-data.export", "students.view", "students.create", "students.update", "students.import", "students.export", "guardians.view", "guardians.create", "guardians.update", "guardians.import", "guardians.export", "teachers.view", "teachers.create", "teachers.update", "teachers.import", "teachers.export", "staffs.view", "staffs.create", "staffs.update", "staffs.import", "staffs.export", "teaching-assignments.view", "teaching-assignments.manage", "schedules.view", "schedules.manage", "attendance.view", "attendance.record", "attendance.update", "attendance.print", "grades.view", "grades.input", "grades.update", "grades.print", "invoices.view", "invoices.print", "payments.view", "payments.print", "ppdb.view", "ppdb.print", "announcements.view", "announcements.create", "announcements.update", "announcements.publish", "announcements.archive", "messages.view", "messages.send", "messages.read", "notifications.view", "notifications.create", "notifications.read", "notification-templates.view", "reports.view", "reports.generate", "report-jobs.view", "report-jobs.create", "export-history.view"],
   "panitia-ppdb": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "users.create", "users.update", "master-data.view", "students.view", "ppdb.view", "ppdb.create", "ppdb.update", "ppdb.verify", "ppdb.approve", "ppdb.reject", "ppdb.convert", "ppdb.export", "ppdb.print"],
   "pembimbing-pkl": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "master-data.view", "students.view", "teachers.view", "industry-partners.view", "internships.view", "internships.create", "internships.update", "internships.start", "internships.complete", "internships.cancel", "internships.score", "internship-logs.view", "internship-logs.create", "internship-logs.update", "internship-logs.approve", "internship-logs.reject"],
-  "admin-bkk": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "master-data.view", "students.view", "staffs.view", "industry-partners.view", "industry-partners.create", "industry-partners.update", "alumni.view", "alumni.create", "alumni.update", "alumni.convert", "job-vacancies.view", "job-vacancies.create", "job-vacancies.update", "job-vacancies.publish", "job-vacancies.close", "job-applications.view", "job-applications.update", "job-applications.review", "job-applications.accept", "job-applications.reject", "tracer-studies.view", "tracer-studies.create", "tracer-studies.update", "bkk.view", "bkk.export", "reports.view", "reports.generate", "report-jobs.view", "report-jobs.create", "export-history.view"]
+  "admin-bkk": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "master-data.view", "students.view", "staffs.view", "industry-partners.view", "industry-partners.create", "industry-partners.update", "alumni.view", "alumni.create", "alumni.update", "alumni.convert", "job-vacancies.view", "job-vacancies.create", "job-vacancies.update", "job-vacancies.publish", "job-vacancies.close", "job-applications.view", "job-applications.update", "job-applications.review", "job-applications.accept", "job-applications.reject", "tracer-studies.view", "tracer-studies.create", "tracer-studies.update", "bkk.view", "bkk.export", "reports.view", "reports.generate", "report-jobs.view", "report-jobs.create", "export-history.view"],
+  "konselor-bk": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "counseling.view", "counseling.create", "counseling.update", "counseling.delete", "discipline.view", "discipline.create", "discipline.update", "discipline.report", "discipline.notify-guardian", "discipline.print"],
+  "petugas-tata-tertib": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "discipline.view", "discipline.create", "discipline.update", "discipline.delete", "discipline.report", "discipline.notify-guardian", "discipline.print", "students.view", "guardians.view", "notifications.view"],
+  "petugas-surat": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "letters.view", "letters.create", "letters.update", "letters.delete", "letters.approve", "letters.print", "letters.export", "students.view", "teachers.view", "staffs.view", "guardians.view"],
+  "petugas-sarpras": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "inventory.view", "inventory.create", "inventory.update", "inventory.delete", "inventory.borrow", "inventory.return", "inventory.maintenance", "inventory.export", "inventory.print"],
+  "petugas-perpustakaan": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "library.view", "library.create", "library.update", "library.delete", "library.borrow", "library.return", "library.fine", "library.export", "library.print"],
+  "hr-payroll": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "payroll.view", "payroll.create", "payroll.update", "payroll.approve", "payroll.pay", "payroll.print", "payroll.export", "teachers.view", "staffs.view"],
+  "petugas-ujian": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "exams.view", "exams.create", "exams.update", "exams.delete", "exams.schedule", "exams.participants", "exams.print-card", "exams.export", "students.view", "teachers.view", "master-data.view"],
+  "approver": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "approvals.view", "approvals.approve", "approvals.reject", "approvals.delegate", "approvals.history"]
 };
 
 function permissionGroup(key: string) {
@@ -1445,7 +1529,33 @@ async function seedPhase10CommunicationReports() {
     create: { id: "seed-export-history-2", reportJobId: reportJob2.id, entity: "FINANCE", format: "XLSX", fileName: "finance-june-preview.xlsx", fileUrl: "/exports/finance-june-preview.xlsx", rowCount: 2, requestedById: superAdmin.id }
   });
 
+  // Phase 12.0B Demo Users (Staging Only)
+  const konselorRole = await prisma.role.findUniqueOrThrow({ where: { slug: "konselor-bk" } });
+  const sarprasRole = await prisma.role.findUniqueOrThrow({ where: { slug: "petugas-sarpras" } });
+  const perpustakaanRole = await prisma.role.findUniqueOrThrow({ where: { slug: "petugas-perpustakaan" } });
+  const suratRole = await prisma.role.findUniqueOrThrow({ where: { slug: "petugas-surat" } });
+
+  const createDemoUser = async (email: string, name: string, roleId: string) => {
+    const defaultPasswordHash = await bcrypt.hash("ChangeMe123!", 12);
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: { name, passwordHash: defaultPasswordHash, status: "ACTIVE", forceChangePassword: true, deletedAt: null },
+      create: { email, name, passwordHash: defaultPasswordHash, status: "ACTIVE", forceChangePassword: true }
+    });
+    await prisma.userRole.upsert({
+      where: { userId_roleId: { userId: user.id, roleId } },
+      update: {},
+      create: { userId: user.id, roleId }
+    });
+  };
+
+  await createDemoUser("konselor@nexsmsid.dev", "Demo Konselor BK", konselorRole.id);
+  await createDemoUser("sarpras@nexsmsid.dev", "Demo Sarpras", sarprasRole.id);
+  await createDemoUser("perpustakaan@nexsmsid.dev", "Demo Perpustakaan", perpustakaanRole.id);
+  await createDemoUser("surat@nexsmsid.dev", "Demo Petugas Surat", suratRole.id);
+
   console.log("Phase 10 communication, notification, and report data seeded.");
+  console.log("Phase 12.0B permission foundation and demo users seeded.");
 }
 
 main()
