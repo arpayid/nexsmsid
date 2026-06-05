@@ -3,6 +3,7 @@ import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, Req, 
 import { AuthenticatedUser, getRequestMeta, RequestWithUser } from "../auth/auth.types";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { RequirePermissions } from "../auth/decorators/require-permissions.decorator";
+import { Public } from "../auth/decorators/public.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { PermissionGuard } from "../auth/guards/permission.guard";
 import { apiSuccess } from "../common/api-response";
@@ -58,6 +59,8 @@ export class JobVacanciesController {
 }
 
 @Controller("public/jobs")
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@Public()
 export class PublicJobsController {
   constructor(@Inject(JobVacanciesService) private readonly service: JobVacanciesService) {}
 

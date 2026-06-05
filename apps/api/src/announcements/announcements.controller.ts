@@ -5,6 +5,7 @@ import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { RequirePermissions } from "../auth/decorators/require-permissions.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { PermissionGuard } from "../auth/guards/permission.guard";
+import { Public } from "../auth/decorators/public.decorator";
 import { apiSuccess } from "../common/api-response";
 import { AnnouncementsService } from "./announcements.service";
 
@@ -58,6 +59,8 @@ export class AnnouncementsController {
 }
 
 @Controller("public/announcements")
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@Public()
 export class PublicAnnouncementsController {
   constructor(@Inject(AnnouncementsService) private readonly service: AnnouncementsService) {}
 
