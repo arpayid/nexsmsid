@@ -45,6 +45,7 @@ model User {
   studentProfile               Student?               @relation("StudentUser")
   guardianProfile              Guardian?              @relation("GuardianUser")
 
+  @@index([name])
   @@map("users")
 }
 

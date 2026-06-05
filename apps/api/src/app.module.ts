@@ -1,4 +1,7 @@
 import { Module } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { APP_GUARD } from "@nestjs/core";
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 
 import { AcademicYearsModule } from "./academic-years/academic-years.module";
 import { AlumniModule } from "./alumni/alumni.module";
@@ -113,8 +116,23 @@ import { UsersModule } from "./users/users.module";
     NotificationTemplatesModule,
     ReportJobsModule,
     ExportHistoryModule,
-    ReportCenterModule
+    ReportCenterModule,
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => [
+        {
+          ttl: config.get<number>("RATE_LIMIT_TTL") ?? 60,
+          limit: config.get<number>("RATE_LIMIT_LIMIT") ?? 100
+        }
+      ]
+    })
   ],
-  controllers: [AppController]
+  controllers: [AppController],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard
+    }
+  ]
 })
 export class AppModule {}
