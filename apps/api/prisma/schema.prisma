@@ -20,12 +20,17 @@ model User {
   name                         String
   passwordHash                 String                 @map("password_hash")
   status                       UserStatus             @default(ACTIVE)
+  forceChangePassword          Boolean                @default(false) @map("force_change_password")
+  passwordChangedAt            DateTime?              @map("password_changed_at")
+  lockedUntil                  DateTime?              @map("locked_until")
+  failedLoginCount             Int                    @default(0) @map("failed_login_count")
   lastLoginAt                  DateTime?              @map("last_login_at")
   createdAt                    DateTime               @default(now()) @map("created_at")
   updatedAt                    DateTime               @updatedAt @map("updated_at")
   deletedAt                    DateTime?              @map("deleted_at")
   roles                        UserRole[]
   refreshTokens                RefreshToken[]
+  loginHistories               LoginHistory[]
   auditLogs                    AuditLog[]             @relation("AuditActor")
   verifiedPayments             Payment[]              @relation("VerifiedPayments")
   approvedExpenses             Expense[]              @relation("ApprovedExpenses")
@@ -46,7 +51,28 @@ model User {
   guardianProfile              Guardian?              @relation("GuardianUser")
 
   @@index([name])
+  @@index([lockedUntil])
+  @@index([forceChangePassword])
+  @@index([lastLoginAt])
   @@map("users")
+}
+
+model LoginHistory {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  email     String
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  success   Boolean
+  reason    String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([email])
+  @@index([createdAt])
+  @@map("login_histories")
 }
 
 model Role {

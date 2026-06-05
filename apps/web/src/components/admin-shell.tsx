@@ -128,6 +128,12 @@ const navigationGroups: NavigationGroup[] = [
       { href: "/admin/reports/jobs", icon: FileText, label: "Report Jobs", permission: "report-jobs.view" },
       { href: "/admin/reports/exports", icon: ClipboardCheck, label: "Export History", permission: "export-history.view" }
     ]
+  },
+  {
+    label: "Pengaturan",
+    items: [
+      { href: "/account/security", icon: UserCog, label: "Keamanan Akun", permission: "auth.change-password" }
+    ]
   }
 ];
 
@@ -167,6 +173,10 @@ export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
 
       try {
         const user = await createBrowserApiClient().me();
+        if ((user as any).forceChangePassword && pathname !== "/account/change-password") {
+          router.replace("/account/change-password");
+          return;
+        }
         if (active) setAuthUser(user);
       } catch {
         const refreshToken = getRefreshToken();
@@ -180,6 +190,10 @@ export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
         try {
           const tokens = await createBrowserApiClient().refresh(refreshToken);
           storeAuthTokens(tokens);
+          if ((tokens.user as any).forceChangePassword && pathname !== "/account/change-password") {
+            router.replace("/account/change-password");
+            return;
+          }
           if (active) setAuthUser(tokens.user);
         } catch {
           clearAuthTokens();

@@ -56,4 +56,36 @@ export class UsersController {
   ) {
     return apiSuccess("User deleted", await this.usersService.delete(id, user, getRequestMeta(request)));
   }
+
+  @Post(":id/reset-password")
+  @RequirePermissions("users.reset-password")
+  async resetPassword(
+    @Param("id") id: string,
+    @Body() body: unknown,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: RequestWithUser
+  ) {
+    return apiSuccess("User password reset successfully", await this.usersService.resetPassword(id, body, user, getRequestMeta(request)));
+  }
+
+  @Post(":id/unlock")
+  @RequirePermissions("users.unlock")
+  async unlock(
+    @Param("id") id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: RequestWithUser
+  ) {
+    return apiSuccess("User unlocked successfully", await this.usersService.unlockUser(id, user, getRequestMeta(request)));
+  }
+
+  @Post(":id/force-change-password")
+  @RequirePermissions("users.force-change-password")
+  async forceChangePassword(
+    @Param("id") id: string,
+    @Body() body: unknown,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: RequestWithUser
+  ) {
+    return apiSuccess("User force change password updated", await this.usersService.forceChangePassword(id, body, user, getRequestMeta(request)));
+  }
 }

@@ -4,6 +4,7 @@ export type AuthenticatedUser = {
   name: string;
   roles: string[];
   permissions: string[];
+  forceChangePassword?: boolean;
 };
 
 export type JwtAccessPayload = {

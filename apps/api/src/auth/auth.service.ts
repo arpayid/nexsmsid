@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { BadRequestException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { z } from "zod";
@@ -25,6 +25,22 @@ const logoutSchema = z.object({
   refreshToken: z.string().min(1).optional()
 });
 
+export const passwordValidator = z.string()
+  .min(12, "Password minimal 12 karakter")
+  .regex(/[a-z]/, "Password harus memiliki huruf kecil")
+  .regex(/[A-Z]/, "Password harus memiliki huruf besar")
+  .regex(/[0-9]/, "Password harus memiliki angka")
+  .regex(/[^a-zA-Z0-9]/, "Password harus memiliki simbol");
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: passwordValidator,
+  confirmPassword: z.string()
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "Konfirmasi password tidak sesuai",
+  path: ["confirmPassword"]
+});
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -40,6 +56,7 @@ export class AuthService {
     const user = await this.findAuthUserByEmail(credentials.email);
 
     if (!user) {
+      await this.logLoginHistory(null, credentials.email, false, "user_not_found", meta);
       await this.auditService.record({
         ...meta,
         action: "auth.login_failed",
@@ -49,28 +66,49 @@ export class AuthService {
       throw new UnauthorizedException("Invalid email or password");
     }
 
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      await this.logLoginHistory(user.id, credentials.email, false, "account_locked", meta);
+      throw new ForbiddenException(`Account is locked. Try again after ${user.lockedUntil.toISOString()}`);
+    }
+
     const passwordValid = await this.passwordService.verify(credentials.password, user.passwordHash);
 
     if (!passwordValid) {
+      const newFailedCount = user.failedLoginCount + 1;
+      const isLocked = newFailedCount >= 5;
+      const lockedUntil = isLocked ? new Date(Date.now() + 15 * 60000) : null;
+
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { failedLoginCount: newFailedCount, lockedUntil }
+      });
+
+      await this.logLoginHistory(user.id, credentials.email, false, isLocked ? "account_locked_now" : "invalid_password", meta);
       await this.auditService.record({
         ...meta,
         actorId: user.id,
         action: "auth.login_failed",
         entity: "user",
         entityId: user.id,
-        metadata: { email: credentials.email, reason: "invalid_password" }
+        metadata: { email: credentials.email, reason: "invalid_password", failedCount: newFailedCount }
       });
+      
       throw new UnauthorizedException("Invalid email or password");
     }
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { lastLoginAt: new Date() }
+      data: { 
+        lastLoginAt: new Date(),
+        failedLoginCount: 0,
+        lockedUntil: null
+      }
     });
 
     const authUser = toAuthenticatedUser(user);
     const tokens = await this.createTokenPair(authUser, meta);
 
+    await this.logLoginHistory(user.id, credentials.email, true, null, meta);
     await this.auditService.record({
       ...meta,
       actorId: user.id,
@@ -83,6 +121,23 @@ export class AuthService {
       user: authUser,
       ...tokens
     };
+  }
+
+  private async logLoginHistory(userId: string | null, email: string, success: boolean, reason: string | null, meta: RequestMeta) {
+    try {
+      await this.prisma.loginHistory.create({
+        data: {
+          userId,
+          email,
+          success,
+          reason,
+          ipAddress: meta.ipAddress,
+          userAgent: meta.userAgent
+        }
+      });
+    } catch (e) {
+      // Ignore errors in logging history
+    }
   }
 
   async refresh(input: unknown, meta: RequestMeta) {
@@ -115,7 +170,7 @@ export class AuthService {
 
     const refreshTokenValid = await this.passwordService.verify(refreshToken, storedToken.tokenHash);
 
-    if (!refreshTokenValid || storedToken.user.status !== "ACTIVE") {
+    if (!refreshTokenValid || storedToken.user.status !== "ACTIVE" || (storedToken.user.lockedUntil && storedToken.user.lockedUntil > new Date())) {
       throw new UnauthorizedException("Invalid refresh token");
     }
 
@@ -177,6 +232,89 @@ export class AuthService {
     });
 
     return { revokedRefreshTokens: revoked };
+  }
+
+  async logoutAll(user: AuthenticatedUser, meta: RequestMeta) {
+    const result = await this.prisma.refreshToken.updateMany({
+      where: {
+        userId: user.id,
+        revokedAt: null
+      },
+      data: { revokedAt: new Date() }
+    });
+
+    await this.auditService.record({
+      ...meta,
+      actorId: user.id,
+      action: "auth.logout_all",
+      entity: "user",
+      entityId: user.id,
+      metadata: { revokedRefreshTokens: result.count }
+    });
+
+    return { revokedRefreshTokens: result.count };
+  }
+
+  async changePassword(user: AuthenticatedUser, input: unknown, meta: RequestMeta) {
+    const data = parseWithSchema(changePasswordSchema, input);
+    
+    const dbUser = await this.prisma.user.findUnique({ where: { id: user.id } });
+    if (!dbUser) throw new NotFoundException("User not found");
+
+    const passwordValid = await this.passwordService.verify(data.currentPassword, dbUser.passwordHash);
+    if (!passwordValid) {
+      throw new BadRequestException("Password saat ini salah");
+    }
+
+    const isSameAsOld = await this.passwordService.verify(data.newPassword, dbUser.passwordHash);
+    if (isSameAsOld) {
+      throw new BadRequestException("Password baru tidak boleh sama dengan password saat ini");
+    }
+
+    const hashedPassword = await this.passwordService.hash(data.newPassword);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { 
+        passwordHash: hashedPassword,
+        passwordChangedAt: new Date(),
+        forceChangePassword: false
+      }
+    });
+
+    // Revoke all refresh tokens on password change
+    await this.prisma.refreshToken.updateMany({
+      where: { userId: user.id, revokedAt: null },
+      data: { revokedAt: new Date() }
+    });
+
+    await this.auditService.record({
+      ...meta,
+      actorId: user.id,
+      action: "auth.change_password",
+      entity: "user",
+      entityId: user.id
+    });
+
+    return { success: true };
+  }
+
+  async getLoginHistory(user: AuthenticatedUser, query: any) {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      this.prisma.loginHistory.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      this.prisma.loginHistory.count({ where: { userId: user.id } })
+    ]);
+
+    return { items, total, page, limit };
   }
 
   async me(user: AuthenticatedUser) {

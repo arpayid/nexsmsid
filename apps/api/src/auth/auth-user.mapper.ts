@@ -4,6 +4,7 @@ export type UserWithAuthRelations = {
   id: string;
   email: string;
   name: string;
+  forceChangePassword?: boolean;
   roles: Array<{
     role: {
       isActive: boolean;
@@ -36,6 +37,7 @@ export function toAuthenticatedUser(user: UserWithAuthRelations): AuthenticatedU
     email: user.email,
     name: user.name,
     roles,
-    permissions: [...permissions].sort()
+    permissions: [...permissions].sort(),
+    forceChangePassword: user.forceChangePassword || false
   };
 }

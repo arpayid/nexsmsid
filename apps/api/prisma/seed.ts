@@ -5,6 +5,12 @@ const prisma = new PrismaClient();
 
 const permissions = [
   "dashboard.view",
+  "auth.change-password",
+  "auth.logout-all",
+  "auth.login-history",
+  "users.reset-password",
+  "users.unlock",
+  "users.force-change-password",
   "users.view",
   "users.create",
   "users.update",
@@ -191,18 +197,18 @@ const roles = [
 const rolePermissionMap: Record<string, string[]> = {
   "super-admin": permissions,
   "admin-sekolah": permissions.filter((permission) => !permission.endsWith(".delete")),
-  "kepala-sekolah": ["dashboard.view", "users.view", "roles.view", "permissions.view", "school-profile.view", "master-data.view", "students.view", "guardians.view", "teachers.view", "staffs.view", "teaching-assignments.view", "schedules.view", "attendance.view", "attendance.print", "grades.view", "grades.print", "finance.view", "invoices.view", "invoices.print", "payments.view", "payments.print", "expenses.view", "ppdb.view", "ppdb.approve", "ppdb.reject", "ppdb.print", "industry-partners.view", "internships.view", "internship-logs.view", "alumni.view", "job-vacancies.view", "job-applications.view", "tracer-studies.view", "bkk.view", "announcements.view", "messages.view", "notifications.view", "notification-templates.view", "reports.view", "report-jobs.view", "export-history.view"],
-  "waka-kurikulum": ["dashboard.view", "users.view", "master-data.view", "master-data.create", "master-data.update", "students.view", "teachers.view", "teaching-assignments.view", "teaching-assignments.manage", "schedules.view", "schedules.manage", "attendance.view", "attendance.record", "attendance.update", "attendance.approve", "attendance.print", "grades.view", "grades.input", "grades.update", "grades.approve", "grades.publish", "grades.print"],
-  "waka-kesiswaan": ["dashboard.view", "users.view", "master-data.view", "students.view", "students.create", "students.update", "guardians.view", "guardians.create", "guardians.update"],
-  "guru": ["dashboard.view", "master-data.view", "students.view", "teachers.view", "teaching-assignments.view", "schedules.view", "attendance.view", "attendance.record", "attendance.print", "grades.view", "grades.input", "grades.print", "teacher-portal.view", "notifications.view", "notifications.read"],
-  "wali-kelas": ["dashboard.view", "users.view", "master-data.view", "students.view", "guardians.view", "teachers.view", "teaching-assignments.view", "schedules.view", "attendance.view", "attendance.record", "attendance.update", "attendance.approve", "attendance.print", "grades.view", "grades.input", "grades.update", "grades.print"],
-  "siswa": ["dashboard.view", "students.view", "student-portal.view", "notifications.view", "notifications.read"],
-  "orang-tua-wali": ["dashboard.view", "students.view", "guardians.view", "guardian-portal.view", "notifications.view", "notifications.read"],
-  "bendahara": ["dashboard.view", "master-data.view", "staffs.view", "finance.view", "finance.export", "invoices.view", "invoices.create", "invoices.update", "invoices.print", "payments.view", "payments.create", "payments.print", "expenses.view", "expenses.create", "expenses.approve", "expenses.pay"],
-  "staff-tu": ["dashboard.view", "users.view", "users.create", "users.update", "master-data.view", "master-data.create", "master-data.update", "master-data.import", "master-data.export", "students.view", "students.create", "students.update", "students.import", "students.export", "guardians.view", "guardians.create", "guardians.update", "guardians.import", "guardians.export", "teachers.view", "teachers.create", "teachers.update", "teachers.import", "teachers.export", "staffs.view", "staffs.create", "staffs.update", "staffs.import", "staffs.export", "teaching-assignments.view", "teaching-assignments.manage", "schedules.view", "schedules.manage", "attendance.view", "attendance.record", "attendance.update", "attendance.print", "grades.view", "grades.input", "grades.update", "grades.print", "invoices.view", "invoices.print", "payments.view", "payments.print", "ppdb.view", "ppdb.print", "announcements.view", "announcements.create", "announcements.update", "announcements.publish", "announcements.archive", "messages.view", "messages.send", "messages.read", "notifications.view", "notifications.create", "notifications.read", "notification-templates.view", "reports.view", "reports.generate", "report-jobs.view", "report-jobs.create", "export-history.view"],
-  "panitia-ppdb": ["dashboard.view", "users.view", "users.create", "users.update", "master-data.view", "students.view", "ppdb.view", "ppdb.create", "ppdb.update", "ppdb.verify", "ppdb.approve", "ppdb.reject", "ppdb.convert", "ppdb.export", "ppdb.print"],
-  "pembimbing-pkl": ["dashboard.view", "users.view", "master-data.view", "students.view", "teachers.view", "industry-partners.view", "internships.view", "internships.create", "internships.update", "internships.start", "internships.complete", "internships.cancel", "internships.score", "internship-logs.view", "internship-logs.create", "internship-logs.update", "internship-logs.approve", "internship-logs.reject"],
-  "admin-bkk": ["dashboard.view", "users.view", "master-data.view", "students.view", "staffs.view", "industry-partners.view", "industry-partners.create", "industry-partners.update", "alumni.view", "alumni.create", "alumni.update", "alumni.convert", "job-vacancies.view", "job-vacancies.create", "job-vacancies.update", "job-vacancies.publish", "job-vacancies.close", "job-applications.view", "job-applications.update", "job-applications.review", "job-applications.accept", "job-applications.reject", "tracer-studies.view", "tracer-studies.create", "tracer-studies.update", "bkk.view", "bkk.export", "reports.view", "reports.generate", "report-jobs.view", "report-jobs.create", "export-history.view"]
+  "kepala-sekolah": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "roles.view", "permissions.view", "school-profile.view", "master-data.view", "students.view", "guardians.view", "teachers.view", "staffs.view", "teaching-assignments.view", "schedules.view", "attendance.view", "attendance.print", "grades.view", "grades.print", "finance.view", "invoices.view", "invoices.print", "payments.view", "payments.print", "expenses.view", "ppdb.view", "ppdb.approve", "ppdb.reject", "ppdb.print", "industry-partners.view", "internships.view", "internship-logs.view", "alumni.view", "job-vacancies.view", "job-applications.view", "tracer-studies.view", "bkk.view", "announcements.view", "messages.view", "notifications.view", "notification-templates.view", "reports.view", "report-jobs.view", "export-history.view"],
+  "waka-kurikulum": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "master-data.view", "master-data.create", "master-data.update", "students.view", "teachers.view", "teaching-assignments.view", "teaching-assignments.manage", "schedules.view", "schedules.manage", "attendance.view", "attendance.record", "attendance.update", "attendance.approve", "attendance.print", "grades.view", "grades.input", "grades.update", "grades.approve", "grades.publish", "grades.print"],
+  "waka-kesiswaan": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "users.reset-password", "users.unlock", "users.force-change-password", "master-data.view", "students.view", "students.create", "students.update", "guardians.view", "guardians.create", "guardians.update"],
+  "guru": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "master-data.view", "students.view", "teachers.view", "teaching-assignments.view", "schedules.view", "attendance.view", "attendance.record", "attendance.print", "grades.view", "grades.input", "grades.print", "teacher-portal.view", "notifications.view", "notifications.read"],
+  "wali-kelas": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "master-data.view", "students.view", "guardians.view", "teachers.view", "teaching-assignments.view", "schedules.view", "attendance.view", "attendance.record", "attendance.update", "attendance.approve", "attendance.print", "grades.view", "grades.input", "grades.update", "grades.print"],
+  "siswa": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "students.view", "student-portal.view", "notifications.view", "notifications.read"],
+  "orang-tua-wali": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "students.view", "guardians.view", "guardian-portal.view", "notifications.view", "notifications.read"],
+  "bendahara": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "master-data.view", "staffs.view", "finance.view", "finance.export", "invoices.view", "invoices.create", "invoices.update", "invoices.print", "payments.view", "payments.create", "payments.print", "expenses.view", "expenses.create", "expenses.approve", "expenses.pay"],
+  "staff-tu": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "users.create", "users.update", "users.reset-password", "users.unlock", "users.force-change-password", "master-data.view", "master-data.create", "master-data.update", "master-data.import", "master-data.export", "students.view", "students.create", "students.update", "students.import", "students.export", "guardians.view", "guardians.create", "guardians.update", "guardians.import", "guardians.export", "teachers.view", "teachers.create", "teachers.update", "teachers.import", "teachers.export", "staffs.view", "staffs.create", "staffs.update", "staffs.import", "staffs.export", "teaching-assignments.view", "teaching-assignments.manage", "schedules.view", "schedules.manage", "attendance.view", "attendance.record", "attendance.update", "attendance.print", "grades.view", "grades.input", "grades.update", "grades.print", "invoices.view", "invoices.print", "payments.view", "payments.print", "ppdb.view", "ppdb.print", "announcements.view", "announcements.create", "announcements.update", "announcements.publish", "announcements.archive", "messages.view", "messages.send", "messages.read", "notifications.view", "notifications.create", "notifications.read", "notification-templates.view", "reports.view", "reports.generate", "report-jobs.view", "report-jobs.create", "export-history.view"],
+  "panitia-ppdb": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "users.create", "users.update", "master-data.view", "students.view", "ppdb.view", "ppdb.create", "ppdb.update", "ppdb.verify", "ppdb.approve", "ppdb.reject", "ppdb.convert", "ppdb.export", "ppdb.print"],
+  "pembimbing-pkl": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "master-data.view", "students.view", "teachers.view", "industry-partners.view", "internships.view", "internships.create", "internships.update", "internships.start", "internships.complete", "internships.cancel", "internships.score", "internship-logs.view", "internship-logs.create", "internship-logs.update", "internship-logs.approve", "internship-logs.reject"],
+  "admin-bkk": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "master-data.view", "students.view", "staffs.view", "industry-partners.view", "industry-partners.create", "industry-partners.update", "alumni.view", "alumni.create", "alumni.update", "alumni.convert", "job-vacancies.view", "job-vacancies.create", "job-vacancies.update", "job-vacancies.publish", "job-vacancies.close", "job-applications.view", "job-applications.update", "job-applications.review", "job-applications.accept", "job-applications.reject", "tracer-studies.view", "tracer-studies.create", "tracer-studies.update", "bkk.view", "bkk.export", "reports.view", "reports.generate", "report-jobs.view", "report-jobs.create", "export-history.view"]
 };
 
 function permissionGroup(key: string) {
@@ -366,12 +372,13 @@ async function seedPortalUsers(defaultPassword: string) {
 
   const guruUser = await prisma.user.upsert({
     where: { email: "guru@nexsmsid.dev" },
-    update: { name: teacher1.name, passwordHash, status: "ACTIVE", deletedAt: null },
+    update: { name: teacher1.name, passwordHash, status: "ACTIVE", forceChangePassword: true, deletedAt: null },
     create: {
       email: "guru@nexsmsid.dev",
       name: teacher1.name,
       passwordHash,
-      status: "ACTIVE"
+      status: "ACTIVE",
+      forceChangePassword: true
     }
   });
   await prisma.userRole.upsert({
@@ -386,12 +393,13 @@ async function seedPortalUsers(defaultPassword: string) {
 
   const siswaUser = await prisma.user.upsert({
     where: { email: "siswa@nexsmsid.dev" },
-    update: { name: studentAktif.name, passwordHash, status: "ACTIVE", deletedAt: null },
+    update: { name: studentAktif.name, passwordHash, status: "ACTIVE", forceChangePassword: true, deletedAt: null },
     create: {
       email: "siswa@nexsmsid.dev",
       name: studentAktif.name,
       passwordHash,
-      status: "ACTIVE"
+      status: "ACTIVE",
+      forceChangePassword: true
     }
   });
   await prisma.userRole.upsert({
@@ -414,12 +422,13 @@ async function seedPortalUsers(defaultPassword: string) {
 
   const waliUser = await prisma.user.upsert({
     where: { email: "wali@nexsmsid.dev" },
-    update: { name: guardianAyah.name, passwordHash, status: "ACTIVE", deletedAt: null },
+    update: { name: guardianAyah.name, passwordHash, status: "ACTIVE", forceChangePassword: true, deletedAt: null },
     create: {
       email: "wali@nexsmsid.dev",
       name: guardianAyah.name,
       passwordHash,
-      status: "ACTIVE"
+      status: "ACTIVE",
+      forceChangePassword: true
     }
   });
   await prisma.userRole.upsert({

@@ -7,12 +7,13 @@ import { AuthenticatedUser, RequestMeta } from "../auth/auth.types";
 import { PasswordService } from "../auth/password.service";
 import { parseWithSchema } from "../common/validation";
 import { PrismaService } from "../database/prisma.service";
+import { passwordValidator } from "../auth/auth.service";
 
 const createUserSchema = z.object({
   email: z.string().email().transform((value) => value.toLowerCase()),
   username: z.string().min(3).max(64).optional(),
   name: z.string().min(2).max(120),
-  password: z.string().min(8),
+  password: passwordValidator,
   status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).default("ACTIVE"),
   roleIds: z.array(z.string().min(1)).optional(),
   roleSlugs: z.array(z.string().min(1)).optional()
@@ -22,10 +23,23 @@ const updateUserSchema = z.object({
   email: z.string().email().transform((value) => value.toLowerCase()).optional(),
   username: z.string().min(3).max(64).nullable().optional(),
   name: z.string().min(2).max(120).optional(),
-  password: z.string().min(8).optional(),
+  password: passwordValidator.optional(),
   status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).optional(),
   roleIds: z.array(z.string().min(1)).optional(),
   roleSlugs: z.array(z.string().min(1)).optional()
+});
+
+const resetPasswordSchema = z.object({
+  newPassword: passwordValidator,
+  confirmPassword: z.string(),
+  forceChangePassword: z.boolean().optional()
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "Konfirmasi password tidak sesuai",
+  path: ["confirmPassword"]
+});
+
+const forceChangePasswordSchema = z.object({
+  forceChangePassword: z.boolean().default(true)
 });
 
 type UserWithRoles = Prisma.UserGetPayload<{
@@ -195,6 +209,99 @@ export class UsersService {
     return { id, deleted: true };
   }
 
+  async resetPassword(id: string, input: unknown, actor: AuthenticatedUser, meta: RequestMeta) {
+    const data = parseWithSchema(resetPasswordSchema, input);
+    const existing = await this.prisma.user.findFirst({ where: { id, deletedAt: null } });
+
+    if (!existing) {
+      throw new NotFoundException("User not found");
+    }
+
+    const hashedPassword = await this.passwordService.hash(data.newPassword);
+
+    await this.prisma.user.update({
+      where: { id },
+      data: {
+        passwordHash: hashedPassword,
+        passwordChangedAt: new Date(),
+        forceChangePassword: data.forceChangePassword ?? false,
+        failedLoginCount: 0,
+        lockedUntil: null
+      }
+    });
+
+    // Revoke tokens so the user is forced to log in again with new password
+    await this.prisma.refreshToken.updateMany({
+      where: { userId: id, revokedAt: null },
+      data: { revokedAt: new Date() }
+    });
+
+    await this.auditService.record({
+      ...meta,
+      actorId: actor.id,
+      action: "users.reset_password",
+      entity: "user",
+      entityId: id,
+      metadata: { email: existing.email }
+    });
+
+    return { success: true };
+  }
+
+  async unlockUser(id: string, actor: AuthenticatedUser, meta: RequestMeta) {
+    const existing = await this.prisma.user.findFirst({ where: { id, deletedAt: null } });
+
+    if (!existing) {
+      throw new NotFoundException("User not found");
+    }
+
+    await this.prisma.user.update({
+      where: { id },
+      data: {
+        failedLoginCount: 0,
+        lockedUntil: null
+      }
+    });
+
+    await this.auditService.record({
+      ...meta,
+      actorId: actor.id,
+      action: "users.unlock",
+      entity: "user",
+      entityId: id,
+      metadata: { email: existing.email }
+    });
+
+    return { success: true };
+  }
+
+  async forceChangePassword(id: string, input: unknown, actor: AuthenticatedUser, meta: RequestMeta) {
+    const data = parseWithSchema(forceChangePasswordSchema, input);
+    const existing = await this.prisma.user.findFirst({ where: { id, deletedAt: null } });
+
+    if (!existing) {
+      throw new NotFoundException("User not found");
+    }
+
+    await this.prisma.user.update({
+      where: { id },
+      data: {
+        forceChangePassword: data.forceChangePassword
+      }
+    });
+
+    await this.auditService.record({
+      ...meta,
+      actorId: actor.id,
+      action: "users.force_change_password",
+      entity: "user",
+      entityId: id,
+      metadata: { email: existing.email, force: data.forceChangePassword }
+    });
+
+    return { success: true };
+  }
+
   private async resolveRoleIds(roleIds: string[] = [], roleSlugs: string[] = []) {
     const uniqueIds = new Set(roleIds);
 
@@ -239,6 +346,9 @@ export class UsersService {
       name: user.name,
       status: user.status,
       lastLoginAt: user.lastLoginAt,
+      lockedUntil: user.lockedUntil,
+      failedLoginCount: user.failedLoginCount,
+      forceChangePassword: user.forceChangePassword,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       roles: user.roles.map(({ role }) => ({

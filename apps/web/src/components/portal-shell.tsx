@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, BookOpen, ChevronRight, ClipboardCheck, FileText, GraduationCap, LayoutDashboard, Loader2, LogOut, Menu, Newspaper, PanelLeftClose, PanelLeftOpen, School, Users, WalletCards, Wallet, type LucideIcon } from "lucide-react";
+import { Bell, BookOpen, ChevronRight, ClipboardCheck, FileText, GraduationCap, LayoutDashboard, Loader2, LogOut, Menu, Newspaper, PanelLeftClose, PanelLeftOpen, School, Users, WalletCards, Wallet, UserCog, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { startTransition, type ReactNode, useEffect, useState } from "react";
@@ -22,7 +22,8 @@ const portalNavigation: Record<PortalKind, { title: string; items: NavItem[] }> 
       { href: "/teacher/schedules", icon: BookOpen, label: "Jadwal Mengajar" },
       { href: "/teacher/attendance", icon: ClipboardCheck, label: "Presensi" },
       { href: "/teacher/grades", icon: GraduationCap, label: "Penilaian" },
-      { href: "/teacher/notifications", icon: Bell, label: "Notifikasi" }
+      { href: "/teacher/notifications", icon: Bell, label: "Notifikasi" },
+      { href: "/account/security", icon: UserCog, label: "Keamanan Akun" }
     ]
   },
   student: {
@@ -34,7 +35,8 @@ const portalNavigation: Record<PortalKind, { title: string; items: NavItem[] }> 
       { href: "/student/grades", icon: GraduationCap, label: "Nilai" },
       { href: "/student/invoices", icon: WalletCards, label: "Tagihan" },
       { href: "/student/announcements", icon: Newspaper, label: "Pengumuman" },
-      { href: "/student/notifications", icon: Bell, label: "Notifikasi" }
+      { href: "/student/notifications", icon: Bell, label: "Notifikasi" },
+      { href: "/account/security", icon: UserCog, label: "Keamanan Akun" }
     ]
   },
   guardian: {
@@ -46,7 +48,8 @@ const portalNavigation: Record<PortalKind, { title: string; items: NavItem[] }> 
       { href: "/guardian/grades", icon: GraduationCap, label: "Nilai Anak" },
       { href: "/guardian/invoices", icon: Wallet, label: "Tagihan Anak" },
       { href: "/guardian/announcements", icon: Newspaper, label: "Pengumuman" },
-      { href: "/guardian/notifications", icon: Bell, label: "Notifikasi" }
+      { href: "/guardian/notifications", icon: Bell, label: "Notifikasi" },
+      { href: "/account/security", icon: UserCog, label: "Keamanan Akun" }
     ]
   },
   admin: {
@@ -105,7 +108,11 @@ export function PortalShell({ children, expectedPortal }: PortalShellProps) {
       try {
         const me = await api.me();
         if (!active) return;
-        const fresh = me as unknown as AuthUser;
+        const fresh = me as unknown as AuthUser & { forceChangePassword?: boolean };
+        if (fresh.forceChangePassword && pathname !== "/account/change-password") {
+          router.replace("/account/change-password");
+          return;
+        }
         const current = getStoredUser();
         if (current && JSON.stringify(current) !== JSON.stringify(fresh)) {
           storeAuthTokens({

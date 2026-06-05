@@ -496,8 +496,49 @@ export function createApiClient(options: ApiClientOptions = {}) {
       const response = await request<AuthUser>("/auth/me");
       return response.data;
     },
+    async changePassword(input: Record<string, unknown>) {
+      const response = await request<{ success: boolean }>("/auth/change-password", {
+        method: "POST",
+        body: JSON.stringify(input)
+      });
+      return response.data;
+    },
+    async logoutAll() {
+      const response = await request<{ revokedRefreshTokens: number }>("/auth/logout-all", {
+        method: "POST"
+      });
+      return response.data;
+    },
+    async getLoginHistory(options: { page?: number; limit?: number } = {}) {
+      const params = new URLSearchParams();
+      if (options.page) params.set("page", String(options.page));
+      if (options.limit) params.set("limit", String(options.limit));
+      const query = params.toString();
+      const response = await request<any>(`/auth/login-history${query ? `?${query}` : ""}`);
+      return { items: response.data.items, meta: { total: response.data.total, page: response.data.page, limit: response.data.limit } };
+    },
     async users() {
       return request<UserSummary[]>("/users");
+    },
+    async resetUserPassword(id: string, input: Record<string, unknown>) {
+      const response = await request<{ success: boolean }>(`/users/${id}/reset-password`, {
+        method: "POST",
+        body: JSON.stringify(input)
+      });
+      return response.data;
+    },
+    async unlockUser(id: string) {
+      const response = await request<{ success: boolean }>(`/users/${id}/unlock`, {
+        method: "POST"
+      });
+      return response.data;
+    },
+    async forceChangePassword(id: string, input: Record<string, unknown>) {
+      const response = await request<{ success: boolean }>(`/users/${id}/force-change-password`, {
+        method: "POST",
+        body: JSON.stringify(input)
+      });
+      return response.data;
     },
     async roles() {
       return request<RoleSummary[]>("/roles");
