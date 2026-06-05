@@ -45,6 +45,11 @@ export class StudentPortalController {
     return apiSuccess("Invoices retrieved", await this.service.listInvoices(user.id));
   }
 
+  @Get("discipline")
+  async discipline(@CurrentUser() user: AuthenticatedUser) {
+    return apiSuccess("Student discipline summary retrieved", await this.service.getDisciplineSummary(user.id));
+  }
+
   @Get("announcements")
   async announcements(@CurrentUser() user: AuthenticatedUser, @Query("limit") limit?: string) {
     const parsed = limit ? Math.max(1, Math.min(50, Number(limit))) : 10;

@@ -1,10 +1,14 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 
 import { PrismaService } from "../database/prisma.service";
+import { DisciplineService } from "../discipline/discipline.service";
 
 @Injectable()
 export class StudentPortalService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(DisciplineService) private readonly disciplineService: DisciplineService
+  ) {}
 
   async getStudentForUser(userId: string) {
     const student = await this.prisma.student.findFirst({
@@ -154,6 +158,11 @@ export class StudentPortalService {
       include: { items: { include: { paymentCategory: true } }, academicYear: true, semester: true },
       orderBy: { issueDate: "desc" }
     });
+  }
+
+  async getDisciplineSummary(userId: string) {
+    const student = await this.getStudentForUser(userId);
+    return this.disciplineService.getStudentSummary(student.id);
   }
 
   async listAnnouncements(userId: string, limit = 10) {

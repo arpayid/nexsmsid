@@ -187,6 +187,111 @@ export class NotificationEventService {
     });
   }
 
+  async disciplineViolationConfirmed(violation: { id: string; point: number; rule: { code: string; name: string; severity: string }; studentId: string }, actor: EventActor, meta: RequestMeta = {}) {
+    const [studentUsers, guardianUsers] = await Promise.all([
+      this.recipients.studentUser(violation.studentId),
+      this.recipients.guardiansOfStudent(violation.studentId)
+    ]);
+    const basePayload = {
+      action: "confirmed",
+      body: `Pelanggaran ${violation.rule.code} - ${violation.rule.name} telah dikonfirmasi dengan ${violation.point} poin.`,
+      entityId: violation.id,
+      entityType: "DisciplineViolation",
+      metadata: { point: violation.point, severity: violation.rule.severity, studentId: violation.studentId },
+      title: "Pelanggaran kedisiplinan dikonfirmasi",
+      type: "DISCIPLINE_VIOLATION_CONFIRMED"
+    };
+    const studentResult = await this.dispatch.notifyUsers(studentUsers, {
+      ...basePayload,
+      dedupeKey: `discipline-violation:${violation.id}:student`,
+      url: "/student/discipline"
+    }, {
+      ...meta,
+      action: "notification.dispatch.discipline-violation",
+      actorId: actorId(actor),
+      entity: "DisciplineViolation",
+      entityId: violation.id,
+      metadata: { studentId: violation.studentId, audience: "student" }
+    });
+    const guardianResult = await this.dispatch.notifyUsers(guardianUsers, {
+      ...basePayload,
+      dedupeKey: `discipline-violation:${violation.id}:guardian`,
+      url: "/guardian/discipline"
+    }, {
+      ...meta,
+      action: "notification.dispatch.discipline-violation",
+      actorId: actorId(actor),
+      entity: "DisciplineViolation",
+      entityId: violation.id,
+      metadata: { studentId: violation.studentId, audience: "guardian" }
+    });
+    return combineDispatchResults(studentResult, guardianResult);
+  }
+
+  async studentAchievementCreated(achievement: { category: string; id: string; point: number; studentId: string; title: string }, actor: EventActor, meta: RequestMeta = {}) {
+    const [studentUsers, guardianUsers] = await Promise.all([
+      this.recipients.studentUser(achievement.studentId),
+      this.recipients.guardiansOfStudent(achievement.studentId)
+    ]);
+    const basePayload = {
+      action: "created",
+      body: `Prestasi ${achievement.title} dicatat dengan ${achievement.point} poin.`,
+      entityId: achievement.id,
+      entityType: "StudentAchievement",
+      metadata: { category: achievement.category, point: achievement.point, studentId: achievement.studentId },
+      title: "Prestasi siswa dicatat",
+      type: "STUDENT_ACHIEVEMENT_CREATED"
+    };
+    const studentResult = await this.dispatch.notifyUsers(studentUsers, {
+      ...basePayload,
+      dedupeKey: `student-achievement:${achievement.id}:student`,
+      url: "/student/discipline"
+    }, {
+      ...meta,
+      action: "notification.dispatch.student-achievement",
+      actorId: actorId(actor),
+      entity: "StudentAchievement",
+      entityId: achievement.id,
+      metadata: { studentId: achievement.studentId, audience: "student" }
+    });
+    const guardianResult = await this.dispatch.notifyUsers(guardianUsers, {
+      ...basePayload,
+      dedupeKey: `student-achievement:${achievement.id}:guardian`,
+      url: "/guardian/discipline"
+    }, {
+      ...meta,
+      action: "notification.dispatch.student-achievement",
+      actorId: actorId(actor),
+      entity: "StudentAchievement",
+      entityId: achievement.id,
+      metadata: { studentId: achievement.studentId, audience: "guardian" }
+    });
+    return combineDispatchResults(studentResult, guardianResult);
+  }
+
+  async counselingFollowUp(counselingCase: { counselorId?: string | null; createdById: string; followUpDate?: Date | null; id: string; studentId: string; title: string }, actor: EventActor, meta: RequestMeta = {}) {
+    if (!counselingCase.followUpDate) return { requested: 0, recipients: 0, created: 0, skipped: 0 };
+    const userIds = [counselingCase.counselorId, counselingCase.createdById].filter((userId): userId is string => Boolean(userId));
+    return this.dispatch.notifyUsers(userIds, {
+      action: "follow-up",
+      body: `Tindak lanjut kasus BK "${counselingCase.title}" dijadwalkan ${formatDate(counselingCase.followUpDate)}.`,
+      dedupeKey: `counseling-follow-up:${counselingCase.id}:${counselingCase.followUpDate.toISOString()}`,
+      entityId: counselingCase.id,
+      entityType: "CounselingCase",
+      metadata: { followUpDate: counselingCase.followUpDate.toISOString(), studentId: counselingCase.studentId },
+      title: "Tindak lanjut kasus BK",
+      type: "COUNSELING_FOLLOW_UP",
+      url: "/admin/counseling/cases"
+    }, {
+      ...meta,
+      action: "notification.dispatch.counseling-follow-up",
+      actorId: actorId(actor),
+      entity: "CounselingCase",
+      entityId: counselingCase.id,
+      metadata: { studentId: counselingCase.studentId }
+    });
+  }
+
   private async studentAndGuardianUsers(studentId: string) {
     const [studentUsers, guardianUsers] = await Promise.all([
       this.recipients.studentUser(studentId),
@@ -212,4 +317,17 @@ function formatCurrency(value: unknown) {
 function attendanceLabel(status: string) {
   const labels: Record<string, string> = { ABSENT: "alpha", LATE: "terlambat", PERMIT: "izin", SICK: "sakit" };
   return labels[status] ?? status;
+}
+
+function formatDate(value: Date) {
+  return value.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
+}
+
+function combineDispatchResults(...results: Array<{ requested: number; recipients: number; created: number; skipped: number }>) {
+  return results.reduce((total, result) => ({
+    requested: total.requested + result.requested,
+    recipients: total.recipients + result.recipients,
+    created: total.created + result.created,
+    skipped: total.skipped + result.skipped
+  }), { requested: 0, recipients: 0, created: 0, skipped: 0 });
 }

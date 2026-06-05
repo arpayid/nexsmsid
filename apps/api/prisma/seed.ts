@@ -416,6 +416,7 @@ async function main() {
   await seedPhase9PklBkk();
   await seedPhase10CommunicationReports();
   await seedPortalUsers(superAdminPassword);
+  await seedPhase121BkDiscipline();
 
   await prisma.auditLog.create({
     data: {
@@ -1531,6 +1532,7 @@ async function seedPhase10CommunicationReports() {
 
   // Phase 12.0B Demo Users (Staging Only)
   const konselorRole = await prisma.role.findUniqueOrThrow({ where: { slug: "konselor-bk" } });
+  const tataTertibRole = await prisma.role.findUniqueOrThrow({ where: { slug: "petugas-tata-tertib" } });
   const sarprasRole = await prisma.role.findUniqueOrThrow({ where: { slug: "petugas-sarpras" } });
   const perpustakaanRole = await prisma.role.findUniqueOrThrow({ where: { slug: "petugas-perpustakaan" } });
   const suratRole = await prisma.role.findUniqueOrThrow({ where: { slug: "petugas-surat" } });
@@ -1550,12 +1552,176 @@ async function seedPhase10CommunicationReports() {
   };
 
   await createDemoUser("konselor@nexsmsid.dev", "Demo Konselor BK", konselorRole.id);
+  await createDemoUser("tatatertib@nexsmsid.dev", "Demo Tata Tertib", tataTertibRole.id);
   await createDemoUser("sarpras@nexsmsid.dev", "Demo Sarpras", sarprasRole.id);
   await createDemoUser("perpustakaan@nexsmsid.dev", "Demo Perpustakaan", perpustakaanRole.id);
   await createDemoUser("surat@nexsmsid.dev", "Demo Petugas Surat", suratRole.id);
 
   console.log("Phase 10 communication, notification, and report data seeded.");
   console.log("Phase 12.0B permission foundation and demo users seeded.");
+}
+
+async function seedPhase121BkDiscipline() {
+  const [superAdmin, konselor, tataTertib] = await Promise.all([
+    prisma.user.findFirst({ where: { email: process.env.SEED_SUPER_ADMIN_EMAIL ?? "superadmin@nexsmsid.dev", deletedAt: null } }),
+    prisma.user.findFirst({ where: { email: "konselor@nexsmsid.dev", deletedAt: null } }),
+    prisma.user.findFirst({ where: { email: "tatatertib@nexsmsid.dev", deletedAt: null } })
+  ]);
+  const student = await prisma.student.findFirst({ where: { deletedAt: null, status: "ACTIVE" as any }, orderBy: { name: "asc" } });
+
+  if (!superAdmin || !student) {
+    console.log("Phase 12.1 BK/Discipline seed: missing prerequisite user/student data, skipping.");
+    return;
+  }
+
+  const actorId = tataTertib?.id ?? konselor?.id ?? superAdmin.id;
+  const counselorId = konselor?.id ?? superAdmin.id;
+
+  const terlambat = await prisma.disciplineRule.upsert({
+    where: { code: "TERLAMBAT" },
+    update: { name: "Terlambat", description: "Datang melewati jam masuk sekolah.", point: 5, severity: "LOW", isActive: true },
+    create: { id: "seed-discipline-rule-terlambat", code: "TERLAMBAT", name: "Terlambat", description: "Datang melewati jam masuk sekolah.", point: 5, severity: "LOW", isActive: true }
+  });
+  const atribut = await prisma.disciplineRule.upsert({
+    where: { code: "ATRIBUT" },
+    update: { name: "Tidak Memakai Atribut", description: "Seragam atau atribut sekolah tidak lengkap.", point: 10, severity: "MEDIUM", isActive: true },
+    create: { id: "seed-discipline-rule-atribut", code: "ATRIBUT", name: "Tidak Memakai Atribut", description: "Seragam atau atribut sekolah tidak lengkap.", point: 10, severity: "MEDIUM", isActive: true }
+  });
+  await prisma.disciplineRule.upsert({
+    where: { code: "BOLOS" },
+    update: { name: "Bolos", description: "Tidak mengikuti kegiatan pembelajaran tanpa keterangan.", point: 25, severity: "HIGH", isActive: true },
+    create: { id: "seed-discipline-rule-bolos", code: "BOLOS", name: "Bolos", description: "Tidak mengikuti kegiatan pembelajaran tanpa keterangan.", point: 25, severity: "HIGH", isActive: true }
+  });
+
+  await prisma.disciplineViolation.upsert({
+    where: { id: "seed-discipline-violation-draft" },
+    update: {
+      studentId: student.id,
+      ruleId: atribut.id,
+      reportedById: actorId,
+      incidentDate: new Date("2026-06-03"),
+      description: "Atribut seragam belum lengkap saat apel pagi.",
+      point: atribut.point,
+      status: "DRAFT",
+      confirmedById: null,
+      confirmedAt: null,
+      cancelledAt: null,
+      deletedAt: null
+    },
+    create: {
+      id: "seed-discipline-violation-draft",
+      studentId: student.id,
+      ruleId: atribut.id,
+      reportedById: actorId,
+      incidentDate: new Date("2026-06-03"),
+      description: "Atribut seragam belum lengkap saat apel pagi.",
+      point: atribut.point,
+      status: "DRAFT"
+    }
+  });
+
+  await prisma.disciplineViolation.upsert({
+    where: { id: "seed-discipline-violation-confirmed" },
+    update: {
+      studentId: student.id,
+      ruleId: terlambat.id,
+      reportedById: actorId,
+      incidentDate: new Date("2026-06-02"),
+      description: "Terlambat masuk kelas pertama.",
+      point: terlambat.point,
+      status: "CONFIRMED",
+      confirmedById: actorId,
+      confirmedAt: new Date("2026-06-02T01:00:00Z"),
+      cancelledAt: null,
+      deletedAt: null
+    },
+    create: {
+      id: "seed-discipline-violation-confirmed",
+      studentId: student.id,
+      ruleId: terlambat.id,
+      reportedById: actorId,
+      incidentDate: new Date("2026-06-02"),
+      description: "Terlambat masuk kelas pertama.",
+      point: terlambat.point,
+      status: "CONFIRMED",
+      confirmedById: actorId,
+      confirmedAt: new Date("2026-06-02T01:00:00Z")
+    }
+  });
+
+  await prisma.studentAchievement.upsert({
+    where: { id: "seed-student-achievement-1" },
+    update: {
+      studentId: student.id,
+      title: "Juara Lomba Kebersihan Kelas",
+      category: "Kedisiplinan",
+      point: 15,
+      awardedAt: new Date("2026-06-04"),
+      description: "Aktif menjaga kebersihan kelas.",
+      awardedById: actorId,
+      deletedAt: null
+    },
+    create: {
+      id: "seed-student-achievement-1",
+      studentId: student.id,
+      title: "Juara Lomba Kebersihan Kelas",
+      category: "Kedisiplinan",
+      point: 15,
+      awardedAt: new Date("2026-06-04"),
+      description: "Aktif menjaga kebersihan kelas.",
+      awardedById: actorId
+    }
+  });
+
+  const counselingCase = await prisma.counselingCase.upsert({
+    where: { id: "seed-counseling-case-1" },
+    update: {
+      studentId: student.id,
+      counselorId,
+      title: "Pendampingan Adaptasi Belajar",
+      category: "Akademik",
+      priority: "MEDIUM",
+      status: "OPEN",
+      description: "Siswa membutuhkan pendampingan adaptasi jadwal belajar.",
+      resolution: null,
+      followUpDate: new Date("2026-06-10"),
+      createdById: counselorId,
+      updatedById: null,
+      closedAt: null,
+      deletedAt: null
+    },
+    create: {
+      id: "seed-counseling-case-1",
+      studentId: student.id,
+      counselorId,
+      title: "Pendampingan Adaptasi Belajar",
+      category: "Akademik",
+      priority: "MEDIUM",
+      status: "OPEN",
+      description: "Siswa membutuhkan pendampingan adaptasi jadwal belajar.",
+      followUpDate: new Date("2026-06-10"),
+      createdById: counselorId
+    }
+  });
+
+  await prisma.counselingNote.upsert({
+    where: { id: "seed-counseling-note-private-1" },
+    update: {
+      caseId: counselingCase.id,
+      note: "Catatan privat BK untuk tindak lanjut internal.",
+      visibility: "PRIVATE",
+      createdById: counselorId
+    },
+    create: {
+      id: "seed-counseling-note-private-1",
+      caseId: counselingCase.id,
+      note: "Catatan privat BK untuk tindak lanjut internal.",
+      visibility: "PRIVATE",
+      createdById: counselorId
+    }
+  });
+
+  console.log("Phase 12.1 BK and discipline sample data seeded.");
 }
 
 main()

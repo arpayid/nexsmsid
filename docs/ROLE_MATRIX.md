@@ -30,8 +30,8 @@ These roles are established now to be linked with future large-scale modules:
 7. **Petugas Ujian** (`petugas-ujian`): For CBT / Exam Management.
 8. **Approver** (`approver`): For the centralized Approval Center.
 
-## Permission Groups (Placeholders)
-The following permission groups are added as foundational placeholders. The actual endpoints will be built in subsequent phases.
+## Permission Groups
+The following permission groups are available. Counseling and Discipline are active in Phase 12.1; the remaining groups stay as foundations for later modules.
 
 - **Counseling (`counseling.*`)**: view, create, update, delete.
 - **Discipline (`discipline.*`)**: view, create, update, delete, report, notify-guardian, print.
@@ -43,6 +43,15 @@ The following permission groups are added as foundational placeholders. The actu
 - **Learning (`learning.*`)**: view, create, update, delete, assignments, submissions, grade.
 - **Approvals (`approvals.*`)**: view, approve, reject, delegate, history.
 - **Calendar (`calendar.*`)**: view, create, update, delete, publish.
+
+## Phase 12.1 Active BK & Discipline Permissions
+Counseling and Discipline are no longer only placeholders. Phase 12.1 activates these permissions for the BK and student discipline module:
+
+- **Konselor BK (`konselor-bk`)**: counseling case/note management through `counseling.*`, plus discipline view/report/print/update access according to seed mapping.
+- **Petugas Tata Tertib (`petugas-tata-tertib`)**: discipline rule, violation, achievement, report, notification, and print access through `discipline.*` mapping.
+- **Siswa (`siswa`)**: no admin counseling/discipline permissions; only portal summary through `student-portal.view`.
+- **Orang Tua/Wali (`orang-tua-wali`)**: no admin counseling/discipline permissions; only linked-child portal summary through `guardian-portal.view`.
+- **Super Admin (`super-admin`)**: all BK and Discipline permissions.
 
 ## Recommended Module Sequence
 The system is now architecturally ready to consume these modules. The recommended sequence is:

@@ -184,6 +184,35 @@ export class ReportRegistryService {
       optionalFilters: ['status', 'channel'],
       permissions: ['reports.view', 'reports.communication'],
     },
+
+    // BK & Discipline
+    {
+      code: 'discipline-violation-recap',
+      name: 'Discipline Violation Recap',
+      category: ReportCategory.BK_DISCIPLINE,
+      supportedFormats: ['XLSX', 'CSV'],
+      requiredFilters: [],
+      optionalFilters: ['startDate', 'endDate', 'studentId', 'classroomId', 'status', 'severity'],
+      permissions: ['discipline.report'],
+    },
+    {
+      code: 'student-discipline-summary',
+      name: 'Student Discipline Summary',
+      category: ReportCategory.BK_DISCIPLINE,
+      supportedFormats: ['XLSX', 'CSV'],
+      requiredFilters: [],
+      optionalFilters: ['studentId', 'classroomId'],
+      permissions: ['discipline.report'],
+    },
+    {
+      code: 'counseling-case-recap',
+      name: 'Counseling Case Recap',
+      category: ReportCategory.BK_DISCIPLINE,
+      supportedFormats: ['XLSX', 'CSV'],
+      requiredFilters: [],
+      optionalFilters: ['startDate', 'endDate', 'studentId', 'status', 'priority', 'category', 'counselorId'],
+      permissions: ['counseling.view'],
+    },
   ];
 
   getAll(): ReportDefinition[] {

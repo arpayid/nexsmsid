@@ -1,10 +1,14 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 
 import { PrismaService } from "../database/prisma.service";
+import { DisciplineService } from "../discipline/discipline.service";
 
 @Injectable()
 export class GuardianPortalService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(DisciplineService) private readonly disciplineService: DisciplineService
+  ) {}
 
   async getGuardianForUser(userId: string) {
     const guardian = await this.prisma.guardian.findFirst({ where: { userId } });
@@ -178,6 +182,12 @@ export class GuardianPortalService {
       include: { items: { include: { paymentCategory: true } }, academicYear: true, semester: true },
       orderBy: { issueDate: "desc" }
     });
+  }
+
+  async getChildDisciplineSummary(userId: string, studentId: string) {
+    const guardian = await this.getGuardianForUser(userId);
+    await this.assertCanAccess(guardian.id, studentId);
+    return this.disciplineService.getStudentSummary(studentId);
   }
 
   async listAnnouncements(userId: string, limit = 10) {

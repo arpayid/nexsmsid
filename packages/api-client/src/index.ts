@@ -371,6 +371,12 @@ export type NotificationTemplateRecord = Record<string, unknown>;
 export type ReportJobRecord = Record<string, unknown>;
 export type ExportHistoryRecord = Record<string, unknown>;
 export type ReportCenterSummary = Record<string, unknown>;
+export type CounselingCaseRecord = Record<string, unknown>;
+export type CounselingNoteRecord = Record<string, unknown>;
+export type DisciplineRuleRecord = Record<string, unknown>;
+export type DisciplineViolationRecord = Record<string, unknown>;
+export type StudentAchievementRecord = Record<string, unknown>;
+export type DisciplineSummaryRecord = Record<string, unknown>;
 
 export type ApiClientOptions = {
   accessToken?: string | (() => string | null | undefined);
@@ -448,6 +454,16 @@ export function createApiClient(options: ApiClientOptions = {}) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  }
+
+  function buildQuery(options: Record<string, unknown> = {}) {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(options)) {
+      if (value === undefined || value === null || value === "") continue;
+      params.set(key, String(value));
+    }
+    const query = params.toString();
+    return query ? `?${query}` : "";
   }
 
   async function uploadFile<TData>(path: string, file: Blob | File, fieldName = "file", fallbackFilename = "upload.xlsx") {
@@ -1369,6 +1385,118 @@ export function createApiClient(options: ApiClientOptions = {}) {
       return response.data;
     },
 
+    // Phase 12.1 - Counseling and Discipline
+    async listCounselingCases(options: { page?: number; limit?: number; search?: string; studentId?: string; status?: string; priority?: string; category?: string; counselorId?: string; startDate?: string; endDate?: string } = {}) {
+      const response = await request<CounselingCaseRecord[]>(`/counseling/cases${buildQuery(options)}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async createCounselingCase(input: Record<string, unknown>) {
+      const response = await request<CounselingCaseRecord>("/counseling/cases", { method: "POST", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async getCounselingCase(id: string) {
+      const response = await request<CounselingCaseRecord>(`/counseling/cases/${id}`);
+      return response.data;
+    },
+    async updateCounselingCase(id: string, input: Record<string, unknown>) {
+      const response = await request<CounselingCaseRecord>(`/counseling/cases/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async deleteCounselingCase(id: string) {
+      const response = await request<{ deleted: boolean; id: string }>(`/counseling/cases/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async closeCounselingCase(id: string, input: Record<string, unknown> = {}) {
+      const response = await request<CounselingCaseRecord>(`/counseling/cases/${id}/close`, { method: "POST", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async reopenCounselingCase(id: string) {
+      const response = await request<CounselingCaseRecord>(`/counseling/cases/${id}/reopen`, { method: "POST" });
+      return response.data;
+    },
+    async listCounselingNotes(caseId: string) {
+      const response = await request<CounselingNoteRecord[]>(`/counseling/cases/${caseId}/notes`);
+      return response.data;
+    },
+    async createCounselingNote(caseId: string, input: Record<string, unknown>) {
+      const response = await request<CounselingNoteRecord>(`/counseling/cases/${caseId}/notes`, { method: "POST", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async listDisciplineRules(options: { page?: number; limit?: number; search?: string; severity?: string; isActive?: boolean } = {}) {
+      const response = await request<DisciplineRuleRecord[]>(`/discipline/rules${buildQuery(options)}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async createDisciplineRule(input: Record<string, unknown>) {
+      const response = await request<DisciplineRuleRecord>("/discipline/rules", { method: "POST", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async updateDisciplineRule(id: string, input: Record<string, unknown>) {
+      const response = await request<DisciplineRuleRecord>(`/discipline/rules/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async deleteDisciplineRule(id: string) {
+      const response = await request<{ deleted: boolean; id: string }>(`/discipline/rules/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async listDisciplineViolations(options: { page?: number; limit?: number; search?: string; studentId?: string; classroomId?: string; ruleId?: string; status?: string; severity?: string; startDate?: string; endDate?: string } = {}) {
+      const response = await request<DisciplineViolationRecord[]>(`/discipline/violations${buildQuery(options)}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async createDisciplineViolation(input: Record<string, unknown>) {
+      const response = await request<DisciplineViolationRecord>("/discipline/violations", { method: "POST", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async getDisciplineViolation(id: string) {
+      const response = await request<DisciplineViolationRecord>(`/discipline/violations/${id}`);
+      return response.data;
+    },
+    async updateDisciplineViolation(id: string, input: Record<string, unknown>) {
+      const response = await request<DisciplineViolationRecord>(`/discipline/violations/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async confirmDisciplineViolation(id: string) {
+      const response = await request<DisciplineViolationRecord>(`/discipline/violations/${id}/confirm`, { method: "POST" });
+      return response.data;
+    },
+    async cancelDisciplineViolation(id: string) {
+      const response = await request<DisciplineViolationRecord>(`/discipline/violations/${id}/cancel`, { method: "POST" });
+      return response.data;
+    },
+    async deleteDisciplineViolation(id: string) {
+      const response = await request<{ deleted: boolean; id: string }>(`/discipline/violations/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async listStudentAchievements(options: { page?: number; limit?: number; search?: string; studentId?: string; classroomId?: string; category?: string; startDate?: string; endDate?: string } = {}) {
+      const response = await request<StudentAchievementRecord[]>(`/discipline/achievements${buildQuery(options)}`);
+      return { items: response.data, meta: response.meta as { total: number; page: number; limit: number } | undefined };
+    },
+    async createStudentAchievement(input: Record<string, unknown>) {
+      const response = await request<StudentAchievementRecord>("/discipline/achievements", { method: "POST", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async updateStudentAchievement(id: string, input: Record<string, unknown>) {
+      const response = await request<StudentAchievementRecord>(`/discipline/achievements/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+      return response.data;
+    },
+    async deleteStudentAchievement(id: string) {
+      const response = await request<{ deleted: boolean; id: string }>(`/discipline/achievements/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async getStudentDisciplineSummary(studentId: string) {
+      const response = await request<DisciplineSummaryRecord>(`/discipline/students/${studentId}/summary`);
+      return response.data;
+    },
+    async getClassroomDisciplineSummary(classroomId: string) {
+      const response = await request<DisciplineSummaryRecord>(`/discipline/classrooms/${classroomId}/summary`);
+      return response.data;
+    },
+    async downloadDisciplineViolationPdf(id: string): Promise<Blob> {
+      return downloadFile(`/discipline/violations/${id}/print`, `discipline-violation-${id}.pdf`);
+    },
+    async downloadStudentDisciplineSummaryPdf(studentId: string): Promise<Blob> {
+      return downloadFile(`/discipline/students/${studentId}/summary.pdf`, `discipline-summary-${studentId}.pdf`);
+    },
+
     // Phase 10 - Communication, Notifications, Reports
     async listAnnouncements(options: { page?: number; limit?: number; search?: string; status?: string; audience?: string } = {}) {
       const params = new URLSearchParams();
@@ -1649,6 +1777,10 @@ export function createApiClient(options: ApiClientOptions = {}) {
       const response = await request<unknown[]>("/student-portal/invoices");
       return response.data;
     },
+    async getStudentPortalDiscipline() {
+      const response = await request<unknown>("/student-portal/discipline");
+      return response.data;
+    },
     async getStudentPortalAnnouncements(options: { limit?: number } = {}) {
       const params = new URLSearchParams();
       if (options.limit) params.set("limit", String(options.limit));
@@ -1709,6 +1841,10 @@ export function createApiClient(options: ApiClientOptions = {}) {
     },
     async getGuardianPortalChildInvoices(studentId: string) {
       const response = await request<unknown[]>(`/guardian-portal/children/${studentId}/invoices`);
+      return response.data;
+    },
+    async getGuardianPortalChildDiscipline(studentId: string) {
+      const response = await request<unknown>(`/guardian-portal/children/${studentId}/discipline`);
       return response.data;
     },
     async getGuardianPortalAnnouncements(options: { limit?: number } = {}) {
