@@ -40,6 +40,11 @@ export class GuardianPortalController {
     return apiSuccess("Child invoices retrieved", await this.service.getChildInvoices(user.id, studentId));
   }
 
+  @Get("children/:studentId/discipline")
+  async childDiscipline(@CurrentUser() user: AuthenticatedUser, @Param("studentId") studentId: string) {
+    return apiSuccess("Child discipline summary retrieved", await this.service.getChildDisciplineSummary(user.id, studentId));
+  }
+
   @Get("announcements")
   async announcements(@CurrentUser() user: AuthenticatedUser, @Query("limit") limit?: string) {
     const parsed = limit ? Math.max(1, Math.min(50, Number(limit))) : 10;

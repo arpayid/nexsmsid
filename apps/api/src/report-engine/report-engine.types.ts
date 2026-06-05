@@ -4,6 +4,7 @@ export enum ReportCategory {
   PPDB = 'PPDB',
   PKL_BKK = 'PKL/BKK',
   COMMUNICATION = 'Communication',
+  BK_DISCIPLINE = 'BK & Discipline',
 }
 
 export interface ReportFilterDefinition {

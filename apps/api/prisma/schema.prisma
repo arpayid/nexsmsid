@@ -14,41 +14,48 @@ enum UserStatus {
 }
 
 model User {
-  id                           String                 @id @default(cuid())
-  email                        String                 @unique
-  username                     String?                @unique
-  name                         String
-  passwordHash                 String                 @map("password_hash")
-  status                       UserStatus             @default(ACTIVE)
-  forceChangePassword          Boolean                @default(false) @map("force_change_password")
-  passwordChangedAt            DateTime?              @map("password_changed_at")
-  lockedUntil                  DateTime?              @map("locked_until")
-  failedLoginCount             Int                    @default(0) @map("failed_login_count")
-  lastLoginAt                  DateTime?              @map("last_login_at")
-  createdAt                    DateTime               @default(now()) @map("created_at")
-  updatedAt                    DateTime               @updatedAt @map("updated_at")
-  deletedAt                    DateTime?              @map("deleted_at")
-  roles                        UserRole[]
-  refreshTokens                RefreshToken[]
-  loginHistories               LoginHistory[]
-  auditLogs                    AuditLog[]             @relation("AuditActor")
-  verifiedPayments             Payment[]              @relation("VerifiedPayments")
-  approvedExpenses             Expense[]              @relation("ApprovedExpenses")
-  ppdbRegistrations            PpdbRegistration[]     @relation("PpdbVerifier")
-  ppdbStatusChanges            PpdbStatusHistory[]    @relation("PpdbStatusChanger")
-  reviewedInternshipLogs       InternshipLog[]        @relation("InternshipLogReviewer")
-  assessedInternshipScores     InternshipScore[]      @relation("InternshipScoreAssessor")
-  createdAnnouncements         Announcement[]         @relation("AnnouncementCreator")
-  sentMessages                 InternalMessage[]      @relation("InternalMessageSender")
-  receivedMessages             InternalMessage[]      @relation("InternalMessageRecipient")
-  readMessages                 InternalMessage[]      @relation("InternalMessageReader")
-  notifications                Notification[]
-  createdNotificationTemplates NotificationTemplate[] @relation("NotificationTemplateCreator")
-  reportJobs                   ReportJob[]            @relation("ReportJobRequester")
-  exportHistories              ExportHistory[]        @relation("ExportHistoryRequester")
-  teacherProfile               Teacher?               @relation("TeacherUser")
-  studentProfile               Student?               @relation("StudentUser")
-  guardianProfile              Guardian?              @relation("GuardianUser")
+  id                            String                 @id @default(cuid())
+  email                         String                 @unique
+  username                      String?                @unique
+  name                          String
+  passwordHash                  String                 @map("password_hash")
+  status                        UserStatus             @default(ACTIVE)
+  forceChangePassword           Boolean                @default(false) @map("force_change_password")
+  passwordChangedAt             DateTime?              @map("password_changed_at")
+  lockedUntil                   DateTime?              @map("locked_until")
+  failedLoginCount              Int                    @default(0) @map("failed_login_count")
+  lastLoginAt                   DateTime?              @map("last_login_at")
+  createdAt                     DateTime               @default(now()) @map("created_at")
+  updatedAt                     DateTime               @updatedAt @map("updated_at")
+  deletedAt                     DateTime?              @map("deleted_at")
+  roles                         UserRole[]
+  refreshTokens                 RefreshToken[]
+  loginHistories                LoginHistory[]
+  auditLogs                     AuditLog[]             @relation("AuditActor")
+  verifiedPayments              Payment[]              @relation("VerifiedPayments")
+  approvedExpenses              Expense[]              @relation("ApprovedExpenses")
+  ppdbRegistrations             PpdbRegistration[]     @relation("PpdbVerifier")
+  ppdbStatusChanges             PpdbStatusHistory[]    @relation("PpdbStatusChanger")
+  reviewedInternshipLogs        InternshipLog[]        @relation("InternshipLogReviewer")
+  assessedInternshipScores      InternshipScore[]      @relation("InternshipScoreAssessor")
+  createdAnnouncements          Announcement[]         @relation("AnnouncementCreator")
+  sentMessages                  InternalMessage[]      @relation("InternalMessageSender")
+  receivedMessages              InternalMessage[]      @relation("InternalMessageRecipient")
+  readMessages                  InternalMessage[]      @relation("InternalMessageReader")
+  notifications                 Notification[]
+  createdNotificationTemplates  NotificationTemplate[] @relation("NotificationTemplateCreator")
+  reportJobs                    ReportJob[]            @relation("ReportJobRequester")
+  exportHistories               ExportHistory[]        @relation("ExportHistoryRequester")
+  teacherProfile                Teacher?               @relation("TeacherUser")
+  studentProfile                Student?               @relation("StudentUser")
+  guardianProfile               Guardian?              @relation("GuardianUser")
+  counselingCasesCounselor      CounselingCase[]       @relation("CounselingCaseCounselor")
+  counselingCasesCreated        CounselingCase[]       @relation("CounselingCaseCreatedBy")
+  counselingCasesUpdated        CounselingCase[]       @relation("CounselingCaseUpdatedBy")
+  counselingNotesCreated        CounselingNote[]       @relation("CounselingNoteCreatedBy")
+  disciplineViolationsReported  DisciplineViolation[]  @relation("DisciplineViolationReportedBy")
+  disciplineViolationsConfirmed DisciplineViolation[]  @relation("DisciplineViolationConfirmedBy")
+  studentAchievementsAwarded    StudentAchievement[]   @relation("StudentAchievementAwardedBy")
 
   @@index([name])
   @@index([lockedUntil])
@@ -67,7 +74,7 @@ model LoginHistory {
   reason    String?
   createdAt DateTime @default(now()) @map("created_at")
 
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([email])
@@ -543,33 +550,36 @@ enum GuardianRelation {
 }
 
 model Student {
-  id                String             @id @default(cuid())
-  nis               String             @unique
-  nisn              String?            @unique
-  userId            String?            @unique @map("user_id")
-  name              String
-  gender            Gender
-  birthPlace        String?            @map("birth_place")
-  birthDate         DateTime?          @map("birth_date")
-  address           String?
-  phone             String?
-  email             String?            @unique
-  classroomId       String?            @map("classroom_id")
-  status            PersonStatus       @default(ACTIVE)
-  photoUrl          String?            @map("photo_url")
-  enrolledAt        DateTime?          @map("enrolled_at")
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
-  deletedAt         DateTime?          @map("deleted_at")
-  user              User?              @relation("StudentUser", fields: [userId], references: [id], onDelete: SetNull)
-  classroom         Classroom?         @relation(fields: [classroomId], references: [id], onDelete: SetNull)
-  guardians         StudentGuardian[]
-  attendanceRecords AttendanceRecord[]
-  grades            Grade[]
-  invoices          Invoice[]
-  ppdbRegistrations PpdbRegistration[] @relation("ConvertedStudent")
-  internships       Internship[]
-  alumni            Alumni?            @relation("StudentAlumni")
+  id                   String                @id @default(cuid())
+  nis                  String                @unique
+  nisn                 String?               @unique
+  userId               String?               @unique @map("user_id")
+  name                 String
+  gender               Gender
+  birthPlace           String?               @map("birth_place")
+  birthDate            DateTime?             @map("birth_date")
+  address              String?
+  phone                String?
+  email                String?               @unique
+  classroomId          String?               @map("classroom_id")
+  status               PersonStatus          @default(ACTIVE)
+  photoUrl             String?               @map("photo_url")
+  enrolledAt           DateTime?             @map("enrolled_at")
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+  deletedAt            DateTime?             @map("deleted_at")
+  user                 User?                 @relation("StudentUser", fields: [userId], references: [id], onDelete: SetNull)
+  classroom            Classroom?            @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  guardians            StudentGuardian[]
+  attendanceRecords    AttendanceRecord[]
+  grades               Grade[]
+  invoices             Invoice[]
+  ppdbRegistrations    PpdbRegistration[]    @relation("ConvertedStudent")
+  internships          Internship[]
+  alumni               Alumni?               @relation("StudentAlumni")
+  counselingCases      CounselingCase[]
+  disciplineViolations DisciplineViolation[]
+  achievements         StudentAchievement[]
 
   @@index([classroomId])
   @@index([status])
@@ -609,6 +619,170 @@ model StudentGuardian {
   @@id([studentId, guardianId])
   @@index([guardianId])
   @@map("student_guardians")
+}
+
+// Phase 12.1 - BK and Discipline
+enum CounselingPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum CounselingStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum CounselingNoteVisibility {
+  PRIVATE
+  COUNSELOR_ONLY
+  HOMEROOM_TEACHER
+  PARENT_VISIBLE
+}
+
+enum DisciplineSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum DisciplineViolationStatus {
+  DRAFT
+  CONFIRMED
+  CANCELLED
+}
+
+model CounselingCase {
+  id           String             @id @default(cuid())
+  studentId    String             @map("student_id")
+  counselorId  String?            @map("counselor_id")
+  title        String
+  category     String
+  priority     CounselingPriority @default(MEDIUM)
+  status       CounselingStatus   @default(OPEN)
+  description  String
+  resolution   String?
+  followUpDate DateTime?          @map("follow_up_date")
+  openedAt     DateTime           @default(now()) @map("opened_at")
+  closedAt     DateTime?          @map("closed_at")
+  createdById  String             @map("created_by_id")
+  updatedById  String?            @map("updated_by_id")
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+  deletedAt    DateTime?          @map("deleted_at")
+
+  student   Student          @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  counselor User?            @relation("CounselingCaseCounselor", fields: [counselorId], references: [id], onDelete: SetNull)
+  createdBy User             @relation("CounselingCaseCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy User?            @relation("CounselingCaseUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  notes     CounselingNote[]
+
+  @@index([studentId])
+  @@index([counselorId])
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+  @@index([followUpDate])
+  @@index([createdById])
+  @@index([deletedAt])
+  @@map("counseling_cases")
+}
+
+model CounselingNote {
+  id          String                   @id @default(cuid())
+  caseId      String                   @map("case_id")
+  note        String
+  visibility  CounselingNoteVisibility @default(PRIVATE)
+  createdById String                   @map("created_by_id")
+  createdAt   DateTime                 @default(now()) @map("created_at")
+  updatedAt   DateTime                 @updatedAt @map("updated_at")
+
+  case      CounselingCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  createdBy User           @relation("CounselingNoteCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([caseId])
+  @@index([visibility])
+  @@index([createdById])
+  @@index([createdAt])
+  @@map("counseling_notes")
+}
+
+model DisciplineRule {
+  id          String             @id @default(cuid())
+  code        String             @unique
+  name        String
+  description String?
+  point       Int
+  severity    DisciplineSeverity @default(MEDIUM)
+  isActive    Boolean            @default(true) @map("is_active")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  violations DisciplineViolation[]
+
+  @@index([code])
+  @@index([severity])
+  @@index([isActive])
+  @@map("discipline_rules")
+}
+
+model DisciplineViolation {
+  id            String                    @id @default(cuid())
+  studentId     String                    @map("student_id")
+  ruleId        String                    @map("rule_id")
+  reportedById  String                    @map("reported_by_id")
+  incidentDate  DateTime                  @map("incident_date")
+  description   String?
+  point         Int
+  status        DisciplineViolationStatus @default(DRAFT)
+  confirmedById String?                   @map("confirmed_by_id")
+  confirmedAt   DateTime?                 @map("confirmed_at")
+  cancelledAt   DateTime?                 @map("cancelled_at")
+  createdAt     DateTime                  @default(now()) @map("created_at")
+  updatedAt     DateTime                  @updatedAt @map("updated_at")
+  deletedAt     DateTime?                 @map("deleted_at")
+
+  student     Student        @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  rule        DisciplineRule @relation(fields: [ruleId], references: [id], onDelete: Restrict)
+  reportedBy  User           @relation("DisciplineViolationReportedBy", fields: [reportedById], references: [id], onDelete: Restrict)
+  confirmedBy User?          @relation("DisciplineViolationConfirmedBy", fields: [confirmedById], references: [id], onDelete: SetNull)
+
+  @@index([studentId])
+  @@index([ruleId])
+  @@index([reportedById])
+  @@index([status])
+  @@index([incidentDate])
+  @@index([confirmedById])
+  @@index([deletedAt])
+  @@map("discipline_violations")
+}
+
+model StudentAchievement {
+  id          String    @id @default(cuid())
+  studentId   String    @map("student_id")
+  title       String
+  category    String
+  point       Int
+  awardedAt   DateTime  @map("awarded_at")
+  description String?
+  awardedById String    @map("awarded_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  awardedBy User    @relation("StudentAchievementAwardedBy", fields: [awardedById], references: [id], onDelete: Restrict)
+
+  @@index([studentId])
+  @@index([category])
+  @@index([awardedAt])
+  @@index([awardedById])
+  @@index([deletedAt])
+  @@map("student_achievements")
 }
 
 model Teacher {

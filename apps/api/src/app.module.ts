@@ -14,9 +14,11 @@ import { BkkDashboardModule } from "./bkk-dashboard/bkk-dashboard.module";
 import { ClassroomsModule } from "./classrooms/classrooms.module";
 import { CompetenciesModule } from "./competencies/competencies.module";
 import { AppConfigModule } from "./config/app-config.module";
+import { CounselingModule } from "./counseling/counseling.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { DatabaseModule } from "./database/database.module";
 import { DepartmentsModule } from "./departments/departments.module";
+import { DisciplineModule } from "./discipline/discipline.module";
 import { ExcelModule } from "./excel/excel.module";
 import { ExportHistoryModule } from "./export-history/export-history.module";
 import { ExpensesModule } from "./expenses/expenses.module";
@@ -107,6 +109,8 @@ import { UsersModule } from "./users/users.module";
     JobApplicationsModule,
     TracerStudiesModule,
     BkkDashboardModule,
+    CounselingModule,
+    DisciplineModule,
     TeacherPortalModule,
     StudentPortalModule,
     GuardianPortalModule,

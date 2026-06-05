@@ -88,6 +88,16 @@ const navigationGroups: NavigationGroup[] = [
     ]
   },
   {
+    label: "BK & Kedisiplinan",
+    items: [
+      { href: "/admin/counseling/cases", icon: HeartHandshake, label: "Kasus BK", permission: "counseling.view" },
+      { href: "/admin/discipline/rules", icon: ClipboardList, label: "Aturan Kedisiplinan", permission: "discipline.view" },
+      { href: "/admin/discipline/violations", icon: ClipboardCheck, label: "Pelanggaran", permission: "discipline.view" },
+      { href: "/admin/discipline/achievements", icon: Award, label: "Prestasi", permission: "discipline.view" },
+      { href: "/admin/discipline/summary", icon: BarChart3, label: "Ringkasan Disiplin", permission: "discipline.report" }
+    ]
+  },
+  {
     label: "Keuangan & PPDB",
     items: [
       { href: "/admin/finance", icon: Landmark, label: "Keuangan", permission: "finance.view" },

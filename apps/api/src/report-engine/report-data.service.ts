@@ -38,6 +38,12 @@ export class ReportDataService {
         return this.getPpdbConversionRecap(filters);
       case 'industry-partner-recap':
         return this.getIndustryPartnerRecap(filters);
+      case 'discipline-violation-recap':
+        return this.getDisciplineViolationRecap(filters);
+      case 'student-discipline-summary':
+        return this.getStudentDisciplineSummary(filters);
+      case 'counseling-case-recap':
+        return this.getCounselingCaseRecap(filters);
       default:
         return this.getPlaceholderData(reportCode);
     }
@@ -579,6 +585,156 @@ export class ReportDataService {
         status: a.status,
         company: a.currentCompany || '-',
         position: a.currentPosition || '-',
+      })),
+    };
+  }
+
+  private async getDisciplineViolationRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.studentId) where.studentId = filters.studentId;
+    if (filters.classroomId) where.student = { classroomId: filters.classroomId };
+    if (filters.status) where.status = filters.status;
+    if (filters.severity) where.rule = { severity: filters.severity };
+    if (filters.startDate || filters.endDate) {
+      where.incidentDate = {
+        ...(filters.startDate ? { gte: new Date(filters.startDate) } : {}),
+        ...(filters.endDate ? { lte: new Date(filters.endDate) } : {}),
+      };
+    }
+
+    const violations = await this.prisma.disciplineViolation.findMany({
+      where,
+      include: { rule: true, student: { include: { classroom: true } }, reportedBy: { select: { name: true } }, confirmedBy: { select: { name: true } } },
+      orderBy: { incidentDate: 'desc' },
+    });
+
+    return {
+      title: 'Discipline Violation Recap',
+      columns: [
+        { key: 'date', label: 'Incident Date', width: 15 },
+        { key: 'student', label: 'Student', width: 30 },
+        { key: 'classroom', label: 'Class', width: 15 },
+        { key: 'rule', label: 'Rule', width: 30 },
+        { key: 'severity', label: 'Severity', width: 15 },
+        { key: 'point', label: 'Point', width: 10 },
+        { key: 'status', label: 'Status', width: 15 },
+        { key: 'reportedBy', label: 'Reported By', width: 25 },
+      ],
+      rows: violations.map((item) => ({
+        date: item.incidentDate.toISOString().split('T')[0],
+        student: item.student.name,
+        classroom: item.student.classroom?.name || '-',
+        rule: `${item.rule.code} - ${item.rule.name}`,
+        severity: item.rule.severity,
+        point: item.point,
+        status: item.status,
+        reportedBy: item.reportedBy.name,
+      })),
+    };
+  }
+
+  private async getStudentDisciplineSummary(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.studentId) where.id = filters.studentId;
+    if (filters.classroomId) where.classroomId = filters.classroomId;
+    const students = await this.prisma.student.findMany({
+      where,
+      include: { classroom: true },
+      orderBy: [{ classroom: { name: 'asc' } }, { name: 'asc' }],
+    });
+    const studentIds = students.map((student) => student.id);
+    const [violations, achievements] = await Promise.all([
+      studentIds.length
+        ? this.prisma.disciplineViolation.groupBy({
+            by: ['studentId'],
+            where: { studentId: { in: studentIds }, status: 'CONFIRMED', deletedAt: null },
+            _sum: { point: true },
+            _count: true,
+          })
+        : Promise.resolve([]),
+      studentIds.length
+        ? this.prisma.studentAchievement.groupBy({
+            by: ['studentId'],
+            where: { studentId: { in: studentIds }, deletedAt: null },
+            _sum: { point: true },
+            _count: true,
+          })
+        : Promise.resolve([]),
+    ]);
+    const violationMap = new Map(violations.map((row) => [row.studentId, { point: row._sum.point ?? 0, count: row._count }]));
+    const achievementMap = new Map(achievements.map((row) => [row.studentId, { point: row._sum.point ?? 0, count: row._count }]));
+
+    return {
+      title: 'Student Discipline Summary',
+      columns: [
+        { key: 'nis', label: 'NIS', width: 15 },
+        { key: 'student', label: 'Student', width: 30 },
+        { key: 'classroom', label: 'Class', width: 15 },
+        { key: 'violationPoint', label: 'Violation Point', width: 18 },
+        { key: 'achievementPoint', label: 'Achievement Point', width: 18 },
+        { key: 'netPoint', label: 'Net Point', width: 15 },
+        { key: 'violationCount', label: 'Violation Count', width: 15 },
+        { key: 'achievementCount', label: 'Achievement Count', width: 15 },
+      ],
+      rows: students.map((student) => {
+        const violation = violationMap.get(student.id) ?? { point: 0, count: 0 };
+        const achievement = achievementMap.get(student.id) ?? { point: 0, count: 0 };
+        return {
+          nis: student.nis,
+          student: student.name,
+          classroom: student.classroom?.name || '-',
+          violationPoint: violation.point,
+          achievementPoint: achievement.point,
+          netPoint: achievement.point - violation.point,
+          violationCount: violation.count,
+          achievementCount: achievement.count,
+        };
+      }),
+    };
+  }
+
+  private async getCounselingCaseRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.studentId) where.studentId = filters.studentId;
+    if (filters.status) where.status = filters.status;
+    if (filters.priority) where.priority = filters.priority;
+    if (filters.category) where.category = filters.category;
+    if (filters.counselorId) where.counselorId = filters.counselorId;
+    if (filters.startDate || filters.endDate) {
+      where.openedAt = {
+        ...(filters.startDate ? { gte: new Date(filters.startDate) } : {}),
+        ...(filters.endDate ? { lte: new Date(filters.endDate) } : {}),
+      };
+    }
+    const cases = await this.prisma.counselingCase.findMany({
+      where,
+      include: { student: { include: { classroom: true } }, counselor: { select: { name: true } }, createdBy: { select: { name: true } } },
+      orderBy: { openedAt: 'desc' },
+    });
+
+    return {
+      title: 'Counseling Case Recap',
+      columns: [
+        { key: 'openedAt', label: 'Opened At', width: 15 },
+        { key: 'student', label: 'Student', width: 30 },
+        { key: 'classroom', label: 'Class', width: 15 },
+        { key: 'title', label: 'Title', width: 35 },
+        { key: 'category', label: 'Category', width: 20 },
+        { key: 'priority', label: 'Priority', width: 15 },
+        { key: 'status', label: 'Status', width: 15 },
+        { key: 'counselor', label: 'Counselor', width: 25 },
+        { key: 'followUpDate', label: 'Follow Up', width: 15 },
+      ],
+      rows: cases.map((item) => ({
+        openedAt: item.openedAt.toISOString().split('T')[0],
+        student: item.student.name,
+        classroom: item.student.classroom?.name || '-',
+        title: item.title,
+        category: item.category,
+        priority: item.priority,
+        status: item.status,
+        counselor: item.counselor?.name || '-',
+        followUpDate: item.followUpDate ? item.followUpDate.toISOString().split('T')[0] : '-',
       })),
     };
   }
