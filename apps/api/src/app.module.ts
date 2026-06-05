@@ -19,6 +19,7 @@ import { ExportHistoryModule } from "./export-history/export-history.module";
 import { ExpensesModule } from "./expenses/expenses.module";
 import { FinanceDashboardModule } from "./finance-dashboard/finance-dashboard.module";
 import { GradesModule } from "./grades/grades.module";
+import { GuardianPortalModule } from "./guardian-portal/guardian-portal.module";
 import { GuardiansModule } from "./guardians/guardians.module";
 import { HealthModule } from "./health/health.module";
 import { IndustryPartnersModule } from "./industry-partners/industry-partners.module";
@@ -47,9 +48,11 @@ import { SchedulesModule } from "./schedules/schedules.module";
 import { SchoolProfileModule } from "./school-profile/school-profile.module";
 import { SemestersModule } from "./semesters/semesters.module";
 import { StaffsModule } from "./staffs/staffs.module";
+import { StudentPortalModule } from "./student-portal/student-portal.module";
 import { StudentsModule } from "./students/students.module";
 import { SubjectsModule } from "./subjects/subjects.module";
 import { TeachersModule } from "./teachers/teachers.module";
+import { TeacherPortalModule } from "./teacher-portal/teacher-portal.module";
 import { TeachingAssignmentsModule } from "./teaching-assignments/teaching-assignments.module";
 import { TracerStudiesModule } from "./tracer-studies/tracer-studies.module";
 import { UsersModule } from "./users/users.module";
@@ -101,6 +104,9 @@ import { UsersModule } from "./users/users.module";
     JobApplicationsModule,
     TracerStudiesModule,
     BkkDashboardModule,
+    TeacherPortalModule,
+    StudentPortalModule,
+    GuardianPortalModule,
     AnnouncementsModule,
     InternalMessagesModule,
     NotificationsModule,

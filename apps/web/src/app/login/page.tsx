@@ -9,6 +9,7 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from "
 
 import { createBrowserApiClient } from "@/lib/api-client";
 import { getAccessToken, storeAuthTokens } from "@/lib/auth-storage";
+import { defaultLandingPath } from "@/lib/portal-routing";
 
 export default function LoginPage() {
   return (
@@ -21,7 +22,7 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") || "/admin";
+  const explicitNext = searchParams.get("next");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -29,9 +30,10 @@ function LoginForm() {
 
   useEffect(() => {
     if (getAccessToken()) {
-      router.replace(nextPath);
+      const stored = JSON.parse(window.localStorage.getItem("nexsmsid.user") ?? "null");
+      router.replace(explicitNext ?? defaultLandingPath(stored));
     }
-  }, [nextPath, router]);
+  }, [explicitNext, router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -41,7 +43,8 @@ function LoginForm() {
     try {
       const tokens = await createBrowserApiClient().login({ email, password });
       storeAuthTokens(tokens);
-      startTransition(() => router.replace(nextPath));
+      const target = explicitNext ?? defaultLandingPath(tokens.user);
+      startTransition(() => router.replace(target));
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Login gagal");
     } finally {

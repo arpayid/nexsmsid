@@ -83,10 +83,18 @@ Phase 3 menambahkan pondasi autentikasi dan otorisasi:
 - login page development di `apps/web`
 - protected admin shell sederhana berbasis `/auth/me`
 
-Credential seed development:
+Credential seed development (default password di-override lewat env `SEED_SUPER_ADMIN_PASSWORD`, default `ChangeMe123!`):
 
-- Email: `superadmin@nexsmsid.dev`
-- Password: `ChangeMe123!`
+- Super admin: `superadmin@nexsmsid.dev`
+- Portal Guru: `guru@nexsmsid.dev` (terkait dengan `seed-teacher-1` / Dewi Anggraini, S.Pd)
+- Portal Siswa: `siswa@nexsmsid.dev` (terkait dengan student aktif pertama / Citra Lestari, NIS `20260002`)
+- Portal Wali: `wali@nexsmsid.dev` (terkait dengan `seed-guardian-ayah` / Budi Santoso)
+
+Setelah login, sistem otomatis mengarahkan ke portal sesuai role utama user:
+- role `guru` / `wali-kelas` → `/teacher`
+- role `siswa` → `/student`
+- role `orang-tua-wali` → `/guardian`
+- role admin lainnya → `/admin`
 
 Command Phase 3:
 
@@ -154,7 +162,7 @@ Default service lokal:
 8. Phase 7 — Academic, schedule, attendance, grades
 9. Phase 8 — Finance dan PPDB
 10. Phase 9 — PKL, BKK, alumni
-11. Phase 10 — Communication, notification, report builder
+11. Phase 10 — Communication, notification, report builder (termasuk 10.1 Announcement, 10.2 Import/Export Excel, 10.3 PDF & Print, 10.4 Role-based Portal Guru/Siswa/Wali)
 12. Phase 11 — Production hardening
 
 ## Prompt Awal AI CLI

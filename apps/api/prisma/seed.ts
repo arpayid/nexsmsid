@@ -76,6 +76,9 @@ const permissions = [
   "payments.reject",
   "payments.cancel",
   "payments.print",
+  "teacher-portal.view",
+  "student-portal.view",
+  "guardian-portal.view",
   "expenses.view",
   "expenses.create",
   "expenses.update",
@@ -182,10 +185,10 @@ const rolePermissionMap: Record<string, string[]> = {
   "kepala-sekolah": ["dashboard.view", "users.view", "roles.view", "permissions.view", "school-profile.view", "master-data.view", "students.view", "guardians.view", "teachers.view", "staffs.view", "teaching-assignments.view", "schedules.view", "attendance.view", "attendance.print", "grades.view", "grades.print", "finance.view", "invoices.view", "invoices.print", "payments.view", "payments.print", "expenses.view", "ppdb.view", "ppdb.approve", "ppdb.reject", "ppdb.print", "industry-partners.view", "internships.view", "internship-logs.view", "alumni.view", "job-vacancies.view", "job-applications.view", "tracer-studies.view", "bkk.view", "announcements.view", "messages.view", "notifications.view", "notification-templates.view", "reports.view", "report-jobs.view", "export-history.view"],
   "waka-kurikulum": ["dashboard.view", "users.view", "master-data.view", "master-data.create", "master-data.update", "students.view", "teachers.view", "teaching-assignments.view", "teaching-assignments.manage", "schedules.view", "schedules.manage", "attendance.view", "attendance.record", "attendance.update", "attendance.approve", "attendance.print", "grades.view", "grades.input", "grades.update", "grades.approve", "grades.publish", "grades.print"],
   "waka-kesiswaan": ["dashboard.view", "users.view", "master-data.view", "students.view", "students.create", "students.update", "guardians.view", "guardians.create", "guardians.update"],
-  "guru": ["dashboard.view", "master-data.view", "students.view", "teachers.view", "teaching-assignments.view", "schedules.view", "attendance.view", "attendance.record", "attendance.print", "grades.view", "grades.input", "grades.print"],
+  "guru": ["dashboard.view", "master-data.view", "students.view", "teachers.view", "teaching-assignments.view", "schedules.view", "attendance.view", "attendance.record", "attendance.print", "grades.view", "grades.input", "grades.print", "teacher-portal.view"],
   "wali-kelas": ["dashboard.view", "users.view", "master-data.view", "students.view", "guardians.view", "teachers.view", "teaching-assignments.view", "schedules.view", "attendance.view", "attendance.record", "attendance.update", "attendance.approve", "attendance.print", "grades.view", "grades.input", "grades.update", "grades.print"],
-  "siswa": ["dashboard.view", "students.view"],
-  "orang-tua-wali": ["dashboard.view", "students.view", "guardians.view"],
+  "siswa": ["dashboard.view", "students.view", "student-portal.view"],
+  "orang-tua-wali": ["dashboard.view", "students.view", "guardians.view", "guardian-portal.view"],
   "bendahara": ["dashboard.view", "master-data.view", "staffs.view", "finance.view", "finance.export", "invoices.view", "invoices.create", "invoices.update", "invoices.print", "payments.view", "payments.create", "payments.print", "expenses.view", "expenses.create", "expenses.approve", "expenses.pay"],
   "staff-tu": ["dashboard.view", "users.view", "users.create", "users.update", "master-data.view", "master-data.create", "master-data.update", "master-data.import", "master-data.export", "students.view", "students.create", "students.update", "students.import", "students.export", "guardians.view", "guardians.create", "guardians.update", "guardians.import", "guardians.export", "teachers.view", "teachers.create", "teachers.update", "teachers.import", "teachers.export", "staffs.view", "staffs.create", "staffs.update", "staffs.import", "staffs.export", "teaching-assignments.view", "teaching-assignments.manage", "schedules.view", "schedules.manage", "attendance.view", "attendance.record", "attendance.update", "attendance.print", "grades.view", "grades.input", "grades.update", "grades.print", "invoices.view", "invoices.print", "payments.view", "payments.print", "ppdb.view", "ppdb.print", "announcements.view", "announcements.create", "announcements.update", "announcements.publish", "announcements.archive", "messages.view", "messages.send", "messages.read", "notifications.view", "notifications.create", "notifications.read", "notification-templates.view", "reports.view", "reports.generate", "report-jobs.view", "report-jobs.create", "export-history.view"],
   "panitia-ppdb": ["dashboard.view", "users.view", "users.create", "users.update", "master-data.view", "students.view", "ppdb.view", "ppdb.create", "ppdb.update", "ppdb.verify", "ppdb.approve", "ppdb.reject", "ppdb.convert", "ppdb.export", "ppdb.print"],
@@ -313,6 +316,7 @@ async function main() {
   await seedFinanceAndPpdb();
   await seedPhase9PklBkk();
   await seedPhase10CommunicationReports();
+  await seedPortalUsers(superAdminPassword);
 
   await prisma.auditLog.create({
     data: {
@@ -328,6 +332,98 @@ async function main() {
   });
 
   console.log(`Seed completed. Super admin: ${superAdminEmail}`);
+}
+
+async function seedPortalUsers(defaultPassword: string) {
+  const guruRole = await prisma.role.findUnique({ where: { slug: "guru" } });
+  const siswaRole = await prisma.role.findUnique({ where: { slug: "siswa" } });
+  const waliRole = await prisma.role.findUnique({ where: { slug: "orang-tua-wali" } });
+
+  if (!guruRole || !siswaRole || !waliRole) {
+    console.log("Phase 10.4 portal user seed: missing required roles, skipping.");
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(defaultPassword, 12);
+
+  const teacher1 = await prisma.teacher.findUnique({ where: { id: "seed-teacher-1" } });
+  const studentAktif = await prisma.student.findFirst({ where: { deletedAt: null, status: "ACTIVE" as any }, orderBy: { createdAt: "asc" } });
+  const guardianAyah = await prisma.guardian.findUnique({ where: { id: "seed-guardian-ayah" } });
+
+  if (!teacher1 || !studentAktif || !guardianAyah) {
+    console.log("Phase 10.4 portal user seed: missing teacher/student/guardian data, skipping.");
+    return;
+  }
+
+  const guruUser = await prisma.user.upsert({
+    where: { email: "guru@nexsmsid.dev" },
+    update: { name: teacher1.name, passwordHash, status: "ACTIVE", deletedAt: null },
+    create: {
+      email: "guru@nexsmsid.dev",
+      name: teacher1.name,
+      passwordHash,
+      status: "ACTIVE"
+    }
+  });
+  await prisma.userRole.upsert({
+    where: { userId_roleId: { userId: guruUser.id, roleId: guruRole.id } },
+    update: {},
+    create: { userId: guruUser.id, roleId: guruRole.id }
+  });
+  await prisma.teacher.update({
+    where: { id: teacher1.id },
+    data: { userId: guruUser.id }
+  });
+
+  const siswaUser = await prisma.user.upsert({
+    where: { email: "siswa@nexsmsid.dev" },
+    update: { name: studentAktif.name, passwordHash, status: "ACTIVE", deletedAt: null },
+    create: {
+      email: "siswa@nexsmsid.dev",
+      name: studentAktif.name,
+      passwordHash,
+      status: "ACTIVE"
+    }
+  });
+  await prisma.userRole.upsert({
+    where: { userId_roleId: { userId: siswaUser.id, roleId: siswaRole.id } },
+    update: {},
+    create: { userId: siswaUser.id, roleId: siswaRole.id }
+  });
+  await prisma.student.update({
+    where: { id: studentAktif.id },
+    data: { userId: siswaUser.id, email: siswaUser.email }
+  });
+  const existingLink = await prisma.studentGuardian.findFirst({
+    where: { studentId: studentAktif.id, guardianId: guardianAyah.id }
+  });
+  if (!existingLink) {
+    await prisma.studentGuardian.create({
+      data: { studentId: studentAktif.id, guardianId: guardianAyah.id, isPrimary: true }
+    });
+  }
+
+  const waliUser = await prisma.user.upsert({
+    where: { email: "wali@nexsmsid.dev" },
+    update: { name: guardianAyah.name, passwordHash, status: "ACTIVE", deletedAt: null },
+    create: {
+      email: "wali@nexsmsid.dev",
+      name: guardianAyah.name,
+      passwordHash,
+      status: "ACTIVE"
+    }
+  });
+  await prisma.userRole.upsert({
+    where: { userId_roleId: { userId: waliUser.id, roleId: waliRole.id } },
+    update: {},
+    create: { userId: waliUser.id, roleId: waliRole.id }
+  });
+  await prisma.guardian.update({
+    where: { id: guardianAyah.id },
+    data: { userId: waliUser.id, email: waliUser.email }
+  });
+
+  console.log("Phase 10.4 portal users seeded (guru/siswa/wali).");
 }
 
 async function seedMasterData() {

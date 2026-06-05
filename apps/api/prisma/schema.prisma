@@ -41,6 +41,9 @@ model User {
   createdNotificationTemplates NotificationTemplate[] @relation("NotificationTemplateCreator")
   reportJobs                   ReportJob[]            @relation("ReportJobRequester")
   exportHistories              ExportHistory[]        @relation("ExportHistoryRequester")
+  teacherProfile               Teacher?               @relation("TeacherUser")
+  studentProfile               Student?               @relation("StudentUser")
+  guardianProfile              Guardian?              @relation("GuardianUser")
 
   @@map("users")
 }
@@ -516,6 +519,7 @@ model Student {
   id                String             @id @default(cuid())
   nis               String             @unique
   nisn              String?            @unique
+  userId            String?            @unique @map("user_id")
   name              String
   gender            Gender
   birthPlace        String?            @map("birth_place")
@@ -530,6 +534,7 @@ model Student {
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
   deletedAt         DateTime?          @map("deleted_at")
+  user              User?              @relation("StudentUser", fields: [userId], references: [id], onDelete: SetNull)
   classroom         Classroom?         @relation(fields: [classroomId], references: [id], onDelete: SetNull)
   guardians         StudentGuardian[]
   attendanceRecords AttendanceRecord[]
@@ -543,11 +548,13 @@ model Student {
   @@index([status])
   @@index([deletedAt])
   @@index([name])
+  @@index([userId])
   @@map("students")
 }
 
 model Guardian {
   id         String            @id @default(cuid())
+  userId     String?           @unique @map("user_id")
   name       String
   relation   GuardianRelation
   phone      String
@@ -556,9 +563,11 @@ model Guardian {
   address    String?
   createdAt  DateTime          @default(now()) @map("created_at")
   updatedAt  DateTime          @updatedAt @map("updated_at")
+  user       User?             @relation("GuardianUser", fields: [userId], references: [id], onDelete: SetNull)
   students   StudentGuardian[]
 
   @@index([name])
+  @@index([userId])
   @@map("guardians")
 }
 
@@ -579,6 +588,7 @@ model Teacher {
   id                    String               @id @default(cuid())
   nip                   String?              @unique
   nuptk                 String?              @unique
+  userId                String?              @unique @map("user_id")
   name                  String
   gender                Gender
   birthPlace            String?              @map("birth_place")
@@ -592,12 +602,14 @@ model Teacher {
   createdAt             DateTime             @default(now()) @map("created_at")
   updatedAt             DateTime             @updatedAt @map("updated_at")
   deletedAt             DateTime?            @map("deleted_at")
+  user                  User?                @relation("TeacherUser", fields: [userId], references: [id], onDelete: SetNull)
   teachingAssignments   TeachingAssignment[]
   supervisedInternships Internship[]         @relation("InternshipSupervisor")
 
   @@index([status])
   @@index([deletedAt])
   @@index([name])
+  @@index([userId])
   @@map("teachers")
 }
 

@@ -1492,6 +1492,118 @@ export function createApiClient(options: ApiClientOptions = {}) {
     },
     savePdfBlob(blob: Blob, filename: string) {
       triggerBrowserDownload(blob, filename);
+    },
+
+    // Phase 10.4 - Role-based Portals
+    async getTeacherPortalSummary() {
+      const response = await request<unknown>("/teacher-portal/summary");
+      return response.data;
+    },
+    async getTeacherPortalTeachingAssignments() {
+      const response = await request<unknown[]>("/teacher-portal/teaching-assignments");
+      return response.data;
+    },
+    async getTeacherPortalSchedules() {
+      const response = await request<unknown[]>("/teacher-portal/schedules");
+      return response.data;
+    },
+    async getTeacherPortalAttendanceSessions(options: { limit?: number } = {}) {
+      const params = new URLSearchParams();
+      if (options.limit) params.set("limit", String(options.limit));
+      const query = params.toString();
+      const response = await request<unknown[]>(`/teacher-portal/attendance-sessions${query ? `?${query}` : ""}`);
+      return response.data;
+    },
+    async getTeacherPortalAssessments() {
+      const response = await request<unknown[]>("/teacher-portal/assessments");
+      return response.data;
+    },
+    async getTeacherPortalNotifications(options: { limit?: number } = {}) {
+      const params = new URLSearchParams();
+      if (options.limit) params.set("limit", String(options.limit));
+      const query = params.toString();
+      const response = await request<unknown[]>(`/teacher-portal/notifications${query ? `?${query}` : ""}`);
+      return response.data;
+    },
+
+    async getStudentPortalSummary() {
+      const response = await request<unknown>("/student-portal/summary");
+      return response.data;
+    },
+    async getStudentPortalProfile() {
+      const response = await request<unknown>("/student-portal/profile");
+      return response.data;
+    },
+    async getStudentPortalSchedules() {
+      const response = await request<unknown[]>("/student-portal/schedules");
+      return response.data;
+    },
+    async getStudentPortalAttendance(options: { limit?: number } = {}) {
+      const params = new URLSearchParams();
+      if (options.limit) params.set("limit", String(options.limit));
+      const query = params.toString();
+      const response = await request<unknown>(`/student-portal/attendance${query ? `?${query}` : ""}`);
+      return response.data;
+    },
+    async getStudentPortalGrades() {
+      const response = await request<unknown[]>("/student-portal/grades");
+      return response.data;
+    },
+    async getStudentPortalInvoices() {
+      const response = await request<unknown[]>("/student-portal/invoices");
+      return response.data;
+    },
+    async getStudentPortalAnnouncements(options: { limit?: number } = {}) {
+      const params = new URLSearchParams();
+      if (options.limit) params.set("limit", String(options.limit));
+      const query = params.toString();
+      const response = await request<unknown[]>(`/student-portal/announcements${query ? `?${query}` : ""}`);
+      return response.data;
+    },
+    async getStudentPortalNotifications(options: { limit?: number } = {}) {
+      const params = new URLSearchParams();
+      if (options.limit) params.set("limit", String(options.limit));
+      const query = params.toString();
+      const response = await request<unknown[]>(`/student-portal/notifications${query ? `?${query}` : ""}`);
+      return response.data;
+    },
+
+    async getGuardianPortalSummary() {
+      const response = await request<unknown>("/guardian-portal/summary");
+      return response.data;
+    },
+    async getGuardianPortalChildren() {
+      const response = await request<unknown[]>("/guardian-portal/children");
+      return response.data;
+    },
+    async getGuardianPortalChildAttendance(studentId: string, options: { limit?: number } = {}) {
+      const params = new URLSearchParams();
+      if (options.limit) params.set("limit", String(options.limit));
+      const query = params.toString();
+      const response = await request<unknown>(`/guardian-portal/children/${studentId}/attendance${query ? `?${query}` : ""}`);
+      return response.data;
+    },
+    async getGuardianPortalChildGrades(studentId: string) {
+      const response = await request<unknown[]>(`/guardian-portal/children/${studentId}/grades`);
+      return response.data;
+    },
+    async getGuardianPortalChildInvoices(studentId: string) {
+      const response = await request<unknown[]>(`/guardian-portal/children/${studentId}/invoices`);
+      return response.data;
+    },
+    async getGuardianPortalAnnouncements(options: { limit?: number } = {}) {
+      const params = new URLSearchParams();
+      if (options.limit) params.set("limit", String(options.limit));
+      const query = params.toString();
+      const response = await request<unknown[]>(`/guardian-portal/announcements${query ? `?${query}` : ""}`);
+      return response.data;
+    },
+    async getGuardianPortalNotifications(options: { limit?: number } = {}) {
+      const params = new URLSearchParams();
+      if (options.limit) params.set("limit", String(options.limit));
+      const query = params.toString();
+      const response = await request<unknown[]>(`/guardian-portal/notifications${query ? `?${query}` : ""}`);
+      return response.data;
     }
   };
 }
