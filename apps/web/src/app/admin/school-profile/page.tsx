@@ -1,10 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { AlertCircle, Loader2, RefreshCcw, Save } from "lucide-react";
+import { Loader2, RefreshCcw, Save } from "lucide-react";
 
 import type { SchoolProfile } from "@nexsmsid/api-client";
-import { Button, Card, CardContent, CardHeader, CardTitle, Input, PageHeader } from "@nexsmsid/ui";
+import { Button, ErrorState, Input, LoadingState, PageHeader, SectionCard } from "@nexsmsid/ui";
 
 import { createBrowserApiClient } from "@/lib/api-client";
 
@@ -75,22 +75,11 @@ export default function SchoolProfilePage() {
         title="Profil Sekolah"
       />
 
-      {error ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-          <AlertCircle className="h-5 w-5" /> {error}
-        </div>
-      ) : null}
+      {error ? <ErrorState message={error} onRetry={loadProfile} title="Gagal memuat profil sekolah" /> : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Data Profil Sekolah</CardTitle>
-          <p className="text-sm leading-6 text-muted-foreground">Endpoint: GET/PATCH `/api/v1/school-profile`.</p>
-        </CardHeader>
-        <CardContent>
+      <SectionCard description="Informasi dasar sekolah yang dipakai sebagai identitas sistem." title="Data Profil Sekolah">
           {loading ? (
-            <div className="grid min-h-48 place-items-center text-sm font-bold text-slate-600">
-              <span className="inline-flex items-center gap-2"><Loader2 className="h-5 w-5 animate-spin text-primary" /> Memuat profil...</span>
-            </div>
+            <LoadingState label="Memuat profil sekolah..." />
           ) : (
             <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
               {fields.map((field) => (
@@ -120,8 +109,7 @@ export default function SchoolProfilePage() {
               </div>
             </form>
           )}
-        </CardContent>
-      </Card>
+      </SectionCard>
     </div>
   );
 }

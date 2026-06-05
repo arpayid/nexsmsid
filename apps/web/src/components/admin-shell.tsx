@@ -31,7 +31,8 @@ import {
   Users,
   WalletCards,
   UsersRound,
-  X
+  X,
+  type LucideIcon
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -43,49 +44,94 @@ import { Avatar, Badge, Button, Input, cn } from "@nexsmsid/ui";
 import { createBrowserApiClient } from "@/lib/api-client";
 import { clearAuthTokens, getAccessToken, getRefreshToken, getStoredUser, storeAuthTokens } from "@/lib/auth-storage";
 
-const navigation = [
-  { href: "/admin", icon: LayoutDashboard, label: "Dashboard", permission: "dashboard.view" },
-  { href: "/admin/school-profile", icon: School, label: "Profil Sekolah", permission: "school-profile.view" },
-  { href: "/admin/students", icon: Users, label: "Data Siswa", permission: "students.view" },
-  { href: "/admin/guardians", icon: HeartHandshake, label: "Wali/Orang Tua", permission: "guardians.view" },
-  { href: "/admin/teachers", icon: UserCog, label: "Guru", permission: "teachers.view" },
-  { href: "/admin/staffs", icon: BriefcaseBusiness, label: "Staff", permission: "staffs.view" },
-  { href: "/admin/master-data/academic-years", icon: CalendarDays, label: "Tahun Ajaran", permission: "master-data.view" },
-  { href: "/admin/master-data/semesters", icon: ClipboardList, label: "Semester", permission: "master-data.view" },
-  { href: "/admin/master-data/departments", icon: Building2, label: "Jurusan", permission: "master-data.view" },
-  { href: "/admin/master-data/competencies", icon: GraduationCap, label: "Program Keahlian", permission: "master-data.view" },
-  { href: "/admin/master-data/classrooms", icon: UsersRound, label: "Kelas", permission: "master-data.view" },
-  { href: "/admin/master-data/rooms", icon: DoorOpen, label: "Ruangan", permission: "master-data.view" },
-  { href: "/admin/master-data/subjects", icon: BookOpenCheck, label: "Mata Pelajaran", permission: "master-data.view" },
-  { href: "/admin/master-data/lesson-hours", icon: Clock, label: "Jam Pelajaran", permission: "master-data.view" },
-  { href: "/admin/master-data/payment-categories", icon: WalletCards, label: "Kategori Pembayaran", permission: "master-data.view" },
-  { href: "/admin/finance", icon: Landmark, label: "Keuangan", permission: "finance.view" },
-  { href: "/admin/finance/invoices", icon: FileText, label: "Tagihan", permission: "invoices.view" },
-  { href: "/admin/finance/payments", icon: WalletCards, label: "Pembayaran", permission: "payments.view" },
-  { href: "/admin/finance/expenses", icon: BriefcaseBusiness, label: "Pengeluaran", permission: "expenses.view" },
-  { href: "/admin/academic/teaching-assignments", icon: ClipboardList, label: "Mengajar", permission: "teaching-assignments.view" },
-  { href: "/admin/academic/schedules", icon: CalendarDays, label: "Jadwal", permission: "schedules.view" },
-  { href: "/admin/academic/attendance", icon: ClipboardCheck, label: "Presensi", permission: "attendance.view" },
-  { href: "/admin/academic/grades", icon: Award, label: "Nilai", permission: "grades.view" },
-  { href: "/admin/ppdb", icon: GraduationCap, label: "PPDB", permission: "ppdb.view" },
-  { href: "/admin/ppdb/periods", icon: CalendarDays, label: "Periode PPDB", permission: "ppdb.view" },
-  { href: "/admin/ppdb/registrations", icon: Users, label: "Pendaftaran", permission: "ppdb.view" },
-  { href: "/admin/industry-partners", icon: Building2, label: "Mitra Industri", permission: "industry-partners.view" },
-  { href: "/admin/internships", icon: BriefcaseBusiness, label: "Data PKL", permission: "internships.view" },
-  { href: "/admin/internships/logs", icon: ClipboardList, label: "Jurnal PKL", permission: "internship-logs.view" },
-  { href: "/admin/bkk", icon: BarChart3, label: "BKK", permission: "bkk.view" },
-  { href: "/admin/alumni", icon: GraduationCap, label: "Alumni", permission: "alumni.view" },
-  { href: "/admin/bkk/jobs", icon: Newspaper, label: "Lowongan Kerja", permission: "job-vacancies.view" },
-  { href: "/admin/bkk/applications", icon: FileText, label: "Lamaran", permission: "job-applications.view" },
-  { href: "/admin/bkk/tracer-studies", icon: ClipboardCheck, label: "Tracer Study", permission: "tracer-studies.view" },
-  { href: "/admin/communication/announcements", icon: Newspaper, label: "Pengumuman", permission: "announcements.view" },
-  { href: "/admin/communication/messages", icon: FileText, label: "Pesan Internal", permission: "messages.view" },
-  { href: "/admin/communication/notifications", icon: Bell, label: "Notifikasi", permission: "notifications.view" },
-  { href: "/admin/communication/templates", icon: ClipboardList, label: "Template Notif", permission: "notification-templates.view" },
-  { href: "/admin/reports", icon: BarChart3, label: "Report Center", permission: "reports.view" },
-  { href: "/admin/reports/jobs", icon: FileText, label: "Report Jobs", permission: "report-jobs.view" },
-  { href: "/admin/reports/exports", icon: ClipboardCheck, label: "Export History", permission: "export-history.view" }
+type NavigationItem = { href: string; icon: LucideIcon; label: string; permission?: string };
+type NavigationGroup = { label: string; items: NavigationItem[] };
+
+const navigationGroups: NavigationGroup[] = [
+  {
+    label: "Utama",
+    items: [
+      { href: "/admin", icon: LayoutDashboard, label: "Dashboard", permission: "dashboard.view" },
+      { href: "/admin/school-profile", icon: School, label: "Profil Sekolah", permission: "school-profile.view" }
+    ]
+  },
+  {
+    label: "People",
+    items: [
+      { href: "/admin/students", icon: Users, label: "Data Siswa", permission: "students.view" },
+      { href: "/admin/guardians", icon: HeartHandshake, label: "Wali/Orang Tua", permission: "guardians.view" },
+      { href: "/admin/teachers", icon: UserCog, label: "Guru", permission: "teachers.view" },
+      { href: "/admin/staffs", icon: BriefcaseBusiness, label: "Staff", permission: "staffs.view" }
+    ]
+  },
+  {
+    label: "Master Data",
+    items: [
+      { href: "/admin/master-data/academic-years", icon: CalendarDays, label: "Tahun Ajaran", permission: "master-data.view" },
+      { href: "/admin/master-data/semesters", icon: ClipboardList, label: "Semester", permission: "master-data.view" },
+      { href: "/admin/master-data/departments", icon: Building2, label: "Jurusan", permission: "master-data.view" },
+      { href: "/admin/master-data/competencies", icon: GraduationCap, label: "Program Keahlian", permission: "master-data.view" },
+      { href: "/admin/master-data/classrooms", icon: UsersRound, label: "Kelas", permission: "master-data.view" },
+      { href: "/admin/master-data/rooms", icon: DoorOpen, label: "Ruangan", permission: "master-data.view" },
+      { href: "/admin/master-data/subjects", icon: BookOpenCheck, label: "Mata Pelajaran", permission: "master-data.view" },
+      { href: "/admin/master-data/lesson-hours", icon: Clock, label: "Jam Pelajaran", permission: "master-data.view" },
+      { href: "/admin/master-data/payment-categories", icon: WalletCards, label: "Kategori Pembayaran", permission: "master-data.view" }
+    ]
+  },
+  {
+    label: "Akademik",
+    items: [
+      { href: "/admin/academic/teaching-assignments", icon: ClipboardList, label: "Mengajar", permission: "teaching-assignments.view" },
+      { href: "/admin/academic/schedules", icon: CalendarDays, label: "Jadwal", permission: "schedules.view" },
+      { href: "/admin/academic/attendance", icon: ClipboardCheck, label: "Presensi", permission: "attendance.view" },
+      { href: "/admin/academic/grades", icon: Award, label: "Nilai", permission: "grades.view" }
+    ]
+  },
+  {
+    label: "Keuangan & PPDB",
+    items: [
+      { href: "/admin/finance", icon: Landmark, label: "Keuangan", permission: "finance.view" },
+      { href: "/admin/finance/invoices", icon: FileText, label: "Tagihan", permission: "invoices.view" },
+      { href: "/admin/finance/payments", icon: WalletCards, label: "Pembayaran", permission: "payments.view" },
+      { href: "/admin/finance/expenses", icon: BriefcaseBusiness, label: "Pengeluaran", permission: "expenses.view" },
+      { href: "/admin/ppdb", icon: GraduationCap, label: "PPDB", permission: "ppdb.view" },
+      { href: "/admin/ppdb/periods", icon: CalendarDays, label: "Periode PPDB", permission: "ppdb.view" },
+      { href: "/admin/ppdb/registrations", icon: Users, label: "Pendaftaran", permission: "ppdb.view" }
+    ]
+  },
+  {
+    label: "PKL & BKK",
+    items: [
+      { href: "/admin/industry-partners", icon: Building2, label: "Mitra Industri", permission: "industry-partners.view" },
+      { href: "/admin/internships", icon: BriefcaseBusiness, label: "Data PKL", permission: "internships.view" },
+      { href: "/admin/internships/logs", icon: ClipboardList, label: "Jurnal PKL", permission: "internship-logs.view" },
+      { href: "/admin/bkk", icon: BarChart3, label: "BKK", permission: "bkk.view" },
+      { href: "/admin/alumni", icon: GraduationCap, label: "Alumni", permission: "alumni.view" },
+      { href: "/admin/bkk/jobs", icon: Newspaper, label: "Lowongan Kerja", permission: "job-vacancies.view" },
+      { href: "/admin/bkk/applications", icon: FileText, label: "Lamaran", permission: "job-applications.view" },
+      { href: "/admin/bkk/tracer-studies", icon: ClipboardCheck, label: "Tracer Study", permission: "tracer-studies.view" }
+    ]
+  },
+  {
+    label: "Komunikasi",
+    items: [
+      { href: "/admin/communication/announcements", icon: Newspaper, label: "Pengumuman", permission: "announcements.view" },
+      { href: "/admin/communication/messages", icon: FileText, label: "Pesan Internal", permission: "messages.view" },
+      { href: "/admin/communication/notifications", icon: Bell, label: "Notifikasi", permission: "notifications.view" },
+      { href: "/admin/communication/templates", icon: ClipboardList, label: "Template Notif", permission: "notification-templates.view" }
+    ]
+  },
+  {
+    label: "Laporan",
+    items: [
+      { href: "/admin/reports", icon: BarChart3, label: "Report Center", permission: "reports.view" },
+      { href: "/admin/reports/jobs", icon: FileText, label: "Report Jobs", permission: "report-jobs.view" },
+      { href: "/admin/reports/exports", icon: ClipboardCheck, label: "Export History", permission: "export-history.view" }
+    ]
+  }
 ];
+
+const navigation = navigationGroups.flatMap((group) => group.items);
 
 export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
   const pathname = usePathname();
@@ -98,7 +144,12 @@ export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
   const sidebarWidth = collapsed ? "lg:w-24" : "lg:w-72";
   const labelVisibility = collapsed ? "lg:hidden" : "lg:block";
   const currentPage = getCurrentPageLabel(pathname);
-  const visibleNavigation = navigation.filter((item) => !item.permission || authUser?.permissions.includes(item.permission));
+  const visibleNavigationGroups = navigationGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.permission || authUser?.permissions.includes(item.permission))
+    }))
+    .filter((group) => group.items.length > 0);
 
   useEffect(() => {
     let active = true;
@@ -226,27 +277,32 @@ export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
             </div>
           </div>
 
-          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
-            {visibleNavigation.map((item) => {
-              const active = item.href === pathname;
-              const Icon = item.icon;
+          <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-5">
+            {visibleNavigationGroups.map((group) => (
+              <div className="space-y-1" key={group.label}>
+                <p className={cn("px-3 text-[0.68rem] font-black uppercase tracking-[0.18em] text-slate-400", labelVisibility)}>{group.label}</p>
+                {group.items.map((item) => {
+                  const active = item.href === pathname;
+                  const Icon = item.icon;
 
-              return (
-                <Link
-                  className={cn(
-                    "flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-slate-600 transition hover:bg-indigo-50 hover:text-primary",
-                    active && "bg-primary text-primary-foreground shadow-soft hover:bg-primary hover:text-primary-foreground",
-                    collapsed && "lg:justify-center"
-                  )}
-                  href={item.href}
-                  key={item.label}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <Icon className="h-5 w-5 shrink-0" />
-                  <span className={cn("truncate", labelVisibility)}>{item.label}</span>
-                </Link>
-              );
-            })}
+                  return (
+                    <Link
+                      className={cn(
+                        "flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-slate-600 transition hover:bg-indigo-50 hover:text-primary",
+                        active && "bg-primary text-primary-foreground shadow-soft hover:bg-primary hover:text-primary-foreground",
+                        collapsed && "lg:justify-center"
+                      )}
+                      href={item.href}
+                      key={item.label}
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      <Icon className="h-5 w-5 shrink-0" />
+                      <span className={cn("truncate", labelVisibility)}>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
 
           <div className="border-t p-4">
@@ -256,8 +312,8 @@ export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
                   <Settings className="h-5 w-5" />
                 </span>
                 <div className={cn("min-w-0", labelVisibility)}>
-                  <p className="truncate text-sm font-black text-slate-950">Phase 1 UI</p>
-                  <p className="truncate text-xs font-semibold text-muted-foreground">Permission ready</p>
+                  <p className="truncate text-sm font-black text-slate-950">Phase 10.1 UI</p>
+                  <p className="truncate text-xs font-semibold text-muted-foreground">Consistent admin shell</p>
                 </div>
               </div>
             </div>

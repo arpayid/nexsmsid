@@ -1,10 +1,11 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Download, Edit3, Loader2, Plus, RefreshCcw, Search, Trash2, Upload, X } from "lucide-react";
+import { Download, Edit3, Loader2, Plus, RefreshCcw, Trash2, Upload } from "lucide-react";
 
 import type { MasterDataRecord } from "@nexsmsid/api-client";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, Input, PageHeader } from "@nexsmsid/ui";
+import { Button, ConfirmDialog, DataTable, ErrorState, FormModal, Input, PageHeader, SearchFilterBar, SectionCard, StatusBadge } from "@nexsmsid/ui";
+import type { DataTableColumn, StatusBadgeMap } from "@nexsmsid/ui";
 
 import { createBrowserApiClient } from "@/lib/api-client";
 
@@ -40,16 +41,16 @@ export type PeoplePageProps = {
   title: string;
 };
 
-const statusVariant: Record<string, "default" | "info" | "outline" | "secondary" | "success" | "warning"> = {
-  ACTIVE: "success",
-  INACTIVE: "outline",
-  GRADUATED: "secondary",
-  TRANSFERRED: "warning",
-  RESIGNED: "warning",
-  PERMANENT: "success",
-  CONTRACT: "warning",
-  HONORARY: "secondary",
-  PROBATION: "outline"
+const statusMap: StatusBadgeMap = {
+  ACTIVE: { label: "ACTIVE", variant: "success" },
+  INACTIVE: { label: "INACTIVE", variant: "outline" },
+  GRADUATED: { label: "GRADUATED", variant: "secondary" },
+  TRANSFERRED: { label: "TRANSFERRED", variant: "warning" },
+  RESIGNED: { label: "RESIGNED", variant: "warning" },
+  PERMANENT: { label: "PERMANENT", variant: "success" },
+  CONTRACT: { label: "CONTRACT", variant: "warning" },
+  HONORARY: { label: "HONORARY", variant: "secondary" },
+  PROBATION: { label: "PROBATION", variant: "outline" }
 };
 
 export function PeoplePage({ description, eyebrow, fields, resource, statusOptions, title }: PeoplePageProps) {
@@ -58,6 +59,7 @@ export function PeoplePage({ description, eyebrow, fields, resource, statusOptio
   const [formOpen, setFormOpen] = useState(false);
   const [items, setItems] = useState<MasterDataRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingDelete, setPendingDelete] = useState<MasterDataRecord | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -108,17 +110,17 @@ export function PeoplePage({ description, eyebrow, fields, resource, statusOptio
     setFormOpen(true);
   }
 
-  async function handleDelete(item: MasterDataRecord) {
-    const confirmed = window.confirm(
-      `Hapus data ${String(item.name ?? item.nis ?? item.nip ?? item.id)}?`
-    );
+  function handleDelete(item: MasterDataRecord) {
+    setPendingDelete(item);
+  }
 
-    if (!confirmed) return;
-
+  async function confirmDelete() {
+    if (!pendingDelete) return;
     setError(null);
 
     try {
-      await resource.delete(item.id);
+      await resource.delete(pendingDelete.id);
+      setPendingDelete(null);
       await loadData();
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Gagal menghapus data");
@@ -150,6 +152,12 @@ export function PeoplePage({ description, eyebrow, fields, resource, statusOptio
     }
   }
 
+  const columns: DataTableColumn<MasterDataRecord>[] = tableFields.map((field) => ({
+    cell: (item) => formatCell(item[field.name], field),
+    header: field.label,
+    key: field.name
+  }));
+
   return (
     <div className="space-y-8">
       <PageHeader
@@ -175,147 +183,53 @@ export function PeoplePage({ description, eyebrow, fields, resource, statusOptio
         title={title}
       />
 
-      {error ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-          <AlertCircle className="h-5 w-5" /> {error}
-        </div>
-      ) : null}
+      {error ? <ErrorState message={error} title="Gagal memproses data" /> : null}
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle>Data {title}</CardTitle>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Search, filter, create, update, dan soft delete data People Management.
-              </p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Total: {total} data
-              </p>
-            </div>
-            <form
-              className="flex w-full flex-col gap-3 lg:flex-row lg:items-center lg:justify-end"
-              onSubmit={handleSearch}
-            >
-              <select
-                className="rounded-2xl border border-input bg-white px-4 py-2 text-sm font-semibold shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                onChange={(event) => setStatusFilter(event.target.value)}
-                value={statusFilter}
-              >
-                <option value="">Semua status</option>
-                {statusOptions.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-              <div className="relative w-full lg:max-w-sm">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  className="pl-11"
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Cari data..."
-                  value={search}
-                />
-              </div>
-              <Button type="submit" variant="soft">
-                Cari
-              </Button>
-            </form>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="grid min-h-48 place-items-center rounded-3xl border border-dashed bg-slate-50 text-sm font-bold text-slate-600">
-              <span className="inline-flex items-center gap-2">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" /> Memuat data...
-              </span>
-            </div>
-          ) : items.length ? (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[820px] text-left text-sm">
-                <thead>
-                  <tr className="border-b text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                    {tableFields.map((field) => (
-                      <th className="px-4 py-3 font-black" key={field.name}>
-                        {field.label}
-                      </th>
-                    ))}
-                    <th className="px-4 py-3 text-right font-black">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item) => (
-                    <tr className="border-b last:border-0" key={item.id}>
-                      {tableFields.map((field) => (
-                        <td className="px-4 py-4 font-semibold text-slate-700" key={field.name}>
-                          {formatCell(item[field.name], field)}
-                        </td>
-                      ))}
-                      <td className="px-4 py-4">
-                        <div className="flex justify-end gap-2">
-                          <Button onClick={() => openEdit(item)} size="sm" variant="outline">
-                            <Edit3 className="h-4 w-4" /> Edit
-                          </Button>
-                          <Button onClick={() => handleDelete(item)} size="sm" variant="ghost">
-                            <Trash2 className="h-4 w-4" /> Hapus
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <EmptyState
-              action={
-                <Button onClick={openCreate} variant="soft">
-                  Tambah data pertama
-                </Button>
-              }
-              description="Belum ada data atau hasil pencarian kosong."
-              title={`Data ${title} kosong`}
-            />
+      <SectionCard
+        action={(
+          <SearchFilterBar
+            filters={[{ label: "Status", onChange: setStatusFilter, options: statusOptions.map((status) => ({ label: status, value: status })), placeholder: "Semua status", value: statusFilter }]}
+            onSearchChange={setSearch}
+            onSubmit={handleSearch}
+            searchValue={search}
+          />
+        )}
+        description={<>Search, filter, create, update, dan soft delete data. Total: <strong>{total}</strong> data.</>}
+        title={`Data ${title}`}
+      >
+        <DataTable
+          actions={(item) => (
+            <>
+              <Button onClick={() => openEdit(item)} size="sm" variant="outline"><Edit3 className="h-4 w-4" /> Edit</Button>
+              <Button onClick={() => handleDelete(item)} size="sm" variant="ghost"><Trash2 className="h-4 w-4" /> Hapus</Button>
+            </>
           )}
-        </CardContent>
-      </Card>
+          columns={columns}
+          data={items}
+          emptyState={{ action: <Button onClick={openCreate} variant="soft">Tambah data pertama</Button>, description: "Belum ada data atau hasil pencarian kosong.", title: `Data ${title} kosong` }}
+          getRowId={(item) => item.id}
+          loading={loading}
+          minWidth="min-w-[820px]"
+        />
+      </SectionCard>
 
-      {formOpen ? (
-        <Card className="border-primary/20">
-          <CardHeader>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <CardTitle>
-                  {editing ? "Edit" : "Tambah"} {title}
-                </CardTitle>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Form People Management untuk Phase 6.
-                </p>
-              </div>
-              <Button onClick={() => setFormOpen(false)} size="icon" variant="ghost">
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
-              {fields.map((field) => (
-                <FieldInput field={field} item={editing} key={field.name} />
-              ))}
-              <div className="flex gap-3 md:col-span-2">
-                <Button disabled={submitting} type="submit">
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Simpan
-                </Button>
-                <Button onClick={() => setFormOpen(false)} type="button" variant="outline">
-                  Batal
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
+      <FormModal description="Form People Management." onClose={() => setFormOpen(false)} open={formOpen} title={`${editing ? "Edit" : "Tambah"} ${title}`}>
+        <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
+          {fields.map((field) => <FieldInput field={field} item={editing} key={field.name} />)}
+          <div className="flex flex-col-reverse gap-3 md:col-span-2 sm:flex-row sm:justify-end">
+            <Button onClick={() => setFormOpen(false)} type="button" variant="outline">Batal</Button>
+            <Button disabled={submitting} type="submit">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan</Button>
+          </div>
+        </form>
+      </FormModal>
+
+      <ConfirmDialog
+        description={`Hapus data ${String(pendingDelete?.name ?? pendingDelete?.nis ?? pendingDelete?.nip ?? pendingDelete?.id ?? "ini")}?`}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => void confirmDelete()}
+        open={Boolean(pendingDelete)}
+        title="Konfirmasi hapus data"
+      />
     </div>
   );
 }
@@ -412,8 +326,7 @@ function formatCell(value: unknown, field: PeopleField) {
   const stringValue = String(value);
 
   if (field.name === "status" || field.name === "employmentStatus") {
-    const variant = statusVariant[stringValue] ?? "secondary";
-    return <Badge variant={variant}>{stringValue}</Badge>;
+    return <StatusBadge map={statusMap} value={stringValue} />;
   }
 
   if (field.name === "gender") {

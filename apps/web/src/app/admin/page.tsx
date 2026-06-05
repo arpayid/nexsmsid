@@ -81,15 +81,15 @@ const securityOverview = [
 ];
 
 const modules = [
-  { title: "Siswa", description: "Shortcut UI statis, modul belum dibuat.", icon: UsersRound, tone: "violet" as const },
-  { title: "Guru & Staf", description: "Shortcut UI statis, modul belum dibuat.", icon: GraduationCap, tone: "blue" as const },
-  { title: "Akademik", description: "Shortcut UI statis, modul belum dibuat.", icon: BookOpenCheck, tone: "cyan" as const },
-  { title: "Keuangan", description: "Shortcut UI statis, modul belum dibuat.", icon: Landmark, tone: "emerald" as const },
-  { title: "PPDB", description: "Shortcut UI statis, modul belum dibuat.", icon: Building2, tone: "amber" as const },
-  { title: "Magang", description: "Shortcut UI statis, modul belum dibuat.", icon: BriefcaseBusiness, tone: "violet" as const },
-  { title: "BKK", description: "Shortcut UI statis, modul belum dibuat.", icon: BarChart3, tone: "blue" as const },
-  { title: "Website CMS", description: "Shortcut UI statis, modul belum dibuat.", icon: Newspaper, tone: "cyan" as const },
-  { title: "Laporan", description: "Shortcut UI statis, modul belum dibuat.", icon: FileText, tone: "slate" as const }
+  { title: "Siswa", description: "Data peserta didik aktif, status, dan relasi kelas.", href: "/admin/students", icon: UsersRound, tone: "violet" as const },
+  { title: "Guru & Staf", description: "Akses cepat ke data guru dan staff sekolah.", href: "/admin/teachers", icon: GraduationCap, tone: "blue" as const },
+  { title: "Akademik", description: "Mengajar, jadwal, presensi, dan nilai.", href: "/admin/academic/teaching-assignments", icon: BookOpenCheck, tone: "cyan" as const },
+  { title: "Keuangan", description: "Dashboard finance, invoice, pembayaran, dan pengeluaran.", href: "/admin/finance", icon: Landmark, tone: "emerald" as const },
+  { title: "PPDB", description: "Periode, pendaftaran, verifikasi, dan konversi siswa.", href: "/admin/ppdb", icon: Building2, tone: "amber" as const },
+  { title: "PKL", description: "Mitra industri, data PKL, dan jurnal pembimbing.", href: "/admin/internships", icon: BriefcaseBusiness, tone: "violet" as const },
+  { title: "BKK", description: "Alumni, lowongan, lamaran, dan tracer study.", href: "/admin/bkk", icon: BarChart3, tone: "blue" as const },
+  { title: "Komunikasi", description: "Pengumuman, pesan internal, dan notifikasi.", href: "/admin/communication/announcements", icon: Newspaper, tone: "cyan" as const },
+  { title: "Laporan", description: "Report center, queue job, dan riwayat export.", href: "/admin/reports", icon: FileText, tone: "slate" as const }
 ];
 
 export default function AdminDashboardPage() {
@@ -144,9 +144,9 @@ export default function AdminDashboardPage() {
           </>
         }
         breadcrumb={["Admin", "Dashboard"]}
-        description="Ringkasan real dari API auth/RBAC/audit. Modul domain sekolah belum dibuat pada Phase 4."
-        eyebrow="Dashboard API Integration"
-        title="Foundation dashboard"
+        description="Ringkasan operasional NexSMSID dari API utama, RBAC, audit, dan status sistem."
+        eyebrow="Admin Overview"
+        title="Dashboard Admin"
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -239,21 +239,21 @@ export default function AdminDashboardPage() {
       <section>
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <Badge variant="outline">Shortcut UI Statis</Badge>
-            <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Rencana akses cepat modul</h2>
+            <Badge variant="outline">Akses Cepat</Badge>
+            <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Akses cepat modul</h2>
           </div>
           <p className="max-w-xl text-sm leading-6 text-muted-foreground">
-            Kartu ini masih UI shell dari Phase 1. Modul siswa, guru, finance, PPDB, absensi, dan nilai belum dibuat.
+            Pintasan untuk modul utama agar operator bisa berpindah konteks tanpa mencari menu sidebar.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {modules.map((module) => (
             <ModuleCard
               description={module.description}
-              href="#"
+              href={module.href}
               icon={<module.icon className="h-5 w-5" />}
               key={module.title}
-              meta="Static"
+              meta="Ready"
               title={module.title}
               tone={module.tone}
             />
