@@ -6,7 +6,7 @@ RUN npm install -g pnpm
 
 WORKDIR /app
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY packages/ ./packages/
 COPY apps/web/package.json ./apps/web/
 
@@ -16,9 +16,15 @@ RUN pnpm install --frozen-lockfile
 # Copy source
 COPY apps/web/ ./apps/web/
 
+# Build dependencies
+RUN pnpm --filter @nexsmsid/types build
+RUN pnpm --filter @nexsmsid/api-client build
+
 # Build Web
 # Use standalone output for smaller image size
 # Need to set NEXT_PRIVATE_STANDALONE=true or output: 'standalone' in next.config.ts
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter @nexsmsid/web build
 

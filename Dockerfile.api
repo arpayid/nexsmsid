@@ -1,43 +1,50 @@
-# Stage 1: Build
+# Stage 1: Build dependencies and app
 FROM node:20-alpine AS builder
 
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk add --no-cache libc6-compat
-RUN npm install -g pnpm
+RUN npm install -g pnpm@10.18.3
 
 WORKDIR /app
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY packages/ ./packages/
 COPY apps/api/package.json ./apps/api/
 
-# Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Copy source
 COPY apps/api/ ./apps/api/
 
-# Build API
+RUN pnpm --filter @nexsmsid/types build
+RUN pnpm --filter @nexsmsid/api-client build
 RUN pnpm --filter @nexsmsid/api build
 
-# Stage 2: Production
+# Stage 2: Runner
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 
 RUN apk add --no-cache libc6-compat openssl
-RUN npm install -g pnpm
+RUN npm install -g pnpm@10.18.3
 
 ENV NODE_ENV=production
 
-COPY --from=builder /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/package.json ./
-COPY --from=builder /app/packages/ ./packages/
-COPY --from=builder /app/apps/api/package.json ./apps/api/
-COPY --from=builder /app/apps/api/dist/ ./apps/api/dist/
-COPY --from=builder /app/apps/api/prisma/ ./apps/api/prisma/
+# Copy workspace configuration
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+# Copy shared packages (might be needed for prod)
+COPY packages/ ./packages/
+# Copy API package.json
+COPY apps/api/package.json ./apps/api/
 
-# Install only production dependencies
+# Install ONLY production dependencies
 RUN pnpm install --prod --frozen-lockfile
+
+# Copy built files
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+# Copy prisma schema
+COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
+
+# Generate Prisma Client in the runner to ensure correct paths
+RUN pnpm --filter @nexsmsid/api prisma generate
 
 EXPOSE 4000
 
