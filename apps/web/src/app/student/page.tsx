@@ -1,179 +1,170 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Bell, ClipboardCheck, GraduationCap, Loader2, School, Wallet } from "lucide-react";
+import Link from "next/link";
+import { Bell, CalendarDays, ClipboardCheck, GraduationCap, Megaphone, RefreshCcw, School, Wallet } from "lucide-react";
 
-import { Badge, Card, CardContent, CardHeader, CardTitle, EmptyState, ErrorState, PageHeader, SectionCard, StatCard } from "@nexsmsid/ui";
+import { Badge, Button, EmptyState, ErrorState, LoadingState, PageHeader, SectionCard, StatCard } from "@nexsmsid/ui";
 
 import { createBrowserApiClient } from "@/lib/api-client";
 
-type Summary = {
-  student: { id: string; nis: string; nisn: string | null; name: string; classroom: { id: string; name: string; code: string } | null; competency: string | null };
+type Dashboard = {
+  student: {
+    classroom: { code: string; id: string; name: string } | null;
+    competency: string | null;
+    id: string;
+    name: string;
+    nis: string;
+    nisn: string | null;
+    photoUrl?: string | null;
+  };
   counts: {
-    attendanceThisMonth: Record<string, number>;
-    totalSessionsThisMonth: number;
-    approvedGradeCount: number;
+    attendanceBreakdown: Record<string, number>;
+    attendancePercent: number;
     averageScore: number;
-    outstandingInvoices: number;
-    outstandingAmount: number;
+    pendingGradeCount: number;
+    totalSessionsThisMonth: number;
+    unpaidAmount: number;
+    unpaidInvoices: number;
     unreadNotifications: number;
   };
+  todaySchedules: ScheduleItem[];
+  recentAnnouncements: Announcement[];
 };
 
-type Notification = { id: string; title: string; body: string; status: string; createdAt: string };
-type Announcement = { id: string; title: string; body: string; publishedAt: string | null; createdBy?: { name: string } | null };
+type ScheduleItem = {
+  id: string;
+  lessonHour?: { endTime: string; name: string; startTime: string } | null;
+  room?: { name: string } | null;
+  teachingAssignment?: { subject?: { name: string } | null; teacher?: { name: string } | null } | null;
+};
+
+type Announcement = { content: string; id: string; publishedAt: string | null; title: string };
+type Notification = { body: string; createdAt: string; id: string; status: string; title: string };
 
 const formatRupiah = (value: number) =>
-  new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
+  new Intl.NumberFormat("id-ID", { currency: "IDR", maximumFractionDigits: 0, style: "currency" }).format(value ?? 0);
 
 export default function StudentDashboardPage() {
   const api = useMemo(() => createBrowserApiClient(), []);
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let active = true;
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const [s, a, n] = await Promise.all([
-          api.getStudentPortalSummary() as Promise<Summary>,
-          api.getStudentPortalAnnouncements({ limit: 3 }) as Promise<Announcement[]>,
-          api.getStudentPortalNotifications({ limit: 5 }) as Promise<Notification[]>
-        ]);
-        if (!active) return;
-        setSummary(s);
-        setAnnouncements(a);
-        setNotifications(n);
-      } catch (err) {
-        if (active) setError(err instanceof Error ? err.message : "Gagal memuat data portal");
-      } finally {
-        if (active) setLoading(false);
-      }
+  async function loadData() {
+    setLoading(true);
+    setError(null);
+    try {
+      const [d, n] = await Promise.all([
+        api.getStudentPortalDashboard() as Promise<Dashboard>,
+        api.getStudentPortalNotifications({ limit: 5 }) as Promise<Notification[]>
+      ]);
+      setDashboard(d);
+      setNotifications(n);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Gagal memuat dashboard siswa");
+    } finally {
+      setLoading(false);
     }
-    void load();
-    return () => {
-      active = false;
-    };
-  }, [api]);
+  }
 
-  if (loading)
-    return (
-      <div className="grid min-h-[60vh] place-items-center">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
-  if (error) return <ErrorState message={error} title="Gagal memuat dashboard" />;
-  if (!summary) return <EmptyState description="Belum ada data." title="Data masih kosong" />;
+  useEffect(() => {
+    void loadData();
+  }, []);
 
-  const att = summary.counts.attendanceThisMonth;
-  const hadir = (att.PRESENT ?? 0) + (att.LATE ?? 0);
+  if (loading) return <LoadingState label="Memuat dashboard siswa..." minHeight="min-h-[60vh]" />;
+  if (error || !dashboard) return <ErrorState message={error ?? "Data dashboard tidak tersedia"} onRetry={loadData} title="Gagal memuat dashboard" />;
+
+  const hadir = (dashboard.counts.attendanceBreakdown.PRESENT ?? 0) + (dashboard.counts.attendanceBreakdown.LATE ?? 0);
 
   return (
     <div className="space-y-6">
       <PageHeader
-        breadcrumb={["Portal Siswa"]}
-        description={`Halo ${summary.student.name} (${summary.student.nis}). Tetap semangat belajar!`}
+        actions={<Button onClick={loadData} variant="outline"><RefreshCcw className="h-4 w-4" /> Refresh</Button>}
+        breadcrumb={["Portal Siswa", "Dashboard"]}
+        description={`Halo ${dashboard.student.name}. Pantau jadwal, kehadiran, nilai, dan tagihan Anda di sini.`}
         eyebrow="Portal Siswa"
-        title="Beranda Siswa"
+        title="Dashboard Siswa"
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <School className="h-4 w-4 text-primary" /> Identitas
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
-            <div>
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Nama</p>
-              <p className="font-semibold">{summary.student.name}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">NIS / NISN</p>
-              <p className="font-semibold">{summary.student.nis} / {summary.student.nisn ?? "-"}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Kelas</p>
-              <p className="font-semibold">{summary.student.classroom?.name ?? "-"}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Kompetensi</p>
-              <p className="font-semibold">{summary.student.competency ?? "-"}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <SectionCard title="Profil Singkat">
+        <div className="grid gap-3 text-sm sm:grid-cols-4">
+          <Info label="Nama" value={dashboard.student.name} />
+          <Info label="NIS / NISN" value={`${dashboard.student.nis} / ${dashboard.student.nisn ?? "-"}`} />
+          <Info label="Kelas" value={dashboard.student.classroom?.name ?? "-"} />
+          <Info label="Kompetensi" value={dashboard.student.competency ?? "-"} />
+        </div>
+      </SectionCard>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          icon={<ClipboardCheck className="h-5 w-5" />}
-          title="Hadir Bulan Ini"
-          tone="emerald"
-          value={`${hadir}/${summary.counts.totalSessionsThisMonth}`}
-        />
-        <StatCard
-          icon={<GraduationCap className="h-5 w-5" />}
-          title="Rata-rata Nilai"
-          tone="violet"
-          value={String(summary.counts.averageScore || 0)}
-        />
-        <StatCard
-          icon={<Wallet className="h-5 w-5" />}
-          title="Tagihan Aktif"
-          tone="amber"
-          value={String(summary.counts.outstandingInvoices)}
-        />
-        <StatCard
-          icon={<Bell className="h-5 w-5" />}
-          title="Notifikasi Belum Dibaca"
-          tone="blue"
-          value={String(summary.counts.unreadNotifications)}
-        />
+        <StatCard icon={<ClipboardCheck className="h-5 w-5" />} title="Kehadiran" tone="emerald" value={`${dashboard.counts.attendancePercent}%`} description={`${hadir}/${dashboard.counts.totalSessionsThisMonth} sesi bulan ini`} />
+        <StatCard icon={<GraduationCap className="h-5 w-5" />} title="Rata-rata Nilai" tone="violet" value={String(dashboard.counts.averageScore || 0)} description={`${dashboard.counts.pendingGradeCount} nilai pending`} />
+        <StatCard icon={<Wallet className="h-5 w-5" />} title="Tagihan Belum Lunas" tone="amber" value={formatRupiah(dashboard.counts.unpaidAmount)} description={`${dashboard.counts.unpaidInvoices} invoice`} />
+        <StatCard icon={<Bell className="h-5 w-5" />} title="Notifikasi Unread" tone="blue" value={String(dashboard.counts.unreadNotifications)} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <SectionCard description="Pengumuman terbaru sekolah" title="Pengumuman">
-          {announcements.length === 0 ? (
-            <EmptyState description="Belum ada pengumuman." title="Tidak ada pengumuman" />
+      <SectionCard description="Akses cepat data akademik dan tagihan." title="Quick Action">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Button asChild variant="soft"><Link href="/student/schedules"><CalendarDays className="h-4 w-4" /> Lihat Jadwal</Link></Button>
+          <Button asChild variant="soft"><Link href="/student/grades"><GraduationCap className="h-4 w-4" /> Lihat Nilai</Link></Button>
+          <Button asChild variant="outline"><Link href="/student/invoices"><Wallet className="h-4 w-4" /> Lihat Tagihan</Link></Button>
+        </div>
+      </SectionCard>
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
+        <SectionCard description="Jadwal pelajaran hari ini." title="Jadwal Hari Ini">
+          {dashboard.todaySchedules.length === 0 ? (
+            <EmptyState description="Tidak ada jadwal pelajaran hari ini." title="Tidak ada jadwal" />
           ) : (
             <ul className="space-y-3">
-              {announcements.map((a) => (
-                <li className="rounded-2xl border border-slate-100 p-3" key={a.id}>
-                  <p className="text-sm font-semibold text-slate-900">{a.title}</p>
-                  <p className="text-xs text-muted-foreground line-clamp-2">{a.body}</p>
-                  <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-                    {a.publishedAt ? new Date(a.publishedAt).toLocaleDateString("id-ID") : "Draft"} • {a.createdBy?.name ?? "-"}
-                  </p>
+              {dashboard.todaySchedules.map((item) => (
+                <li className="rounded-2xl border border-slate-100 p-4" key={item.id}>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="flex items-center gap-2 text-sm font-bold text-slate-900"><School className="h-4 w-4 text-primary" /> {item.teachingAssignment?.subject?.name ?? "Mata pelajaran"}</p>
+                      <p className="text-xs text-muted-foreground">{item.teachingAssignment?.teacher?.name ?? "Guru"} - {item.room?.name ?? "Ruang"}</p>
+                    </div>
+                    <Badge variant="info">{item.lessonHour?.startTime ?? "--:--"} - {item.lessonHour?.endTime ?? "--:--"}</Badge>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
         </SectionCard>
 
-        <SectionCard description="Notifikasi terbaru untuk Anda" title="Notifikasi">
-          {notifications.length === 0 ? (
-            <EmptyState description="Belum ada notifikasi." title="Tidak ada notifikasi" />
-          ) : (
-            <ul className="space-y-3">
-              {notifications.map((n) => (
-                <li className="rounded-2xl border border-slate-100 p-3" key={n.id}>
-                  <p className="text-sm font-semibold text-slate-900">{n.title}</p>
-                  <p className="text-xs text-muted-foreground line-clamp-2">{n.body}</p>
-                  <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-                    {new Date(n.createdAt).toLocaleString("id-ID")}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
+        <SectionCard description="Pengumuman dan notifikasi terbaru." title="Info Terbaru">
+          <div className="space-y-3">
+            <InfoList icon="announcement" items={dashboard.recentAnnouncements.map((a) => ({ id: a.id, title: a.title, body: a.content, date: a.publishedAt }))} />
+            <InfoList icon="notification" items={notifications.map((n) => ({ id: n.id, title: n.title, body: n.body, date: n.createdAt }))} />
+          </div>
         </SectionCard>
       </div>
     </div>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="font-semibold text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+function InfoList({ icon, items }: { icon: "announcement" | "notification"; items: Array<{ body: string; date: string | null; id: string; title: string }> }) {
+  if (!items.length) return <EmptyState description="Belum ada informasi terbaru." title="Tidak ada data" />;
+  const Icon = icon === "announcement" ? Megaphone : Bell;
+  return (
+    <ul className="space-y-2">
+      {items.slice(0, 3).map((item) => (
+        <li className="rounded-2xl border border-slate-100 p-3" key={item.id}>
+          <p className="flex items-center gap-2 text-sm font-semibold text-slate-900"><Icon className="h-4 w-4 text-primary" /> {item.title}</p>
+          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.body}</p>
+          {item.date ? <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">{new Date(item.date).toLocaleString("id-ID")}</p> : null}
+        </li>
+      ))}
+    </ul>
   );
 }

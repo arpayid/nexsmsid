@@ -51,4 +51,35 @@ export class GuardianPortalController {
     const parsed = limit ? Math.max(1, Math.min(100, Number(limit))) : 20;
     return apiSuccess("Notifications retrieved", await this.service.listNotifications(user.id, Number.isFinite(parsed) ? parsed : 20));
   }
+
+  // Phase 10.5 — Guardian Dashboard
+  @Get("dashboard")
+  async dashboard(@CurrentUser() user: AuthenticatedUser) {
+    return apiSuccess("Guardian portal dashboard retrieved", await this.service.getDashboard(user.id));
+  }
+
+  @Get("children/:studentId/dashboard")
+  async childDashboard(@CurrentUser() user: AuthenticatedUser, @Param("studentId") studentId: string) {
+    return apiSuccess("Guardian portal child dashboard retrieved", await this.service.getChildDashboard(user.id, studentId));
+  }
+
+  @Get("children/:studentId/attendance-summary")
+  async childAttendanceSummary(@CurrentUser() user: AuthenticatedUser, @Param("studentId") studentId: string) {
+    return apiSuccess("Guardian portal child attendance summary retrieved", await this.service.getChildAttendanceSummary(user.id, studentId));
+  }
+
+  @Get("children/:studentId/grade-summary")
+  async childGradeSummary(@CurrentUser() user: AuthenticatedUser, @Param("studentId") studentId: string) {
+    return apiSuccess("Guardian portal child grade summary retrieved", await this.service.getChildGradeSummary(user.id, studentId));
+  }
+
+  @Get("children/:studentId/invoice-summary")
+  async childInvoiceSummary(@CurrentUser() user: AuthenticatedUser, @Param("studentId") studentId: string) {
+    return apiSuccess("Guardian portal child invoice summary retrieved", await this.service.getChildInvoiceSummary(user.id, studentId));
+  }
+
+  @Get("recent-announcements")
+  async recentAnnouncements(@CurrentUser() user: AuthenticatedUser) {
+    return apiSuccess("Guardian portal recent announcements retrieved", await this.service.getRecentAnnouncements(user.id));
+  }
 }

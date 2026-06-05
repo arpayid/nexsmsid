@@ -31,4 +31,40 @@ export class DashboardController {
   async getSystemStatus() {
     return apiSuccess("Dashboard system status retrieved", await this.dashboardService.getSystemStatus());
   }
+
+  // Phase 10.5 — Dashboard Enhancement
+  @Get("overview")
+  async getOverview() {
+    return apiSuccess("Dashboard overview retrieved", await this.dashboardService.getOverview());
+  }
+
+  @Get("academic-summary")
+  async getAcademicSummary() {
+    return apiSuccess("Dashboard academic summary retrieved", await this.dashboardService.getAcademicSummary());
+  }
+
+  @Get("finance-summary")
+  async getFinanceSummary() {
+    return apiSuccess("Dashboard finance summary retrieved", await this.dashboardService.getFinanceSummary());
+  }
+
+  @Get("ppdb-summary")
+  async getPpdbSummary() {
+    return apiSuccess("Dashboard PPDB summary retrieved", await this.dashboardService.getPpdbSummary());
+  }
+
+  @Get("people-summary")
+  async getPeopleSummary() {
+    return apiSuccess("Dashboard people summary retrieved", await this.dashboardService.getPeopleSummary());
+  }
+
+  @Get("activity-feed")
+  async getActivityFeed() {
+    return apiSuccess("Dashboard activity feed retrieved", await this.dashboardService.getActivityFeed());
+  }
+
+  @Get("quick-alerts")
+  async getQuickAlerts() {
+    return apiSuccess("Dashboard quick alerts retrieved", await this.dashboardService.getQuickAlerts());
+  }
 }

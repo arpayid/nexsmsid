@@ -41,8 +41,33 @@ export class TeacherPortalController {
   }
 
   @Get("notifications")
-  async notifications(@CurrentUser() user: AuthenticatedUser, @Query("limit") limit?: string) {
-    const parsed = limit ? Math.max(1, Math.min(100, Number(limit))) : 20;
-    return apiSuccess("Notifications retrieved", await this.service.listNotifications(user.id, Number.isFinite(parsed) ? parsed : 20));
+  async getNotifications(@CurrentUser() user: AuthenticatedUser) {
+    return apiSuccess("Teacher portal notifications retrieved", await this.service.listNotifications(user.id));
+  }
+
+  // Phase 10.5 — Teacher Dashboard
+  @Get("dashboard")
+  async getDashboard(@CurrentUser() user: AuthenticatedUser) {
+    return apiSuccess("Teacher portal dashboard retrieved", await this.service.getDashboard(user.id));
+  }
+
+  @Get("today-schedules")
+  async getTodaySchedules(@CurrentUser() user: AuthenticatedUser) {
+    return apiSuccess("Teacher portal today schedules retrieved", await this.service.getTodaySchedules(user.id));
+  }
+
+  @Get("pending-attendance")
+  async getPendingAttendance(@CurrentUser() user: AuthenticatedUser) {
+    return apiSuccess("Teacher portal pending attendance retrieved", await this.service.getPendingAttendance(user.id));
+  }
+
+  @Get("pending-grades")
+  async getPendingGrades(@CurrentUser() user: AuthenticatedUser) {
+    return apiSuccess("Teacher portal pending grades retrieved", await this.service.getPendingGrades(user.id));
+  }
+
+  @Get("recent-notifications")
+  async getRecentNotifications(@CurrentUser() user: AuthenticatedUser) {
+    return apiSuccess("Teacher portal recent notifications retrieved", await this.service.getRecentNotifications(user.id));
   }
 }

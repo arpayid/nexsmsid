@@ -56,4 +56,35 @@ export class StudentPortalController {
     const parsed = limit ? Math.max(1, Math.min(100, Number(limit))) : 20;
     return apiSuccess("Notifications retrieved", await this.service.listNotifications(user.id, Number.isFinite(parsed) ? parsed : 20));
   }
+
+  // Phase 10.5 — Student Dashboard
+  @Get("dashboard")
+  async dashboard(@CurrentUser() user: AuthenticatedUser) {
+    return apiSuccess("Student portal dashboard retrieved", await this.service.getDashboard(user.id));
+  }
+
+  @Get("today-schedules")
+  async todaySchedules(@CurrentUser() user: AuthenticatedUser) {
+    return apiSuccess("Student portal today schedules retrieved", await this.service.getTodaySchedules(user.id));
+  }
+
+  @Get("attendance-summary")
+  async attendanceSummary(@CurrentUser() user: AuthenticatedUser) {
+    return apiSuccess("Student portal attendance summary retrieved", await this.service.getAttendanceSummary(user.id));
+  }
+
+  @Get("grade-summary")
+  async gradeSummary(@CurrentUser() user: AuthenticatedUser) {
+    return apiSuccess("Student portal grade summary retrieved", await this.service.getGradeSummary(user.id));
+  }
+
+  @Get("invoice-summary")
+  async invoiceSummary(@CurrentUser() user: AuthenticatedUser) {
+    return apiSuccess("Student portal invoice summary retrieved", await this.service.getInvoiceSummary(user.id));
+  }
+
+  @Get("recent-announcements")
+  async recentAnnouncements(@CurrentUser() user: AuthenticatedUser) {
+    return apiSuccess("Student portal recent announcements retrieved", await this.service.getRecentAnnouncements(user.id));
+  }
 }

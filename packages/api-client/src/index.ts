@@ -521,6 +521,34 @@ export function createApiClient(options: ApiClientOptions = {}) {
       const response = await request<DashboardSystemStatus>("/dashboard/system-status");
       return response.data;
     },
+    async dashboardOverview() {
+      const response = await request<unknown>("/dashboard/overview");
+      return response.data;
+    },
+    async dashboardAcademicSummary() {
+      const response = await request<unknown>("/dashboard/academic-summary");
+      return response.data;
+    },
+    async dashboardFinanceSummary() {
+      const response = await request<unknown>("/dashboard/finance-summary");
+      return response.data;
+    },
+    async dashboardPpdbSummary() {
+      const response = await request<unknown>("/dashboard/ppdb-summary");
+      return response.data;
+    },
+    async dashboardPeopleSummary() {
+      const response = await request<unknown>("/dashboard/people-summary");
+      return response.data;
+    },
+    async dashboardActivityFeed() {
+      const response = await request<unknown[]>("/dashboard/activity-feed");
+      return response.data;
+    },
+    async dashboardQuickAlerts() {
+      const response = await request<unknown>("/dashboard/quick-alerts");
+      return response.data;
+    },
     async schoolProfile() {
       const response = await request<SchoolProfile>("/school-profile");
       return response.data;
@@ -1525,6 +1553,26 @@ export function createApiClient(options: ApiClientOptions = {}) {
       const response = await request<unknown[]>(`/teacher-portal/notifications${query ? `?${query}` : ""}`);
       return response.data;
     },
+    async getTeacherPortalDashboard() {
+      const response = await request<unknown>("/teacher-portal/dashboard");
+      return response.data;
+    },
+    async getTeacherPortalTodaySchedules() {
+      const response = await request<unknown[]>("/teacher-portal/today-schedules");
+      return response.data;
+    },
+    async getTeacherPortalPendingAttendance() {
+      const response = await request<unknown[]>("/teacher-portal/pending-attendance");
+      return response.data;
+    },
+    async getTeacherPortalPendingGrades() {
+      const response = await request<unknown[]>("/teacher-portal/pending-grades");
+      return response.data;
+    },
+    async getTeacherPortalRecentNotifications() {
+      const response = await request<unknown[]>("/teacher-portal/recent-notifications");
+      return response.data;
+    },
 
     async getStudentPortalSummary() {
       const response = await request<unknown>("/student-portal/summary");
@@ -1567,6 +1615,30 @@ export function createApiClient(options: ApiClientOptions = {}) {
       const response = await request<unknown[]>(`/student-portal/notifications${query ? `?${query}` : ""}`);
       return response.data;
     },
+    async getStudentPortalDashboard() {
+      const response = await request<unknown>("/student-portal/dashboard");
+      return response.data;
+    },
+    async getStudentPortalTodaySchedules() {
+      const response = await request<unknown[]>("/student-portal/today-schedules");
+      return response.data;
+    },
+    async getStudentPortalAttendanceSummary() {
+      const response = await request<unknown>("/student-portal/attendance-summary");
+      return response.data;
+    },
+    async getStudentPortalGradeSummary() {
+      const response = await request<unknown>("/student-portal/grade-summary");
+      return response.data;
+    },
+    async getStudentPortalInvoiceSummary() {
+      const response = await request<unknown>("/student-portal/invoice-summary");
+      return response.data;
+    },
+    async getStudentPortalRecentAnnouncements() {
+      const response = await request<unknown[]>("/student-portal/recent-announcements");
+      return response.data;
+    },
 
     async getGuardianPortalSummary() {
       const response = await request<unknown>("/guardian-portal/summary");
@@ -1603,6 +1675,30 @@ export function createApiClient(options: ApiClientOptions = {}) {
       if (options.limit) params.set("limit", String(options.limit));
       const query = params.toString();
       const response = await request<unknown[]>(`/guardian-portal/notifications${query ? `?${query}` : ""}`);
+      return response.data;
+    },
+    async getGuardianPortalDashboard() {
+      const response = await request<unknown>("/guardian-portal/dashboard");
+      return response.data;
+    },
+    async getGuardianPortalChildDashboard(studentId: string) {
+      const response = await request<unknown>(`/guardian-portal/children/${studentId}/dashboard`);
+      return response.data;
+    },
+    async getGuardianPortalChildAttendanceSummary(studentId: string) {
+      const response = await request<unknown>(`/guardian-portal/children/${studentId}/attendance-summary`);
+      return response.data;
+    },
+    async getGuardianPortalChildGradeSummary(studentId: string) {
+      const response = await request<unknown>(`/guardian-portal/children/${studentId}/grade-summary`);
+      return response.data;
+    },
+    async getGuardianPortalChildInvoiceSummary(studentId: string) {
+      const response = await request<unknown>(`/guardian-portal/children/${studentId}/invoice-summary`);
+      return response.data;
+    },
+    async getGuardianPortalRecentAnnouncements() {
+      const response = await request<unknown[]>("/guardian-portal/recent-announcements");
       return response.data;
     }
   };

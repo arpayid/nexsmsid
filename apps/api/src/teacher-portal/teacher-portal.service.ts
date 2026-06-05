@@ -143,4 +143,184 @@ export class TeacherPortalService {
       take: limit
     });
   }
+
+  // Phase 10.5 — Teacher Dashboard
+  async getDashboard(userId: string) {
+    const teacher = await this.getTeacherForUser(userId);
+    const now = new Date();
+    const dayOfWeek = this.toDayOfWeek(now);
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(now);
+    todayEnd.setHours(23, 59, 59, 999);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const [
+      teachingAssignments,
+      todaySchedules,
+      pendingAttendanceSessions,
+      pendingAssessments,
+      unreadNotifications,
+      recentAnnouncements
+    ] = await Promise.all([
+      this.prisma.teachingAssignment.findMany({
+        where: { teacherId: teacher.id, deletedAt: null, isActive: true },
+        select: { id: true, subjectId: true, classroomId: true, subject: { select: { name: true } }, classroom: { select: { name: true } } }
+      }),
+      this.prisma.schedule.findMany({
+        where: {
+          isActive: true,
+          deletedAt: null,
+          dayOfWeek,
+          teachingAssignment: { teacherId: teacher.id, deletedAt: null, isActive: true }
+        },
+        include: {
+          teachingAssignment: { include: { subject: true, classroom: { include: { competency: true } } } },
+          room: true,
+          lessonHour: true
+        },
+        orderBy: { lessonHour: { startTime: "asc" } }
+      }),
+      this.prisma.attendanceSession.findMany({
+        where: {
+          deletedAt: null,
+          date: { gte: startOfMonth, lte: endOfMonth },
+          schedule: { teachingAssignment: { teacherId: teacher.id, deletedAt: null } },
+          records: { none: {} }
+        },
+        include: {
+          schedule: { include: { teachingAssignment: { include: { subject: true, classroom: true } } } },
+          _count: { select: { records: true } }
+        },
+        orderBy: { date: "asc" },
+        take: 10
+      }),
+      this.prisma.assessment.findMany({
+        where: {
+          deletedAt: null,
+          teachingAssignment: { teacherId: teacher.id, deletedAt: null }
+        },
+        include: {
+          teachingAssignment: { include: { subject: true, classroom: true } },
+          _count: { select: { grades: true } }
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10
+      }),
+      this.prisma.notification.count({ where: { userId, status: "UNREAD" as any } }),
+      this.prisma.announcement.findMany({
+        where: { status: "PUBLISHED" as any, deletedAt: null },
+        orderBy: { publishedAt: "desc" },
+        take: 3,
+        select: { id: true, title: true, content: true, publishedAt: true }
+      })
+    ]);
+
+    const uniqueSubjects = new Set(teachingAssignments.map((ta) => ta.subjectId));
+    const uniqueClassrooms = new Set(teachingAssignments.map((ta) => ta.classroomId));
+    const pendingScoresCount = pendingAssessments.reduce((sum, a) => sum + (a._count.grades > 0 ? 0 : 1), 0);
+
+    return {
+      teacher: {
+        id: teacher.id,
+        name: teacher.name,
+        nip: teacher.nip,
+        email: teacher.email,
+        photoUrl: teacher.photoUrl
+      },
+      counts: {
+        teachingAssignments: teachingAssignments.length,
+        subjects: uniqueSubjects.size,
+        classrooms: uniqueClassrooms.size,
+        todaySchedules: todaySchedules.length,
+        pendingAttendance: pendingAttendanceSessions.length,
+        pendingGrades: pendingScoresCount,
+        unreadNotifications
+      },
+      todaySchedules,
+      pendingAttendance: pendingAttendanceSessions,
+      pendingAssessments: pendingAssessments.map((a) => ({
+        id: a.id,
+        name: a.name,
+        type: a.type,
+        maxScore: a.maxScore,
+        subject: a.teachingAssignment?.subject?.name ?? null,
+        classroom: a.teachingAssignment?.classroom?.name ?? null,
+        gradesCount: a._count.grades
+      })),
+      recentAnnouncements
+    };
+  }
+
+  async getTodaySchedules(userId: string) {
+    const teacher = await this.getTeacherForUser(userId);
+    const dayOfWeek = this.toDayOfWeek(new Date());
+    return this.prisma.schedule.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+        dayOfWeek,
+        teachingAssignment: { teacherId: teacher.id, deletedAt: null, isActive: true }
+      },
+      include: {
+        teachingAssignment: { include: { subject: true, classroom: { include: { competency: true } } } },
+        room: true,
+        lessonHour: true
+      },
+      orderBy: { lessonHour: { startTime: "asc" } }
+    });
+  }
+
+  async getPendingAttendance(userId: string) {
+    const teacher = await this.getTeacherForUser(userId);
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    const endOfMonth = new Date();
+    endOfMonth.setMonth(endOfMonth.getMonth() + 1, 0);
+    endOfMonth.setHours(23, 59, 59, 999);
+
+    return this.prisma.attendanceSession.findMany({
+      where: {
+        deletedAt: null,
+        date: { gte: startOfMonth, lte: endOfMonth },
+        schedule: { teachingAssignment: { teacherId: teacher.id, deletedAt: null } },
+        records: { none: {} }
+      },
+      include: {
+        schedule: { include: { teachingAssignment: { include: { subject: true, classroom: true } } } },
+        _count: { select: { records: true } }
+      },
+      orderBy: { date: "asc" }
+    });
+  }
+
+  async getPendingGrades(userId: string) {
+    const teacher = await this.getTeacherForUser(userId);
+    return this.prisma.assessment.findMany({
+      where: {
+        deletedAt: null,
+        teachingAssignment: { teacherId: teacher.id, deletedAt: null }
+      },
+      include: {
+        teachingAssignment: { include: { subject: true, classroom: true } },
+        _count: { select: { grades: true } }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+  }
+
+  async getRecentNotifications(userId: string, limit = 5) {
+    return this.prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: limit
+    });
+  }
+
+  private toDayOfWeek(date: Date) {
+    const map = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"] as const;
+    return map[date.getDay()];
+  }
 }
