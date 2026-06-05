@@ -1,0 +1,597 @@
+import { Injectable, Inject } from '@nestjs/common';
+import { PrismaService } from '../database/prisma.service';
+import { ReportDataResult } from './report-engine.types';
+
+@Injectable()
+export class ReportDataService {
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+
+  async getData(reportCode: string, filters: Record<string, any>): Promise<ReportDataResult> {
+    switch (reportCode) {
+      case 'students-by-class':
+        return this.getStudentsByClass(filters);
+      case 'attendance-class-recap':
+        return this.getAttendanceClassRecap(filters);
+      case 'invoice-recap':
+        return this.getInvoiceRecap(filters);
+      case 'ppdb-registration-recap':
+        return this.getPpdbRegistrationRecap(filters);
+      case 'internship-recap':
+        return this.getInternshipRecap(filters);
+      case 'alumni-recap':
+        return this.getAlumniRecap(filters);
+      case 'payment-recap':
+        return this.getPaymentRecap(filters);
+      case 'outstanding-invoices':
+        return this.getOutstandingInvoices(filters);
+      case 'ppdb-status-recap':
+        return this.getPpdbStatusRecap(filters);
+      case 'expense-recap':
+        return this.getExpenseRecap(filters);
+      case 'grades-class-recap':
+        return this.getGradesClassRecap(filters);
+      case 'teacher-schedule-recap':
+        return this.getTeacherScheduleRecap(filters);
+      case 'cashflow-recap':
+        return this.getCashflowRecap(filters);
+      case 'ppdb-conversion-recap':
+        return this.getPpdbConversionRecap(filters);
+      case 'industry-partner-recap':
+        return this.getIndustryPartnerRecap(filters);
+      default:
+        return this.getPlaceholderData(reportCode);
+    }
+  }
+
+  private async getGradesClassRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = {
+      assessment: {
+        teachingAssignment: {
+          academicYearId: filters.academicYearId,
+          semesterId: filters.semesterId,
+          classroomId: filters.classroomId,
+        },
+      },
+    };
+    if (filters.subjectId) where.assessment.teachingAssignment.subjectId = filters.subjectId;
+
+    const grades = await this.prisma.grade.findMany({
+      where,
+      include: {
+        student: true,
+        assessment: {
+          include: {
+            teachingAssignment: {
+              include: { subject: true, classroom: true },
+            },
+          },
+        },
+      },
+      orderBy: [{ student: { name: 'asc' } }, { assessment: { createdAt: 'asc' } }],
+    });
+
+    return {
+      title: 'Grades Class Recap',
+      columns: [
+        { key: 'student', label: 'Student', width: 30 },
+        { key: 'subject', label: 'Subject', width: 20 },
+        { key: 'assessment', label: 'Assessment', width: 25 },
+        { key: 'score', label: 'Score', width: 10 },
+        { key: 'status', label: 'Status', width: 15 },
+      ],
+      rows: grades.map((g) => ({
+        student: g.student.name,
+        subject: g.assessment.teachingAssignment.subject.name,
+        assessment: g.assessment.name,
+        score: g.score,
+        status: g.status,
+      })),
+    };
+  }
+
+  private async getTeacherScheduleRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = {
+      teachingAssignment: {
+        academicYearId: filters.academicYearId,
+        semesterId: filters.semesterId,
+      },
+    };
+    if (filters.teacherId) where.teachingAssignment.teacherId = filters.teacherId;
+
+    const schedules = await this.prisma.schedule.findMany({
+      where,
+      include: {
+        teachingAssignment: {
+          include: { teacher: true, subject: true, classroom: true },
+        },
+        lessonHour: true,
+        room: true,
+      },
+      orderBy: [{ dayOfWeek: 'asc' }, { lessonHour: { startTime: 'asc' } }],
+    });
+
+    return {
+      title: 'Teacher Schedule Recap',
+      columns: [
+        { key: 'day', label: 'Day', width: 15 },
+        { key: 'time', label: 'Time', width: 15 },
+        { key: 'teacher', label: 'Teacher', width: 30 },
+        { key: 'subject', label: 'Subject', width: 20 },
+        { key: 'classroom', label: 'Class', width: 15 },
+        { key: 'room', label: 'Room', width: 15 },
+      ],
+      rows: schedules.map((s) => ({
+        day: s.dayOfWeek,
+        time: `${s.lessonHour.startTime} - ${s.lessonHour.endTime}`,
+        teacher: s.teachingAssignment.teacher.name,
+        subject: s.teachingAssignment.subject.name,
+        classroom: s.teachingAssignment.classroom.name,
+        room: s.room?.name || '-',
+      })),
+    };
+  }
+
+  private async getCashflowRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const startDate = new Date(filters.startDate);
+    const endDate = new Date(filters.endDate);
+
+    const [payments, expenses] = await Promise.all([
+      this.prisma.payment.findMany({
+        where: { paidAt: { gte: startDate, lte: endDate }, status: 'VERIFIED' },
+        orderBy: { paidAt: 'asc' },
+      }),
+      this.prisma.expense.findMany({
+        where: { date: { gte: startDate, lte: endDate }, status: 'PAID' },
+        orderBy: { date: 'asc' },
+      }),
+    ]);
+
+    const rows = [
+      ...payments.map((p) => ({
+        date: p.paidAt.toISOString().split('T')[0],
+        type: 'INCOME (Payment)',
+        description: `Payment ${p.paymentNumber}`,
+        amount: Number(p.amount),
+      })),
+      ...expenses.map((e) => ({
+        date: e.date.toISOString().split('T')[0],
+        type: 'EXPENSE',
+        description: `${e.title} (${e.expenseNumber})`,
+        amount: -Number(e.amount),
+      })),
+    ].sort((a, b) => a.date.localeCompare(b.date));
+
+    return {
+      title: 'Cashflow Recap',
+      subtitle: `Period: ${filters.startDate} to ${filters.endDate}`,
+      columns: [
+        { key: 'date', label: 'Date', width: 15 },
+        { key: 'type', label: 'Type', width: 20 },
+        { key: 'description', label: 'Description', width: 40 },
+        { key: 'amount', label: 'Amount', width: 15 },
+      ],
+      rows,
+    };
+  }
+
+  private async getPpdbConversionRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = {
+      period: { academicYearId: filters.academicYearId },
+      status: 'CONVERTED',
+    };
+
+    const regs = await this.prisma.ppdbRegistration.findMany({
+      where,
+      include: { convertedStudent: { include: { classroom: true } }, selectedDepartment: true },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return {
+      title: 'PPDB Conversion Recap',
+      columns: [
+        { key: 'regNum', label: 'Reg #', width: 15 },
+        { key: 'name', label: 'Student Name', width: 30 },
+        { key: 'department', label: 'Department', width: 20 },
+        { key: 'classroom', label: 'Assigned Class', width: 15 },
+        { key: 'date', label: 'Conversion Date', width: 20 },
+      ],
+      rows: regs.map((r) => ({
+        regNum: r.registrationNumber,
+        name: r.name,
+        department: r.selectedDepartment?.name || '-',
+        classroom: r.convertedStudent?.classroom?.name || '-',
+        date: r.updatedAt.toISOString().split('T')[0],
+      })),
+    };
+  }
+
+  private async getIndustryPartnerRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.status) where.status = filters.status;
+
+    const partners = await this.prisma.industryPartner.findMany({
+      where,
+      orderBy: { name: 'asc' },
+    });
+
+    return {
+      title: 'Industry Partner Recap',
+      columns: [
+        { key: 'name', label: 'Partner Name', width: 30 },
+        { key: 'type', label: 'Type', width: 15 },
+        { key: 'contact', label: 'Contact Person', width: 20 },
+        { key: 'phone', label: 'Phone', width: 15 },
+        { key: 'status', label: 'Status', width: 15 },
+      ],
+      rows: partners.map((p) => ({
+        name: p.name,
+        type: p.type || '-',
+        contact: p.contactPerson || '-',
+        phone: p.phone || '-',
+        status: p.status,
+      })),
+    };
+  }
+
+  private async getStudentsByClass(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.classroomId) where.classroomId = filters.classroomId;
+    if (filters.status) where.status = filters.status;
+
+    const students = await this.prisma.student.findMany({
+      where,
+      include: { classroom: true },
+      orderBy: [{ classroom: { name: 'asc' } }, { name: 'asc' }],
+    });
+
+    return {
+      title: 'Students by Class Report',
+      columns: [
+        { key: 'nis', label: 'NIS', width: 15 },
+        { key: 'name', label: 'Student Name', width: 30 },
+        { key: 'gender', label: 'Gender', width: 10 },
+        { key: 'classroom', label: 'Class', width: 20 },
+        { key: 'status', label: 'Status', width: 15 },
+      ],
+      rows: students.map((s) => ({
+        nis: s.nis,
+        name: s.name,
+        gender: s.gender,
+        classroom: s.classroom?.name || '-',
+        status: s.status,
+      })),
+    };
+  }
+
+  private async getAttendanceClassRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = {
+      date: {
+        gte: new Date(filters.startDate),
+        lte: new Date(filters.endDate),
+      },
+    };
+    if (filters.classroomId) {
+      where.schedule = { teachingAssignment: { classroomId: filters.classroomId } };
+    }
+
+    const sessions = await this.prisma.attendanceSession.findMany({
+      where,
+      include: {
+        records: { include: { student: true } },
+        schedule: {
+          include: {
+            teachingAssignment: {
+              include: { classroom: true, subject: true },
+            },
+          },
+        },
+      },
+      orderBy: { date: 'asc' },
+    });
+
+    const rows = [];
+    for (const session of sessions) {
+      for (const record of session.records) {
+        rows.push({
+          date: session.date.toISOString().split('T')[0],
+          student: record.student.name,
+          class: session.schedule.teachingAssignment.classroom.name,
+          subject: session.schedule.teachingAssignment.subject.name,
+          status: record.status,
+          note: record.note || '-',
+        });
+      }
+    }
+
+    return {
+      title: 'Attendance Class Recap',
+      subtitle: `Period: ${filters.startDate} to ${filters.endDate}`,
+      columns: [
+        { key: 'date', label: 'Date', width: 15 },
+        { key: 'student', label: 'Student', width: 30 },
+        { key: 'class', label: 'Class', width: 15 },
+        { key: 'subject', label: 'Subject', width: 20 },
+        { key: 'status', label: 'Status', width: 10 },
+        { key: 'note', label: 'Note', width: 20 },
+      ],
+      rows,
+    };
+  }
+
+  private async getInvoiceRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = {
+      deletedAt: null,
+      issueDate: {
+        gte: new Date(filters.startDate),
+        lte: new Date(filters.endDate),
+      },
+    };
+    if (filters.status) where.status = filters.status;
+    if (filters.studentId) where.studentId = filters.studentId;
+
+    const invoices = await this.prisma.invoice.findMany({
+      where,
+      include: { student: true },
+      orderBy: { issueDate: 'desc' },
+    });
+
+    return {
+      title: 'Invoice Recap',
+      subtitle: `Period: ${filters.startDate} to ${filters.endDate}`,
+      columns: [
+        { key: 'invoiceNumber', label: 'Invoice #', width: 20 },
+        { key: 'date', label: 'Date', width: 15 },
+        { key: 'student', label: 'Student', width: 30 },
+        { key: 'total', label: 'Total Amount', width: 15 },
+        { key: 'paid', label: 'Paid Amount', width: 15 },
+        { key: 'status', label: 'Status', width: 15 },
+      ],
+      rows: invoices.map((i) => ({
+        invoiceNumber: i.invoiceNumber,
+        date: i.issueDate.toISOString().split('T')[0],
+        student: i.student.name,
+        total: Number(i.total),
+        paid: Number(i.paidAmount),
+        status: i.status,
+      })),
+    };
+  }
+
+  private async getPaymentRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = {
+      paidAt: {
+        gte: new Date(filters.startDate),
+        lte: new Date(filters.endDate),
+      },
+    };
+    if (filters.studentId) where.invoice = { studentId: filters.studentId };
+
+    const payments = await this.prisma.payment.findMany({
+      where,
+      include: { invoice: { include: { student: true } } },
+      orderBy: { paidAt: 'desc' },
+    });
+
+    return {
+      title: 'Payment Recap',
+      subtitle: `Period: ${filters.startDate} to ${filters.endDate}`,
+      columns: [
+        { key: 'date', label: 'Paid At', width: 15 },
+        { key: 'invoiceNum', label: 'Invoice #', width: 20 },
+        { key: 'student', label: 'Student', width: 30 },
+        { key: 'amount', label: 'Amount', width: 15 },
+        { key: 'method', label: 'Method', width: 15 },
+        { key: 'status', label: 'Status', width: 15 },
+      ],
+      rows: payments.map((p) => ({
+        date: p.paidAt.toISOString().split('T')[0],
+        invoiceNum: p.invoice.invoiceNumber,
+        student: p.invoice.student.name,
+        amount: Number(p.amount),
+        method: p.method,
+        status: p.status,
+      })),
+    };
+  }
+
+  private async getOutstandingInvoices(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = {
+      deletedAt: null,
+      status: { in: ['PENDING', 'PARTIAL'] },
+    };
+    if (filters.studentId) where.studentId = filters.studentId;
+    if (filters.academicYearId) where.academicYearId = filters.academicYearId;
+
+    const invoices = await this.prisma.invoice.findMany({
+      where,
+      include: { student: true, academicYear: true },
+      orderBy: { issueDate: 'asc' },
+    });
+
+    return {
+      title: 'Outstanding Invoices',
+      columns: [
+        { key: 'invoiceNum', label: 'Invoice #', width: 20 },
+        { key: 'date', label: 'Issue Date', width: 15 },
+        { key: 'student', label: 'Student', width: 30 },
+        { key: 'ay', label: 'AY', width: 15 },
+        { key: 'total', label: 'Total', width: 15 },
+        { key: 'paid', label: 'Paid', width: 15 },
+        { key: 'remaining', label: 'Remaining', width: 15 },
+      ],
+      rows: invoices.map((i) => ({
+        invoiceNum: i.invoiceNumber,
+        date: i.issueDate.toISOString().split('T')[0],
+        student: i.student.name,
+        ay: i.academicYear?.name || '-',
+        total: Number(i.total),
+        paid: Number(i.paidAmount),
+        remaining: Number(i.total) - Number(i.paidAmount),
+      })),
+    };
+  }
+
+  private async getPpdbRegistrationRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { period: { academicYearId: filters.academicYearId } };
+    if (filters.status) where.status = filters.status;
+    if (filters.departmentId) where.selectedDepartmentId = filters.departmentId;
+
+    const regs = await this.prisma.ppdbRegistration.findMany({
+      where,
+      include: { selectedDepartment: true, selectedCompetency: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      title: 'PPDB Registration Recap',
+      columns: [
+        { key: 'regNum', label: 'Reg #', width: 15 },
+        { key: 'name', label: 'Name', width: 30 },
+        { key: 'gender', label: 'Gender', width: 10 },
+        { key: 'department', label: 'Department', width: 20 },
+        { key: 'status', label: 'Status', width: 15 },
+        { key: 'date', label: 'Date', width: 15 },
+      ],
+      rows: regs.map((r) => ({
+        regNum: r.registrationNumber,
+        name: r.name,
+        gender: r.gender,
+        department: r.selectedDepartment?.name || '-',
+        status: r.status,
+        date: r.createdAt.toISOString().split('T')[0],
+      })),
+    };
+  }
+
+  private async getPpdbStatusRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { period: { academicYearId: filters.academicYearId } };
+    
+    const stats = await this.prisma.ppdbRegistration.groupBy({
+      by: ['status'],
+      where,
+      _count: { _all: true },
+    });
+
+    return {
+      title: 'PPDB Status Summary',
+      columns: [
+        { key: 'status', label: 'Status', width: 25 },
+        { key: 'count', label: 'Count', width: 15 },
+      ],
+      rows: stats.map((s) => ({
+        status: s.status,
+        count: s._count._all,
+      })),
+    };
+  }
+
+  private async getExpenseRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = {
+      deletedAt: null,
+      date: {
+        gte: new Date(filters.startDate),
+        lte: new Date(filters.endDate),
+      },
+    };
+    if (filters.status) where.status = filters.status;
+
+    const expenses = await this.prisma.expense.findMany({
+      where,
+      orderBy: { date: 'desc' },
+    });
+
+    return {
+      title: 'Expense Recap',
+      subtitle: `Period: ${filters.startDate} to ${filters.endDate}`,
+      columns: [
+        { key: 'num', label: 'Expense #', width: 20 },
+        { key: 'date', label: 'Date', width: 15 },
+        { key: 'title', label: 'Title', width: 30 },
+        { key: 'category', label: 'Category', width: 15 },
+        { key: 'amount', label: 'Amount', width: 15 },
+        { key: 'status', label: 'Status', width: 15 },
+      ],
+      rows: expenses.map((e) => ({
+        num: e.expenseNumber,
+        date: e.date.toISOString().split('T')[0],
+        title: e.title,
+        category: e.category,
+        amount: Number(e.amount),
+        status: e.status,
+      })),
+    };
+  }
+
+  private async getInternshipRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = {
+      deletedAt: null,
+      startDate: { gte: new Date(filters.startDate) },
+      endDate: { lte: new Date(filters.endDate) },
+    };
+    if (filters.status) where.status = filters.status;
+
+    const internships = await this.prisma.internship.findMany({
+      where,
+      include: { student: true, industryPartner: true },
+    });
+
+    return {
+      title: 'Internship Recap',
+      columns: [
+        { key: 'student', label: 'Student', width: 30 },
+        { key: 'partner', label: 'Partner', width: 30 },
+        { key: 'title', label: 'Internship Title', width: 25 },
+        { key: 'period', label: 'Period', width: 25 },
+        { key: 'status', label: 'Status', width: 15 },
+      ],
+      rows: internships.map((i) => ({
+        student: i.student.name,
+        partner: i.industryPartner.name,
+        title: i.title,
+        period: `${i.startDate.toISOString().split('T')[0]} - ${i.endDate.toISOString().split('T')[0]}`,
+        status: i.status,
+      })),
+    };
+  }
+
+  private async getAlumniRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.graduationYear) where.graduationYear = Number(filters.graduationYear);
+    if (filters.status) where.status = filters.status;
+
+    const alumni = await this.prisma.alumni.findMany({
+      where,
+      orderBy: { graduationYear: 'desc' },
+    });
+
+    return {
+      title: 'Alumni Recap',
+      columns: [
+        { key: 'name', label: 'Name', width: 30 },
+        { key: 'year', label: 'Graduation Year', width: 15 },
+        { key: 'status', label: 'Status', width: 15 },
+        { key: 'company', label: 'Current Company', width: 25 },
+        { key: 'position', label: 'Position', width: 20 },
+      ],
+      rows: alumni.map((a) => ({
+        name: a.name,
+        year: a.graduationYear,
+        status: a.status,
+        company: a.currentCompany || '-',
+        position: a.currentPosition || '-',
+      })),
+    };
+  }
+
+  private async getPlaceholderData(reportCode: string): Promise<ReportDataResult> {
+    return {
+      title: `Report: ${reportCode}`,
+      columns: [
+        { key: 'info', label: 'Information', width: 50 },
+      ],
+      rows: [
+        { info: `Data for ${reportCode} is coming soon.` },
+      ],
+    };
+  }
+}

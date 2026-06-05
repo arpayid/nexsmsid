@@ -156,10 +156,19 @@ const permissions = [
   "notification-templates.delete",
   "reports.view",
   "reports.generate",
+  "reports.download",
+  "reports.export",
+  "reports.cancel",
+  "reports.academic",
+  "reports.finance",
+  "reports.ppdb",
+  "reports.pkl_bkk",
+  "reports.communication",
   "report-jobs.view",
   "report-jobs.create",
   "report-jobs.cancel",
-  "export-history.view"
+  "export-history.view",
+  "export-history.export"
 ];
 
 const roles = [

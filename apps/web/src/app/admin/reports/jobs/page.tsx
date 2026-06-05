@@ -19,7 +19,10 @@ export default function AdminReportJobsPage() {
         { name: "format", label: "Format", type: "select", options: options(formats), required: true }
       ]}
       load={(api, params) => api.listReportJobs(params)}
-      rowActions={[{ label: "Cancel", run: (api, row) => api.cancelReportJob(row.id as string), show: (row) => row.status === "PENDING" || row.status === "PROCESSING", variant: "outline" }]}
+      rowActions={[
+        { label: "Download", run: async (api, row) => { const blob = await api.downloadReport(row.id as string); api.saveExcelBlob(blob, `report-${row.id}.xlsx`); }, show: (row) => row.status === "COMPLETED", variant: "primary" },
+        { label: "Cancel", run: (api, row) => api.cancelReportJob(row.id as string), show: (row) => row.status === "PENDING" || row.status === "PROCESSING", variant: "outline" }
+      ]}
       statusMap={statusMap(statuses)}
       statusOptions={options(statuses)}
       title="Report Jobs"

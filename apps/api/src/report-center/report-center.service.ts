@@ -1,10 +1,18 @@
 import { Inject, Injectable } from "@nestjs/common";
 
 import { PrismaService } from "../database/prisma.service";
+import { ReportRegistryService } from "../report-engine/report-registry.service";
 
 @Injectable()
 export class ReportCenterService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(ReportRegistryService) private readonly registry: ReportRegistryService
+  ) {}
+
+  async getReportTypes() {
+    return this.registry.getAll();
+  }
 
   async summary() {
     const [totalJobs, pendingJobs, processingJobs, completedJobs, failedJobs, cancelledJobs, totalExports, recentJobs] = await Promise.all([
@@ -21,7 +29,7 @@ export class ReportCenterService {
     return {
       jobs: { total: totalJobs, pending: pendingJobs, processing: processingJobs, completed: completedJobs, failed: failedJobs, cancelled: cancelledJobs },
       exports: { total: totalExports },
-      availableTypes: ["STUDENTS", "FINANCE", "PPDB", "BKK"],
+      availableTypes: this.registry.getAll().map(r => r.code),
       recentJobs
     };
   }

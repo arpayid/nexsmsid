@@ -7,13 +7,15 @@ import { parseWithSchema } from "../common/validation";
 import { PrismaService } from "../database/prisma.service";
 import { generateReportSchema, reportJobListQuerySchema } from "./report-jobs.dto";
 import { ReportQueueService } from "./report-queue.service";
+import { ReportFilterValidationService } from "../report-engine/report-filter-validation.service";
 
 @Injectable()
 export class ReportJobsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(AuditService) private readonly auditService: AuditService,
-    @Inject(ReportQueueService) private readonly reportQueue: ReportQueueService
+    @Inject(ReportQueueService) private readonly reportQueue: ReportQueueService,
+    @Inject(ReportFilterValidationService) private readonly validator: ReportFilterValidationService,
   ) {}
 
   async list(query: unknown) {
@@ -45,13 +47,18 @@ export class ReportJobsService {
 
   async generate(input: unknown, actor: AuthenticatedUser, meta: RequestMeta) {
     const data = parseWithSchema(generateReportSchema, input);
+    
+    // Validate filters
+    const filters = (data.parameters as Record<string, any>) || {};
+    this.validator.validate(data.type, filters);
+
     const item = await this.prisma.reportJob.create({
       data: {
-        type: data.type.toUpperCase(),
-        title: data.title || `${data.type.toUpperCase()} Report`,
+        type: data.type,
+        title: data.title || `${data.type} Report`,
         format: data.format,
         status: "PENDING",
-        parameters: data.parameters === undefined ? undefined : (data.parameters as Prisma.InputJsonValue),
+        parameters: filters as Prisma.InputJsonValue,
         requestedById: actor.id
       }
     });

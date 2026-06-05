@@ -10,6 +10,9 @@ export default function AdminExportHistoryPage() {
       description="Riwayat export yang dibuat oleh report queue dummy."
       eyebrow="Phase 10 Export"
       load={(api, params) => api.listExportHistory(params)}
+      rowActions={[
+        { label: "Download", run: async (api, row) => { if (row.reportJobId) { const blob = await api.downloadReport(row.reportJobId as string); api.saveExcelBlob(blob, row.fileName as string); } }, show: (row) => !!row.reportJobId, variant: "outline" }
+      ]}
       title="Export History"
     />
   );

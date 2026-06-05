@@ -41,21 +41,31 @@ export class NotificationsService {
 
   async create(input: unknown, actor: AuthenticatedUser, meta: RequestMeta) {
     const data = parseWithSchema(createNotificationSchema, input);
-    const recipient = await this.prisma.user.findFirst({ where: { id: data.userId, deletedAt: null, status: "ACTIVE" } });
-    if (!recipient) throw new NotFoundException("Notification recipient not found");
-
-    const item = await this.prisma.notification.create({
-      data: {
-        userId: data.userId,
-        title: data.title,
-        body: data.body,
-        channel: data.channel,
-        metadata: data.metadata === undefined ? undefined : (data.metadata as Prisma.InputJsonValue)
-      }
+    const item = await this.createSystemNotification({
+      userId: data.userId,
+      title: data.title,
+      body: data.body,
+      channel: data.channel,
+      metadata: data.metadata
     });
 
     await this.auditService.record({ ...meta, actorId: actor.id, action: "notification.create", entity: "notification", entityId: item.id, metadata: { userId: data.userId } });
     return item;
+  }
+
+  async createSystemNotification(data: { userId: string; title: string; body: string; channel?: string; metadata?: any }) {
+    const recipient = await this.prisma.user.findFirst({ where: { id: data.userId, deletedAt: null, status: "ACTIVE" } });
+    if (!recipient) throw new NotFoundException("Notification recipient not found");
+
+    return this.prisma.notification.create({
+      data: {
+        userId: data.userId,
+        title: data.title,
+        body: data.body,
+        channel: (data.channel as any) || "IN_APP",
+        metadata: data.metadata === undefined ? undefined : (data.metadata as Prisma.InputJsonValue)
+      }
+    });
   }
 
   async markRead(id: string, actor: AuthenticatedUser, meta: RequestMeta) {

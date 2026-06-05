@@ -3,6 +3,10 @@ import { ConfigService } from "@nestjs/config";
 import { Queue, Worker, type ConnectionOptions } from "bullmq";
 
 import { PrismaService } from "../database/prisma.service";
+import { ReportDataService } from "../report-engine/report-data.service";
+import { ReportRendererService } from "../report-engine/report-renderer.service";
+import { NotificationsService } from "../notifications/notifications.service";
+import { AuditService } from "../audit/audit.service";
 
 type ReportQueuePayload = { reportJobId: string };
 
@@ -15,7 +19,11 @@ export class ReportQueueService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     @Inject(ConfigService) configService: ConfigService,
-    @Inject(PrismaService) private readonly prisma: PrismaService
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(ReportDataService) private readonly reportData: ReportDataService,
+    @Inject(ReportRendererService) private readonly reportRenderer: ReportRendererService,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
+    @Inject(AuditService) private readonly audit: AuditService,
   ) {
     this.connection = this.redisConnection(configService.get<string>("REDIS_URL") ?? "redis://localhost:6379");
     this.queue = new Queue<ReportQueuePayload>("reportQueue", { connection: this.connection });
@@ -46,6 +54,7 @@ export class ReportQueueService implements OnModuleInit, OnModuleDestroy {
       this.logger.warn(`Unable to enqueue report job ${reportJobId}: ${message}. Processing directly.`);
     }
 
+    // Still process directly if queue fails or for sync behavior in dev
     await this.processReportJob(reportJobId);
   }
 
@@ -71,10 +80,18 @@ export class ReportQueueService implements OnModuleInit, OnModuleDestroy {
     if (!reportJob) return;
 
     try {
-      const rowCount = await this.estimateRowCount(reportJob.type);
+      // 1. Get Data
+      const filters = (reportJob.parameters as any) || {};
+      const data = await this.reportData.getData(reportJob.type, filters);
+      
+      // 2. Render
       const fileName = `${reportJob.type.toLowerCase()}-${reportJob.id}.${reportJob.format.toLowerCase()}`;
-      const fileUrl = `/exports/${fileName}`;
+      await this.reportRenderer.render(data, reportJob.format as any, fileName);
+      
+      const fileUrl = `/api/v1/reports/download/${reportJob.id}`;
+      const rowCount = data.rows.length;
 
+      // 3. Update DB
       await this.prisma.$transaction([
         this.prisma.reportJob.update({
           where: { id: reportJob.id },
@@ -92,9 +109,51 @@ export class ReportQueueService implements OnModuleInit, OnModuleDestroy {
           }
         })
       ]);
+
+      // 4. Audit & Notification
+      if (reportJob.requestedById) {
+        await this.audit.record({
+          actorId: reportJob.requestedById,
+          action: 'report.completed',
+          entity: 'ReportJob',
+          entityId: reportJob.id,
+          metadata: { type: reportJob.type, format: reportJob.format }
+        });
+
+        await this.notifications.createSystemNotification({
+          userId: reportJob.requestedById,
+          title: 'Report Completed',
+          body: `Your report "${reportJob.title || reportJob.type}" is ready for download.`,
+          metadata: { reportJobId: reportJob.id, type: 'REPORT_COMPLETED' }
+        });
+      }
+
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown report processing error";
-      await this.prisma.reportJob.update({ where: { id: reportJob.id }, data: { status: "FAILED", completedAt: new Date(), errorMessage: message } });
+      this.logger.error(`Failed to process report job ${reportJobId}: ${message}`, error instanceof Error ? error.stack : undefined);
+      
+      await this.prisma.reportJob.update({ 
+        where: { id: reportJob.id }, 
+        data: { status: "FAILED", completedAt: new Date(), errorMessage: message } 
+      });
+
+      if (reportJob.requestedById) {
+        await this.audit.record({
+          actorId: reportJob.requestedById,
+          action: 'report.failed',
+          entity: 'ReportJob',
+          entityId: reportJob.id,
+          metadata: { type: reportJob.type, error: message }
+        });
+
+        await this.notifications.createSystemNotification({
+          userId: reportJob.requestedById,
+          title: 'Report Failed',
+          body: `Failed to generate report "${reportJob.title || reportJob.type}": ${message}`,
+          metadata: { reportJobId: reportJob.id, type: 'REPORT_FAILED' }
+        });
+      }
+      
       throw error;
     }
   }
@@ -110,20 +169,5 @@ export class ReportQueueService implements OnModuleInit, OnModuleDestroy {
       db: Number.isNaN(db) ? undefined : db,
       tls: url.protocol === "rediss:" ? {} : undefined
     };
-  }
-
-  private async estimateRowCount(type: string) {
-    switch (type.toUpperCase()) {
-      case "STUDENTS":
-        return this.prisma.student.count({ where: { deletedAt: null } });
-      case "FINANCE":
-        return this.prisma.invoice.count({ where: { deletedAt: null } });
-      case "PPDB":
-        return this.prisma.ppdbRegistration.count();
-      case "BKK":
-        return this.prisma.jobVacancy.count({ where: { deletedAt: null } });
-      default:
-        return 0;
-    }
   }
 }

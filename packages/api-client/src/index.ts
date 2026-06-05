@@ -1459,6 +1459,10 @@ export function createApiClient(options: ApiClientOptions = {}) {
       const response = await request<{ deleted: boolean; id: string }>(`/notification-templates/${id}`, { method: "DELETE" });
       return response.data;
     },
+    async listReportTypes() {
+      const response = await request<any[]>("/reports/types");
+      return response.data;
+    },
     async getReportSummary() {
       const response = await request<ReportCenterSummary>("/reports/summary");
       return response.data;
@@ -1466,6 +1470,9 @@ export function createApiClient(options: ApiClientOptions = {}) {
     async generateReport(input: Record<string, unknown>) {
       const response = await request<ReportJobRecord>("/reports/generate", { method: "POST", body: JSON.stringify(input) });
       return response.data;
+    },
+    async downloadReport(reportJobId: string): Promise<Blob> {
+      return downloadFile(`/reports/download/${reportJobId}`, `report-${reportJobId}.xlsx`);
     },
     async listReportJobs(options: { page?: number; limit?: number; search?: string; status?: string; type?: string } = {}) {
       const params = new URLSearchParams();

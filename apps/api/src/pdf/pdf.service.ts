@@ -62,19 +62,19 @@ export class PdfService {
     };
   }
 
-  createDocument(): PDFKit.PDFDocument {
+  createDocument(options: { info?: { Title?: string; Author?: string } } = {}): PDFKit.PDFDocument {
     const doc = new PDFDocument({
       size: "A4",
       margins: { top: PAGE_MARGIN, left: PAGE_MARGIN, right: PAGE_MARGIN, bottom: PAGE_MARGIN },
       info: {
-        Title: "Document",
-        Author: "NexSMSID"
+        Title: options.info?.Title || "Document",
+        Author: options.info?.Author || "NexSMSID"
       }
     });
     return doc;
   }
 
-  private collectBuffer(doc: PDFKit.PDFDocument): Promise<Buffer> {
+  async bufferFromDocument(doc: PDFKit.PDFDocument): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
       doc.on("data", (chunk: Buffer) => chunks.push(chunk));
@@ -85,16 +85,14 @@ export class PdfService {
   }
 
   async render(header: PdfHeader, renderContent: (doc: PDFKit.PDFDocument) => void): Promise<Buffer> {
-    const doc = this.createDocument();
-    doc.info.Title = header.title;
-    doc.info.Author = header.schoolName;
+    const doc = this.createDocument({ info: { Title: header.title, Author: header.schoolName } });
 
     this.drawHeader(doc, header);
     doc.moveDown(1.5);
 
     renderContent(doc);
 
-    return this.collectBuffer(doc);
+    return this.bufferFromDocument(doc);
   }
 
   private drawHeader(doc: PDFKit.PDFDocument, header: PdfHeader) {
