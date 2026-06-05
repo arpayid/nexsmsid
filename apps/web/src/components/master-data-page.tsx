@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Edit3, Loader2, Plus, RefreshCcw, Trash2 } from "lucide-react";
+import { Download, Edit3, Loader2, Plus, RefreshCcw, Trash2, Upload } from "lucide-react";
 
 import type { MasterDataRecord } from "@nexsmsid/api-client";
 import { Button, ConfirmDialog, DataTable, ErrorState, FormModal, Input, PageHeader, SearchFilterBar, SectionCard, StatusBadge } from "@nexsmsid/ui";
@@ -34,14 +34,40 @@ export function MasterDataPage({ description, fields, resource, title }: MasterD
   const [pendingDelete, setPendingDelete] = useState<MasterDataRecord | null>(null);
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [excelBusy, setExcelBusy] = useState<"" | "export" | "import" | "template">("");
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<{ totalRows: number; successRows: number; failedRows: number; errors: Array<{ row?: number; field?: string; message: string }> } | null>(null);
   const tableFields = fields.filter((field) => field.table !== false).slice(0, 5);
+
+  const client = createBrowserApiClient();
+
+  const excelMethods = {
+    downloadTemplate: async () => {
+      if (resource === "subjects") return client.downloadSubjectsTemplate();
+      if (resource === "classrooms") return client.downloadClassroomsTemplate();
+      throw new Error("Template not available for this resource");
+    },
+    exportData: async () => {
+      if (resource === "subjects") return client.exportSubjects();
+      if (resource === "classrooms") return client.exportClassrooms();
+      throw new Error("Export not available for this resource");
+    },
+    importData: async (file: File) => {
+      if (resource === "subjects") return client.importSubjects(file);
+      if (resource === "classrooms") return client.importClassrooms(file);
+      throw new Error("Import not available for this resource");
+    }
+  };
+
+  const isExcelSupported = resource === "subjects" || resource === "classrooms";
 
   async function loadData() {
     setError(null);
     setLoading(true);
 
     try {
-      const response = await createBrowserApiClient().masterDataList(resource, {
+      const response = await client.masterDataList(resource, {
         limit: 50,
         search: search || undefined
       });
@@ -81,7 +107,7 @@ export function MasterDataPage({ description, fields, resource, title }: MasterD
     setError(null);
 
     try {
-      await createBrowserApiClient().masterDataDelete(resource, pendingDelete.id);
+      await client.masterDataDelete(resource, pendingDelete.id);
       setPendingDelete(null);
       await loadData();
     } catch (deleteError) {
@@ -99,9 +125,9 @@ export function MasterDataPage({ description, fields, resource, title }: MasterD
 
     try {
       if (editing) {
-        await createBrowserApiClient().masterDataUpdate(resource, editing.id, payload);
+        await client.masterDataUpdate(resource, editing.id, payload);
       } else {
-        await createBrowserApiClient().masterDataCreate(resource, payload);
+        await client.masterDataCreate(resource, payload);
       }
 
       setFormOpen(false);
@@ -111,6 +137,57 @@ export function MasterDataPage({ description, fields, resource, title }: MasterD
       setError(submitError instanceof Error ? submitError.message : "Gagal menyimpan data");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleDownloadTemplate() {
+    if (!isExcelSupported) return;
+    setError(null);
+    setExcelBusy("template");
+    try {
+      const blob = await excelMethods.downloadTemplate();
+      client.saveExcelBlob(blob, `${resource}-template.xlsx`);
+    } catch (downloadError) {
+      setError(downloadError instanceof Error ? downloadError.message : "Gagal mengunduh template");
+    } finally {
+      setExcelBusy("");
+    }
+  }
+
+  async function handleExport() {
+    if (!isExcelSupported) return;
+    setError(null);
+    setExcelBusy("export");
+    try {
+      const blob = await excelMethods.exportData();
+      client.saveExcelBlob(blob, `${resource}-export.xlsx`);
+    } catch (exportError) {
+      setError(exportError instanceof Error ? exportError.message : "Gagal mengekspor data");
+    } finally {
+      setExcelBusy("");
+    }
+  }
+
+  function openImport() {
+    if (!isExcelSupported) return;
+    setImportFile(null);
+    setImportResult(null);
+    setImportModalOpen(true);
+  }
+
+  async function handleImport(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!isExcelSupported || !importFile) return;
+    setError(null);
+    setExcelBusy("import");
+    try {
+      const result = await excelMethods.importData(importFile);
+      setImportResult(result);
+      await loadData();
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : "Gagal mengimpor data");
+    } finally {
+      setExcelBusy("");
     }
   }
 
@@ -132,6 +209,19 @@ export function MasterDataPage({ description, fields, resource, title }: MasterD
       <PageHeader
         actions={
           <>
+            {isExcelSupported ? (
+              <>
+                <Button disabled={Boolean(excelBusy)} onClick={openImport} variant="outline">
+                  {excelBusy === "import" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Import
+                </Button>
+                <Button disabled={Boolean(excelBusy)} onClick={() => void handleDownloadTemplate()} variant="outline">
+                  {excelBusy === "template" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Template
+                </Button>
+                <Button disabled={Boolean(excelBusy)} onClick={() => void handleExport()} variant="outline">
+                  {excelBusy === "export" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Export
+                </Button>
+              </>
+            ) : null}
             <Button onClick={loadData} variant="outline">
               <RefreshCcw className="h-4 w-4" /> Refresh
             </Button>
@@ -186,6 +276,52 @@ export function MasterDataPage({ description, fields, resource, title }: MasterD
         open={Boolean(pendingDelete)}
         title="Konfirmasi hapus data"
       />
+
+      {isExcelSupported ? (
+        <FormModal
+          description={`Upload file Excel (.xlsx) hasil dari template.`}
+          onClose={() => setImportModalOpen(false)}
+          open={importModalOpen}
+          title={`Import ${title} dari Excel`}
+        >
+          <form className="space-y-4" onSubmit={handleImport}>
+            <label className="space-y-2">
+              <span className="text-sm font-bold text-slate-700">File Excel</span>
+              <input
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                className="block w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none file:mr-3 file:rounded-full file:border-0 file:bg-primary/10 file:px-3 file:py-1 file:text-primary"
+                onChange={(event) => setImportFile(event.target.files?.[0] ?? null)}
+                required
+                type="file"
+              />
+            </label>
+            {importResult ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                <p>
+                  Total baris: <strong>{importResult.totalRows}</strong> | Berhasil: <strong className="text-emerald-600">{importResult.successRows}</strong> | Gagal: <strong className="text-rose-600">{importResult.failedRows}</strong>
+                </p>
+                {importResult.errors.length > 0 ? (
+                  <ul className="mt-2 list-disc pl-5 text-xs">
+                    {importResult.errors.slice(0, 8).map((err, index) => (
+                      <li key={`${err.row ?? "row"}-${index}`}>
+                        Baris {err.row ?? "?"}
+                        {err.field ? ` (${err.field})` : ""}: {err.message}
+                      </li>
+                    ))}
+                    {importResult.errors.length > 8 ? <li>...dan {importResult.errors.length - 8} error lainnya</li> : null}
+                  </ul>
+                ) : null}
+              </div>
+            ) : null}
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button onClick={() => setImportModalOpen(false)} type="button" variant="outline">Tutup</Button>
+              <Button disabled={!importFile || excelBusy === "import"} type="submit">
+                {excelBusy === "import" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Upload & Import
+              </Button>
+            </div>
+          </form>
+        </FormModal>
+      ) : null}
     </div>
   );
 }

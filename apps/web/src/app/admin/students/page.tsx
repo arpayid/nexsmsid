@@ -103,6 +103,18 @@ export default function StudentsPage() {
     [api]
   );
 
+  const excel = useMemo(
+    () => ({
+      downloadTemplate: () => api.downloadStudentsTemplate(),
+      exportData: () => api.exportStudents(),
+      importData: (file: File) => api.importStudents(file),
+      saveBlob: (blob: Blob, filename: string) => api.saveExcelBlob(blob, filename),
+      templateFilename: "students-template.xlsx",
+      exportFilename: "students-export.xlsx"
+    }),
+    [api]
+  );
+
   return (
     <div className="space-y-6">
       {classroomError ? (
@@ -130,6 +142,7 @@ export default function StudentsPage() {
 
       <PeoplePage
         description="Kelola data siswa, wali kelas, dan histori akademik dasar."
+        excel={excel}
         fields={fields}
         resource={resource}
         statusOptions={["ACTIVE", "INACTIVE", "GRADUATED", "TRANSFERRED"]}

@@ -62,9 +62,19 @@ export default function StaffsPage() {
     [api]
   );
 
+  const excel = {
+    downloadTemplate: () => api.downloadStaffsTemplate(),
+    exportData: () => api.exportStaffs(),
+    importData: (file: File) => api.importStaffs(file),
+    saveBlob: (blob: Blob, filename: string) => api.saveExcelBlob(blob, filename),
+    templateFilename: "staffs-template.xlsx",
+    exportFilename: "staffs-export.xlsx"
+  };
+
   return (
     <PeoplePage
       description="Kelola data staff tata usaha dan tenaga kependidikan non-guru."
+      excel={excel}
       fields={fields}
       resource={resource}
       statusOptions={["ACTIVE", "INACTIVE", "RESIGNED", "TRANSFERRED"]}

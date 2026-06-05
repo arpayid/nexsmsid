@@ -1,4 +1,21 @@
-import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  Res,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors
+} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import type { Response } from "express";
 
 import { AuthenticatedUser, getRequestMeta, RequestWithUser } from "../auth/auth.types";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
@@ -6,12 +23,17 @@ import { RequirePermissions } from "../auth/decorators/require-permissions.decor
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { PermissionGuard } from "../auth/guards/permission.guard";
 import { apiSuccess } from "../common/api-response";
+import { ExcelImportService } from "../excel/excel-import.service";
+import { getGuardiansImportConfig } from "./guardians.excel";
 import { GuardiansService } from "./guardians.service";
 
 @Controller("guardians")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class GuardiansController {
-  constructor(@Inject(GuardiansService) private readonly guardiansService: GuardiansService) {}
+  constructor(
+    @Inject(GuardiansService) private readonly guardiansService: GuardiansService,
+    @Inject(ExcelImportService) private readonly excelImportService: ExcelImportService
+  ) {}
 
   @Get()
   @RequirePermissions("guardians.view")
@@ -22,6 +44,57 @@ export class GuardiansController {
       limit: result.limit,
       total: result.total
     });
+  }
+
+  @Get("template")
+  @RequirePermissions("guardians.import")
+  async template(@Res() response: Response) {
+    const buffer = await this.excelImportService.buildTemplate(getGuardiansImportConfig(this.guardiansService));
+    response
+      .status(200)
+      .setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      .setHeader("Content-Disposition", `attachment; filename="guardians-template.xlsx"`)
+      .setHeader("Content-Length", String(buffer.length))
+      .end(buffer);
+  }
+
+  @Get("export")
+  @RequirePermissions("guardians.export")
+  async export(@Res() response: Response) {
+    const records = await this.guardiansService.exportAll();
+    const buffer = await this.excelImportService.exportRows(getGuardiansImportConfig(this.guardiansService), records);
+    response
+      .status(200)
+      .setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      .setHeader("Content-Disposition", `attachment; filename="guardians-export.xlsx"`)
+      .setHeader("Content-Length", String(buffer.length))
+      .end(buffer);
+  }
+
+  @Post("import")
+  @RequirePermissions("guardians.import")
+  @UseInterceptors(FileInterceptor("file"))
+  async import(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: RequestWithUser,
+    @Body() _body: unknown
+  ) {
+    if (!file) {
+      return apiSuccess("Guardian import failed", {
+        totalRows: 0,
+        successRows: 0,
+        failedRows: 0,
+        errors: [{ row: 0, message: "No file uploaded" }]
+      });
+    }
+    const result = await this.excelImportService.importFromBuffer(
+      getGuardiansImportConfig(this.guardiansService),
+      file.buffer,
+      user,
+      getRequestMeta(request)
+    );
+    return apiSuccess("Guardian import completed", result);
   }
 
   @Get(":id")

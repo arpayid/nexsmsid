@@ -43,9 +43,19 @@ export default function GuardiansPage() {
     [api]
   );
 
+  const excel = {
+    downloadTemplate: () => api.downloadGuardiansTemplate(),
+    exportData: () => api.exportGuardians(),
+    importData: (file: File) => api.importGuardians(file),
+    saveBlob: (blob: Blob, filename: string) => api.saveExcelBlob(blob, filename),
+    templateFilename: "guardians-template.xlsx",
+    exportFilename: "guardians-export.xlsx"
+  };
+
   return (
     <PeoplePage
       description="Kelola data wali/orang tua siswa untuk kebutuhan komunikasi dan persetujuan akademik."
+      excel={excel}
       fields={fields}
       resource={resource}
       statusOptions={[]}

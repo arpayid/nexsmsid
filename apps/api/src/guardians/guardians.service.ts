@@ -18,4 +18,18 @@ export class GuardiansService extends BasePeopleService<typeof createGuardianSch
       useSoftDelete: false
     });
   }
+
+  async findUniqueGuardian(conditions: Array<Record<string, unknown>>) {
+    return this.prisma.guardian.findFirst({ where: { OR: conditions } });
+  }
+
+  async createRaw(data: Record<string, unknown>) {
+    return this.prisma.guardian.create({ data: data as never });
+  }
+
+  async exportAll(): Promise<Record<string, unknown>[]> {
+    return this.prisma.guardian.findMany({
+      orderBy: { name: "asc" }
+    }) as unknown as Promise<Record<string, unknown>[]>;
+  }
 }

@@ -14,6 +14,7 @@ import { AppConfigModule } from "./config/app-config.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { DatabaseModule } from "./database/database.module";
 import { DepartmentsModule } from "./departments/departments.module";
+import { ExcelModule } from "./excel/excel.module";
 import { ExportHistoryModule } from "./export-history/export-history.module";
 import { ExpensesModule } from "./expenses/expenses.module";
 import { FinanceDashboardModule } from "./finance-dashboard/finance-dashboard.module";
@@ -57,6 +58,7 @@ import { UsersModule } from "./users/users.module";
     AppConfigModule,
     DatabaseModule,
     AuditModule,
+    ExcelModule,
     AuthModule,
     DashboardModule,
     HealthModule,

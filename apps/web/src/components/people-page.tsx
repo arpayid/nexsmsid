@@ -32,9 +32,19 @@ export type PeopleResourceConfig = {
   update: (id: string, input: Record<string, unknown>) => Promise<MasterDataRecord>;
 };
 
+export type PeopleExcelConfig = {
+  downloadTemplate: () => Promise<Blob>;
+  exportData: () => Promise<Blob>;
+  importData: (file: File) => Promise<{ totalRows: number; successRows: number; failedRows: number; errors: Array<{ row?: number; field?: string; message: string }> }>;
+  saveBlob: (blob: Blob, filename: string) => void;
+  templateFilename: string;
+  exportFilename: string;
+};
+
 export type PeoplePageProps = {
   description: string;
   eyebrow?: string;
+  excel?: PeopleExcelConfig;
   fields: PeopleField[];
   resource: PeopleResourceConfig;
   statusOptions: string[];
@@ -53,7 +63,7 @@ const statusMap: StatusBadgeMap = {
   PROBATION: { label: "PROBATION", variant: "outline" }
 };
 
-export function PeoplePage({ description, eyebrow, fields, resource, statusOptions, title }: PeoplePageProps) {
+export function PeoplePage({ description, eyebrow, excel, fields, resource, statusOptions, title }: PeoplePageProps) {
   const [editing, setEditing] = useState<MasterDataRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -64,6 +74,10 @@ export function PeoplePage({ description, eyebrow, fields, resource, statusOptio
   const [statusFilter, setStatusFilter] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [total, setTotal] = useState(0);
+  const [excelBusy, setExcelBusy] = useState<"" | "export" | "import" | "template">("");
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<{ totalRows: number; successRows: number; failedRows: number; errors: Array<{ row?: number; field?: string; message: string }> } | null>(null);
 
   const tableFields = useMemo(
     () => fields.filter((field) => field.table !== false).slice(0, 6),
@@ -152,6 +166,57 @@ export function PeoplePage({ description, eyebrow, fields, resource, statusOptio
     }
   }
 
+  async function handleDownloadTemplate() {
+    if (!excel) return;
+    setError(null);
+    setExcelBusy("template");
+    try {
+      const blob = await excel.downloadTemplate();
+      excel.saveBlob(blob, excel.templateFilename);
+    } catch (downloadError) {
+      setError(downloadError instanceof Error ? downloadError.message : "Gagal mengunduh template");
+    } finally {
+      setExcelBusy("");
+    }
+  }
+
+  async function handleExport() {
+    if (!excel) return;
+    setError(null);
+    setExcelBusy("export");
+    try {
+      const blob = await excel.exportData();
+      excel.saveBlob(blob, excel.exportFilename);
+    } catch (exportError) {
+      setError(exportError instanceof Error ? exportError.message : "Gagal mengekspor data");
+    } finally {
+      setExcelBusy("");
+    }
+  }
+
+  function openImport() {
+    if (!excel) return;
+    setImportFile(null);
+    setImportResult(null);
+    setImportModalOpen(true);
+  }
+
+  async function handleImport(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!excel || !importFile) return;
+    setError(null);
+    setExcelBusy("import");
+    try {
+      const result = await excel.importData(importFile);
+      setImportResult(result);
+      await loadData();
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : "Gagal mengimpor data");
+    } finally {
+      setExcelBusy("");
+    }
+  }
+
   const columns: DataTableColumn<MasterDataRecord>[] = tableFields.map((field) => ({
     cell: (item) => formatCell(item[field.name], field),
     header: field.label,
@@ -163,12 +228,28 @@ export function PeoplePage({ description, eyebrow, fields, resource, statusOptio
       <PageHeader
         actions={
           <>
-            <Button disabled title="Import akan tersedia di Phase berikutnya" variant="outline">
-              <Upload className="h-4 w-4" /> Import
-            </Button>
-            <Button disabled title="Export akan tersedia di Phase berikutnya" variant="outline">
-              <Download className="h-4 w-4" /> Export
-            </Button>
+            {excel ? (
+              <>
+                <Button disabled={Boolean(excelBusy)} onClick={openImport} variant="outline">
+                  {excelBusy === "import" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Import
+                </Button>
+                <Button disabled={Boolean(excelBusy)} onClick={() => void handleDownloadTemplate()} variant="outline">
+                  {excelBusy === "template" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Template
+                </Button>
+                <Button disabled={Boolean(excelBusy)} onClick={() => void handleExport()} variant="outline">
+                  {excelBusy === "export" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Export
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button disabled title="Import akan tersedia di Phase berikutnya" variant="outline">
+                  <Upload className="h-4 w-4" /> Import
+                </Button>
+                <Button disabled title="Export akan tersedia di Phase berikutnya" variant="outline">
+                  <Download className="h-4 w-4" /> Export
+                </Button>
+              </>
+            )}
             <Button onClick={loadData} variant="outline">
               <RefreshCcw className="h-4 w-4" /> Refresh
             </Button>
@@ -230,6 +311,52 @@ export function PeoplePage({ description, eyebrow, fields, resource, statusOptio
         open={Boolean(pendingDelete)}
         title="Konfirmasi hapus data"
       />
+
+      {excel ? (
+        <FormModal
+          description={`Upload file Excel (.xlsx) hasil dari template. Maksimal: lihat kolom wajib di template.`}
+          onClose={() => setImportModalOpen(false)}
+          open={importModalOpen}
+          title={`Import ${title} dari Excel`}
+        >
+          <form className="space-y-4" onSubmit={handleImport}>
+            <label className="space-y-2">
+              <span className="text-sm font-bold text-slate-700">File Excel</span>
+              <input
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                className="block w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none file:mr-3 file:rounded-full file:border-0 file:bg-primary/10 file:px-3 file:py-1 file:text-primary"
+                onChange={(event) => setImportFile(event.target.files?.[0] ?? null)}
+                required
+                type="file"
+              />
+            </label>
+            {importResult ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                <p>
+                  Total baris: <strong>{importResult.totalRows}</strong> | Berhasil: <strong className="text-emerald-600">{importResult.successRows}</strong> | Gagal: <strong className="text-rose-600">{importResult.failedRows}</strong>
+                </p>
+                {importResult.errors.length > 0 ? (
+                  <ul className="mt-2 list-disc pl-5 text-xs">
+                    {importResult.errors.slice(0, 8).map((err, index) => (
+                      <li key={`${err.row ?? "row"}-${index}`}>
+                        Baris {err.row ?? "?"}
+                        {err.field ? ` (${err.field})` : ""}: {err.message}
+                      </li>
+                    ))}
+                    {importResult.errors.length > 8 ? <li>...dan {importResult.errors.length - 8} error lainnya</li> : null}
+                  </ul>
+                ) : null}
+              </div>
+            ) : null}
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button onClick={() => setImportModalOpen(false)} type="button" variant="outline">Tutup</Button>
+              <Button disabled={!importFile || excelBusy === "import"} type="submit">
+                {excelBusy === "import" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Upload & Import
+              </Button>
+            </div>
+          </form>
+        </FormModal>
+      ) : null}
     </div>
   );
 }

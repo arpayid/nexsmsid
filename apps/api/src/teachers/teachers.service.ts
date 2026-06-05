@@ -18,4 +18,21 @@ export class TeachersService extends BasePeopleService<typeof createTeacherSchem
       useSoftDelete: true
     });
   }
+
+  async findUniqueTeacher(conditions: Array<Record<string, unknown>>) {
+    return this.prisma.teacher.findFirst({
+      where: { OR: conditions, deletedAt: null }
+    });
+  }
+
+  async createRaw(data: Record<string, unknown>) {
+    return this.prisma.teacher.create({ data: data as never });
+  }
+
+  async exportAll(): Promise<Record<string, unknown>[]> {
+    return this.prisma.teacher.findMany({
+      where: { deletedAt: null },
+      orderBy: { name: "asc" }
+    }) as unknown as Promise<Record<string, unknown>[]>;
+  }
 }

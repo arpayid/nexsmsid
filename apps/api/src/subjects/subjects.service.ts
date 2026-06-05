@@ -16,4 +16,21 @@ export class SubjectsService extends BaseMasterDataService<typeof createSubjectS
       updateSchema: updateSubjectSchema
     });
   }
+
+  async findUniqueSubject(code: string) {
+    return this.prisma.subject.findFirst({
+      where: { code: code.toUpperCase(), deletedAt: null }
+    });
+  }
+
+  async createRaw(data: Record<string, unknown>) {
+    return this.prisma.subject.create({ data: data as never });
+  }
+
+  async exportAll(): Promise<Record<string, unknown>[]> {
+    return this.prisma.subject.findMany({
+      where: { deletedAt: null },
+      orderBy: { code: "asc" }
+    }) as unknown as Promise<Record<string, unknown>[]>;
+  }
 }

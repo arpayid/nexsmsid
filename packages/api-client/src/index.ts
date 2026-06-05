@@ -378,9 +378,25 @@ export type ApiClientOptions = {
   fetcher?: typeof fetch;
 };
 
+export type ImportResult = {
+  totalRows: number;
+  successRows: number;
+  failedRows: number;
+  errors: Array<{ row?: number; field?: string; message: string }>;
+};
+
 export function createApiClient(options: ApiClientOptions = {}) {
   const baseUrl = (options.baseUrl ?? "http://localhost:4000/api/v1").replace(/\/$/, "");
   const fetcher = options.fetcher ?? fetch;
+
+  function authHeaders() {
+    const token = typeof options.accessToken === "function" ? options.accessToken() : options.accessToken;
+    const headers = new Headers();
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+    return headers;
+  }
 
   async function request<TData>(path: string, init: RequestInit = {}) {
     const headers = new Headers(init.headers);
@@ -405,6 +421,49 @@ export function createApiClient(options: ApiClientOptions = {}) {
     }
 
     return payload;
+  }
+
+  async function downloadFile(path: string, fallbackFilename: string): Promise<Blob> {
+    const response = await fetcher(`${baseUrl}${path}`, { headers: authHeaders() });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as ApiResponse<unknown> | null;
+      throw new Error(payload?.message ?? `NexSMSID API request failed: ${response.status}`);
+    }
+    const blob = await response.blob();
+    const headerDisposition = response.headers.get("Content-Disposition") ?? "";
+    const match = headerDisposition.match(/filename="?([^";]+)"?/i);
+    const filename = match?.[1] ?? fallbackFilename;
+    return new Blob([blob], { type: blob.type || "application/octet-stream" }).slice(0, blob.size, blob.type) as Blob;
+  }
+
+  function triggerBrowserDownload(blob: Blob, filename: string) {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  async function uploadFile<TData>(path: string, file: Blob | File, fieldName = "file", fallbackFilename = "upload.xlsx") {
+    const formData = new FormData();
+    const filename = (file as { name?: string }).name ?? fallbackFilename;
+    formData.append(fieldName, file, filename);
+    const response = await fetcher(`${baseUrl}${path}`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: formData
+    });
+    const payload = (await response.json().catch(() => null)) as ApiResponse<TData> | null;
+    if (!response.ok || !payload?.success) {
+      throw new Error(payload?.message ?? `NexSMSID API request failed: ${response.status}`);
+    }
+    return payload.data;
   }
 
   return {
@@ -646,6 +705,65 @@ export function createApiClient(options: ApiClientOptions = {}) {
         method: "DELETE"
       });
       return response.data;
+    },
+
+    // Phase 10.2 - Excel Import / Export / Template
+    async downloadStudentsTemplate(): Promise<Blob> {
+      return downloadFile("/students/template", "students-template.xlsx");
+    },
+    async exportStudents(): Promise<Blob> {
+      return downloadFile("/students/export", "students-export.xlsx");
+    },
+    async importStudents(file: Blob | File) {
+      return uploadFile<ImportResult>("/students/import", file);
+    },
+    async downloadGuardiansTemplate(): Promise<Blob> {
+      return downloadFile("/guardians/template", "guardians-template.xlsx");
+    },
+    async exportGuardians(): Promise<Blob> {
+      return downloadFile("/guardians/export", "guardians-export.xlsx");
+    },
+    async importGuardians(file: Blob | File) {
+      return uploadFile<ImportResult>("/guardians/import", file);
+    },
+    async downloadTeachersTemplate(): Promise<Blob> {
+      return downloadFile("/teachers/template", "teachers-template.xlsx");
+    },
+    async exportTeachers(): Promise<Blob> {
+      return downloadFile("/teachers/export", "teachers-export.xlsx");
+    },
+    async importTeachers(file: Blob | File) {
+      return uploadFile<ImportResult>("/teachers/import", file);
+    },
+    async downloadStaffsTemplate(): Promise<Blob> {
+      return downloadFile("/staffs/template", "staffs-template.xlsx");
+    },
+    async exportStaffs(): Promise<Blob> {
+      return downloadFile("/staffs/export", "staffs-export.xlsx");
+    },
+    async importStaffs(file: Blob | File) {
+      return uploadFile<ImportResult>("/staffs/import", file);
+    },
+    async downloadSubjectsTemplate(): Promise<Blob> {
+      return downloadFile("/subjects/template", "subjects-template.xlsx");
+    },
+    async exportSubjects(): Promise<Blob> {
+      return downloadFile("/subjects/export", "subjects-export.xlsx");
+    },
+    async importSubjects(file: Blob | File) {
+      return uploadFile<ImportResult>("/subjects/import", file);
+    },
+    async downloadClassroomsTemplate(): Promise<Blob> {
+      return downloadFile("/classrooms/template", "classrooms-template.xlsx");
+    },
+    async exportClassrooms(): Promise<Blob> {
+      return downloadFile("/classrooms/export", "classrooms-export.xlsx");
+    },
+    async importClassrooms(file: Blob | File) {
+      return uploadFile<ImportResult>("/classrooms/import", file);
+    },
+    saveExcelBlob(blob: Blob, filename: string) {
+      triggerBrowserDownload(blob, filename);
     },
 
     // Phase 7 - Teaching Assignments

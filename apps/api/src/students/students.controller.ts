@@ -1,4 +1,21 @@
-import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  Res,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors
+} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import type { Response } from "express";
 
 import { AuthenticatedUser, getRequestMeta, RequestWithUser } from "../auth/auth.types";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
@@ -6,12 +23,17 @@ import { RequirePermissions } from "../auth/decorators/require-permissions.decor
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { PermissionGuard } from "../auth/guards/permission.guard";
 import { apiSuccess } from "../common/api-response";
+import { ExcelImportService } from "../excel/excel-import.service";
+import { getStudentsImportConfig } from "./students.excel";
 import { StudentsService } from "./students.service";
 
 @Controller("students")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class StudentsController {
-  constructor(@Inject(StudentsService) private readonly studentsService: StudentsService) {}
+  constructor(
+    @Inject(StudentsService) private readonly studentsService: StudentsService,
+    @Inject(ExcelImportService) private readonly excelImportService: ExcelImportService
+  ) {}
 
   @Get()
   @RequirePermissions("students.view")
@@ -22,6 +44,66 @@ export class StudentsController {
       limit: result.limit,
       total: result.total
     });
+  }
+
+  @Get("template")
+  @RequirePermissions("students.import")
+  async template(@Res() response: Response) {
+    const buffer = await this.excelImportService.buildTemplate(getStudentsImportConfig(this.studentsService));
+    response
+      .status(200)
+      .setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      )
+      .setHeader("Content-Disposition", `attachment; filename="students-template.xlsx"`)
+      .setHeader("Content-Length", String(buffer.length))
+      .end(buffer);
+  }
+
+  @Get("export")
+  @RequirePermissions("students.export")
+  async export(@Res() response: Response) {
+    const records = await this.studentsService.exportAll();
+    const buffer = await this.excelImportService.exportRows(
+      getStudentsImportConfig(this.studentsService),
+      records
+    );
+    response
+      .status(200)
+      .setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      )
+      .setHeader("Content-Disposition", `attachment; filename="students-export.xlsx"`)
+      .setHeader("Content-Length", String(buffer.length))
+      .end(buffer);
+  }
+
+  @Post("import")
+  @RequirePermissions("students.import")
+  @UseInterceptors(FileInterceptor("file"))
+  async import(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: RequestWithUser,
+    @Body() _body: unknown
+  ) {
+    if (!file) {
+      return apiSuccess("Student import failed", {
+        totalRows: 0,
+        successRows: 0,
+        failedRows: 0,
+        errors: [{ row: 0, message: "No file uploaded" }]
+      });
+    }
+    const result = await this.excelImportService.importFromBuffer(
+      getStudentsImportConfig(this.studentsService),
+      file.buffer,
+      user,
+      getRequestMeta(request)
+    );
+    return apiSuccess("Student import completed", result);
   }
 
   @Get(":id")

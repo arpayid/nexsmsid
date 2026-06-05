@@ -63,9 +63,19 @@ export default function TeachersPage() {
     [api]
   );
 
+  const excel = {
+    downloadTemplate: () => api.downloadTeachersTemplate(),
+    exportData: () => api.exportTeachers(),
+    importData: (file: File) => api.importTeachers(file),
+    saveBlob: (blob: Blob, filename: string) => api.saveExcelBlob(blob, filename),
+    templateFilename: "teachers-template.xlsx",
+    exportFilename: "teachers-export.xlsx"
+  };
+
   return (
     <PeoplePage
       description="Kelola data guru dan tenaga pendidik untuk kebutuhan penjadwalan serta pembelajaran."
+      excel={excel}
       fields={fields}
       resource={resource}
       statusOptions={["ACTIVE", "INACTIVE", "RESIGNED", "TRANSFERRED"]}

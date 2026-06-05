@@ -6,7 +6,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "isolatedModules": false,
-    "types": ["node"],
+    "types": ["node", "multer"],
     "rootDir": "src",
     "outDir": "dist",
     "noEmit": true
