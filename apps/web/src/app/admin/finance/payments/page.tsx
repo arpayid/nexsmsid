@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AlertCircle, CheckCircle, Loader2, Plus, Printer, RefreshCcw, Search, X, XCircle } from "lucide-react";
 
 import type { InvoiceRecord, PaymentRecord, StudentRecord } from "@nexsmsid/api-client";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, Input, PageHeader } from "@nexsmsid/ui";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, FormModal, Input, PageHeader } from "@nexsmsid/ui";
 
 import { createBrowserApiClient } from "@/lib/api-client";
 
@@ -264,70 +264,62 @@ export default function PaymentsPage() {
         </CardContent>
       </Card>
 
-      {formOpen ? (
-        <Card className="border-primary/20">
-          <CardHeader>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <CardTitle>Tambah Pembayaran</CardTitle>
-              </div>
-              <Button onClick={() => setFormOpen(false)} size="icon" variant="ghost"><X className="h-5 w-5" /></Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Invoice</span>
-                <select className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  name="invoiceId" required>
-                  <option value="" disabled>Pilih Invoice</option>
-                  {invoices.map((inv) => {
-                    const invRow = inv as Record<string, unknown>;
-                    return (
-                      <option key={invRow.id as string} value={invRow.id as string}>
-                        {invRow.invoiceNumber as string ?? "-"} - {(invRow.student as Record<string, unknown>)?.name as string ?? ""}
-                      </option>
-                    );
-                  })}
-                </select>
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Jumlah</span>
-                <Input name="amount" type="number" min="0" required />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Metode Pembayaran</span>
-                <select className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  name="method" required>
-                  <option value="" disabled>Pilih Metode</option>
-                  <option value="CASH">Tunai</option>
-                  <option value="TRANSFER">Transfer Bank</option>
-                  <option value="VA">Virtual Account</option>
-                  <option value="QRIS">QRIS</option>
-                  <option value="OTHER">Lainnya</option>
-                </select>
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">URL Bukti Pembayaran</span>
-                <Input name="proofUrl" placeholder="https://..." type="url" />
-              </label>
-              <div className="md:col-span-2">
-                <label className="space-y-2">
-                  <span className="text-sm font-bold text-slate-700">Catatan</span>
-                  <textarea className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                    name="note" rows={2} />
-                </label>
-              </div>
-              <div className="flex gap-3 md:col-span-2">
-                <Button disabled={submitting} type="submit">
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan
-                </Button>
-                <Button onClick={() => setFormOpen(false)} type="button" variant="outline">Batal</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
+      <FormModal
+        onClose={() => setFormOpen(false)}
+        open={formOpen}
+        title="Tambah Pembayaran"
+      >
+        <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Invoice</span>
+            <select className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              name="invoiceId" required defaultValue="">
+              <option value="" disabled>Pilih Invoice</option>
+              {invoices.map((inv) => {
+                const invRow = inv as Record<string, unknown>;
+                return (
+                  <option key={invRow.id as string} value={invRow.id as string}>
+                    {invRow.invoiceNumber as string ?? "-"} - {(invRow.student as Record<string, unknown>)?.name as string ?? ""}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Jumlah</span>
+            <Input name="amount" type="number" min="0" required />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Metode Pembayaran</span>
+            <select className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              name="method" required defaultValue="">
+              <option value="" disabled>Pilih Metode</option>
+              <option value="CASH">Tunai</option>
+              <option value="TRANSFER">Transfer Bank</option>
+              <option value="VA">Virtual Account</option>
+              <option value="QRIS">QRIS</option>
+              <option value="OTHER">Lainnya</option>
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">URL Bukti Pembayaran</span>
+            <Input name="proofUrl" placeholder="https://..." type="url" />
+          </label>
+          <div className="md:col-span-2">
+            <label className="space-y-2">
+              <span className="text-sm font-bold text-slate-700">Catatan</span>
+              <textarea className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                name="note" rows={2} />
+            </label>
+          </div>
+          <div className="flex gap-3 md:col-span-2">
+            <Button disabled={submitting} type="submit">
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan
+            </Button>
+            <Button onClick={() => setFormOpen(false)} type="button" variant="outline">Batal</Button>
+          </div>
+        </form>
+      </FormModal>
     </div>
   );
 }

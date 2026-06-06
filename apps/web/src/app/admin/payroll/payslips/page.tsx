@@ -47,7 +47,7 @@ export default function Page() {
             <Button onClick={loadData} variant="outline">
               <RefreshCcw className="h-4 w-4" /> Refresh
             </Button>
-            <Button>
+            <Button onClick={() => window.alert("Slip gaji (payslip) dibuat otomatis saat memproses periode penggajian.")}>
               <Plus className="h-4 w-4" /> Tambah
             </Button>
           </>

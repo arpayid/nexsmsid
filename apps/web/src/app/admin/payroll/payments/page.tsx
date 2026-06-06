@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCcw, Wallet } from "lucide-react";
+import { Plus, RefreshCcw, Wallet } from "lucide-react";
 
 import { Button, DataTable, ErrorState, PageHeader, SectionCard } from "@nexsmsid/ui";
 import { createBrowserApiClient } from "@/lib/api-client";
@@ -48,7 +48,9 @@ export default function PayrollPaymentsPage() {
         actions={
           <>
             <Button onClick={loadData} variant="outline"><RefreshCcw className="h-4 w-4" /> Refresh</Button>
-            <Button><Wallet className="h-4 w-4" /> Tandai Dibayar</Button>
+            <Button onClick={() => window.alert("Pembayaran payroll dilakukan dengan memproses slip gaji di menu 'Daftar Gaji (Payroll Run)'.")}>
+              <Plus className="h-4 w-4" /> Tandai Dibayar
+            </Button>
           </>
         }
       />

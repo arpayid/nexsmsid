@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Edit3, FileText, Loader2, Plus, Printer, RefreshCcw, Search, Trash2, X } from "lucide-react";
 
 import type { InvoiceRecord, MasterDataRecord, StudentRecord } from "@nexsmsid/api-client";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, Input, PageHeader } from "@nexsmsid/ui";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, FormModal, Input, PageHeader } from "@nexsmsid/ui";
 
 import { createBrowserApiClient } from "@/lib/api-client";
 
@@ -283,57 +283,49 @@ export default function InvoicesPage() {
         </CardContent>
       </Card>
 
-      {formOpen ? (
-        <Card className="border-primary/20">
-          <CardHeader>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <CardTitle>{editing ? "Edit" : "Tambah"} Invoice</CardTitle>
-              </div>
-              <Button onClick={() => setFormOpen(false)} size="icon" variant="ghost"><X className="h-5 w-5" /></Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Siswa</span>
-                <select className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  defaultValue={(editing as Record<string, unknown>)?.studentId as string ?? ""} name="studentId" required>
-                  <option value="" disabled>Pilih Siswa</option>
-                  {students.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.nis})</option>)}
-                </select>
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Items (JSON)</span>
-                <textarea className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  defaultValue={editing ? JSON.stringify((editing as Record<string, unknown>).items ?? []) : "[{\"name\":\"\",\"quantity\":1,\"unitPrice\":0}]"}
-                  name="items" rows={3} required />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Diskon</span>
-                <Input defaultValue={(editing as Record<string, unknown>)?.discount as string ?? "0"} name="discount" type="number" min="0" />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Denda</span>
-                <Input defaultValue={(editing as Record<string, unknown>)?.penalty as string ?? "0"} name="penalty" type="number" min="0" />
-              </label>
-              <div className="md:col-span-2">
-                <label className="space-y-2">
-                  <span className="text-sm font-bold text-slate-700">Catatan</span>
-                  <textarea className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                    defaultValue={(editing as Record<string, unknown>)?.note as string ?? ""} name="note" rows={2} />
-                </label>
-              </div>
-              <div className="flex gap-3 md:col-span-2">
-                <Button disabled={submitting} type="submit">
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan
-                </Button>
-                <Button onClick={() => setFormOpen(false)} type="button" variant="outline">Batal</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
+      <FormModal
+        onClose={() => setFormOpen(false)}
+        open={formOpen}
+        title={editing ? "Edit Invoice" : "Tambah Invoice"}
+      >
+        <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Siswa</span>
+            <select className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              defaultValue={(editing as Record<string, unknown>)?.studentId as string ?? ""} name="studentId" required>
+              <option value="" disabled>Pilih Siswa</option>
+              {students.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.nis})</option>)}
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Items (JSON)</span>
+            <textarea className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              defaultValue={editing ? JSON.stringify((editing as Record<string, unknown>).items ?? []) : "[{\"name\":\"\",\"quantity\":1,\"unitPrice\":0}]"}
+              name="items" rows={3} required />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Diskon</span>
+            <Input defaultValue={(editing as Record<string, unknown>)?.discount as string ?? "0"} name="discount" type="number" min="0" />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Denda</span>
+            <Input defaultValue={(editing as Record<string, unknown>)?.penalty as string ?? "0"} name="penalty" type="number" min="0" />
+          </label>
+          <div className="md:col-span-2">
+            <label className="space-y-2">
+              <span className="text-sm font-bold text-slate-700">Catatan</span>
+              <textarea className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                defaultValue={(editing as Record<string, unknown>)?.note as string ?? ""} name="note" rows={2} />
+            </label>
+          </div>
+          <div className="flex gap-3 md:col-span-2">
+            <Button disabled={submitting} type="submit">
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan
+            </Button>
+            <Button onClick={() => setFormOpen(false)} type="button" variant="outline">Batal</Button>
+          </div>
+        </form>
+      </FormModal>
     </div>
   );
 }

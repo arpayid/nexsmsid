@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AlertCircle, CheckCircle, Edit3, Loader2, Plus, RefreshCcw, Search, Trash2, X } from "lucide-react";
 
 import type { ExpenseRecord } from "@nexsmsid/api-client";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, Input, PageHeader } from "@nexsmsid/ui";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, FormModal, Input, PageHeader } from "@nexsmsid/ui";
 
 import { createBrowserApiClient } from "@/lib/api-client";
 
@@ -233,61 +233,53 @@ export default function ExpensesPage() {
         </CardContent>
       </Card>
 
-      {formOpen ? (
-        <Card className="border-primary/20">
-          <CardHeader>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <CardTitle>{editing ? "Edit" : "Tambah"} Pengeluaran</CardTitle>
-              </div>
-              <Button onClick={() => setFormOpen(false)} size="icon" variant="ghost"><X className="h-5 w-5" /></Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Judul</span>
-                <Input defaultValue={(editing as Record<string, unknown>)?.title as string ?? ""} name="title" required />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Kategori</span>
-                <select className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  defaultValue={(editing as Record<string, unknown>)?.category as string ?? ""} name="category" required>
-                  <option value="" disabled>Pilih Kategori</option>
-                  <option value="UTILITIES">Utilitas</option>
-                  <option value="MAINTENANCE">Perawatan</option>
-                  <option value="SUPPLIES">Perlengkapan</option>
-                  <option value="SALARY">Gaji</option>
-                  <option value="TRANSPORT">Transportasi</option>
-                  <option value="EVENT">Kegiatan</option>
-                  <option value="OTHER">Lainnya</option>
-                </select>
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Jumlah</span>
-                <Input defaultValue={(editing as Record<string, unknown>)?.amount as string ?? ""} name="amount" type="number" min="0" required />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Tanggal</span>
-                <Input defaultValue={(editing as Record<string, unknown>)?.expenseDate as string ?? ""} name="expenseDate" type="date" />
-              </label>
-              <div className="md:col-span-2">
-                <label className="space-y-2">
-                  <span className="text-sm font-bold text-slate-700">Deskripsi</span>
-                  <textarea className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                    defaultValue={(editing as Record<string, unknown>)?.description as string ?? ""} name="description" rows={3} />
-                </label>
-              </div>
-              <div className="flex gap-3 md:col-span-2">
-                <Button disabled={submitting} type="submit">
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan
-                </Button>
-                <Button onClick={() => setFormOpen(false)} type="button" variant="outline">Batal</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
+      <FormModal
+        onClose={() => setFormOpen(false)}
+        open={formOpen}
+        title={editing ? "Edit Pengeluaran" : "Tambah Pengeluaran"}
+      >
+        <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Judul</span>
+            <Input defaultValue={(editing as Record<string, unknown>)?.title as string ?? ""} name="title" required />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Kategori</span>
+            <select className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              defaultValue={(editing as Record<string, unknown>)?.category as string ?? ""} name="category" required>
+              <option value="" disabled>Pilih Kategori</option>
+              <option value="UTILITIES">Utilitas</option>
+              <option value="MAINTENANCE">Perawatan</option>
+              <option value="SUPPLIES">Perlengkapan</option>
+              <option value="SALARY">Gaji</option>
+              <option value="TRANSPORT">Transportasi</option>
+              <option value="EVENT">Kegiatan</option>
+              <option value="OTHER">Lainnya</option>
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Jumlah</span>
+            <Input defaultValue={(editing as Record<string, unknown>)?.amount as string ?? ""} name="amount" type="number" min="0" required />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Tanggal</span>
+            <Input defaultValue={(editing as Record<string, unknown>)?.expenseDate as string ?? ""} name="expenseDate" type="date" />
+          </label>
+          <div className="md:col-span-2">
+            <label className="space-y-2">
+              <span className="text-sm font-bold text-slate-700">Deskripsi</span>
+              <textarea className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                defaultValue={(editing as Record<string, unknown>)?.description as string ?? ""} name="description" rows={3} />
+            </label>
+          </div>
+          <div className="flex gap-3 md:col-span-2">
+            <Button disabled={submitting} type="submit">
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan
+            </Button>
+            <Button onClick={() => setFormOpen(false)} type="button" variant="outline">Batal</Button>
+          </div>
+        </form>
+      </FormModal>
     </div>
   );
 }

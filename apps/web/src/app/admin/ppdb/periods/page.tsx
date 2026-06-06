@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Edit3, Loader2, Plus, RefreshCcw, Search, Trash2, X } from "lucide-react";
 
 import type { MasterDataRecord, PpdbPeriodRecord } from "@nexsmsid/api-client";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, Input, PageHeader } from "@nexsmsid/ui";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, FormModal, Input, PageHeader } from "@nexsmsid/ui";
 
 import { createBrowserApiClient } from "@/lib/api-client";
 
@@ -194,59 +194,51 @@ export default function PpdbPeriodsPage() {
         </CardContent>
       </Card>
 
-      {formOpen ? (
-        <Card className="border-primary/20">
-          <CardHeader>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <CardTitle>{editing ? "Edit" : "Tambah"} Periode PPDB</CardTitle>
-              </div>
-              <Button onClick={() => setFormOpen(false)} size="icon" variant="ghost"><X className="h-5 w-5" /></Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Nama Periode</span>
-                <input className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  defaultValue={editing?.name as string ?? ""} name="name" required type="text" />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Tahun Ajaran</span>
-                <select className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  defaultValue={editing?.academicYearId as string ?? activeAcademicYear?.id ?? ""} name="academicYearId" required>
-                  <option value="" disabled>Pilih Tahun Ajaran</option>
-                  {academicYears.map((y) => <option key={y.id} value={y.id}>{y.name}</option>)}
-                </select>
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Tanggal Mulai</span>
-                <input className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  defaultValue={editing?.startDate as string ?? ""} name="startDate" required type="date" />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Tanggal Selesai</span>
-                <input className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  defaultValue={editing?.endDate as string ?? ""} name="endDate" required type="date" />
-              </label>
-              <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700">Kuota</span>
-                <input className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  defaultValue={editing?.quota as number ?? ""} min="1" name="quota" required type="number" />
-              </label>
-              <label className="flex items-center gap-3 rounded-2xl border bg-white px-4 py-3 text-sm font-bold text-slate-700">
-                <input defaultChecked={editing?.isActive as boolean ?? true} name="isActive" type="checkbox" /> Aktif
-              </label>
-              <div className="flex gap-3 md:col-span-2">
-                <Button disabled={submitting} type="submit">
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan
-                </Button>
-                <Button onClick={() => setFormOpen(false)} type="button" variant="outline">Batal</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
+      <FormModal
+        onClose={() => setFormOpen(false)}
+        open={formOpen}
+        title={editing ? "Edit Periode PPDB" : "Tambah Periode PPDB"}
+      >
+        <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Nama Periode</span>
+            <input className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              defaultValue={editing?.name as string ?? ""} name="name" required type="text" />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Tahun Ajaran</span>
+            <select className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              defaultValue={editing?.academicYearId as string ?? activeAcademicYear?.id ?? ""} name="academicYearId" required>
+              <option value="" disabled>Pilih Tahun Ajaran</option>
+              {academicYears.map((y) => <option key={y.id} value={y.id}>{y.name}</option>)}
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Tanggal Mulai</span>
+            <input className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              defaultValue={editing?.startDate ? new Date(editing.startDate as string).toISOString().split("T")[0] : ""} name="startDate" required type="date" />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Tanggal Selesai</span>
+            <input className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              defaultValue={editing?.endDate ? new Date(editing.endDate as string).toISOString().split("T")[0] : ""} name="endDate" required type="date" />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Kuota</span>
+            <input className="w-full rounded-2xl border border-input bg-white px-4 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              defaultValue={editing?.quota as number ?? ""} min="1" name="quota" required type="number" />
+          </label>
+          <label className="flex items-center gap-3 rounded-2xl border bg-white px-4 py-3 text-sm font-bold text-slate-700">
+            <input defaultChecked={editing?.isActive as boolean ?? true} name="isActive" type="checkbox" /> Aktif
+          </label>
+          <div className="flex gap-3 md:col-span-2">
+            <Button disabled={submitting} type="submit">
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan
+            </Button>
+            <Button onClick={() => setFormOpen(false)} type="button" variant="outline">Batal</Button>
+          </div>
+        </form>
+      </FormModal>
     </div>
   );
 }
