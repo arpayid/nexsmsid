@@ -58,6 +58,22 @@ export class ReportDataService {
         return this.getInventoryMovementRecap(filters);
       case 'inventory-maintenance-recap':
         return this.getInventoryMaintenanceRecap(filters);
+
+      // HR & Payroll
+      case 'hr-employee-recap':
+        return this.getHrEmployeeRecap(filters);
+      case 'hr-attendance-recap':
+        return this.getHrAttendanceRecap(filters);
+      case 'hr-leave-recap':
+        return this.getHrLeaveRecap(filters);
+      case 'payroll-period-recap':
+        return this.getPayrollPeriodRecap(filters);
+      case 'payroll-run-recap':
+        return this.getPayrollRunRecap(filters);
+      case 'payroll-component-recap':
+        return this.getPayrollComponentRecap(filters);
+      case 'payroll-payment-recap':
+        return this.getPayrollPaymentRecap(filters);
       case 'inventory-loan-recap':
         return this.getInventoryLoanRecap(filters);
       case 'inventory-low-stock-recap':
@@ -1311,6 +1327,100 @@ export class ReportDataService {
         { key: 'availableCopies', label: 'Available Copies', width: 15 },
       ],
       rows: data,
+    };
+  }
+
+  // =========================================================================================
+  // HR & PAYROLL REPORTS
+  // =========================================================================================
+
+  private async getHrEmployeeRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    return {
+      title: 'Employee Data Recap',
+      columns: [
+        { key: 'employeeCode', label: 'Employee Code', width: 20 },
+        { key: 'fullName', label: 'Full Name', width: 30 },
+        { key: 'employmentType', label: 'Employment Type', width: 20 },
+        { key: 'status', label: 'Status', width: 20 },
+      ],
+      rows: [],
+    };
+  }
+
+  private async getHrAttendanceRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    return {
+      title: 'Employee Attendance Recap',
+      columns: [
+        { key: 'date', label: 'Date', width: 15 },
+        { key: 'employeeCode', label: 'Employee Code', width: 20 },
+        { key: 'fullName', label: 'Full Name', width: 30 },
+        { key: 'status', label: 'Status', width: 20 },
+      ],
+      rows: [],
+    };
+  }
+
+  private async getHrLeaveRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    return {
+      title: 'Employee Leave Recap',
+      columns: [
+        { key: 'employeeCode', label: 'Employee Code', width: 20 },
+        { key: 'fullName', label: 'Full Name', width: 30 },
+        { key: 'type', label: 'Leave Type', width: 20 },
+        { key: 'status', label: 'Status', width: 20 },
+      ],
+      rows: [],
+    };
+  }
+
+  private async getPayrollPeriodRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    return {
+      title: 'Payroll Period Recap',
+      columns: [
+        { key: 'code', label: 'Code', width: 20 },
+        { key: 'name', label: 'Name', width: 30 },
+        { key: 'status', label: 'Status', width: 20 },
+      ],
+      rows: [],
+    };
+  }
+
+  private async getPayrollRunRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    return {
+      title: 'Payroll Run Recap',
+      columns: [
+        { key: 'periodCode', label: 'Period', width: 20 },
+        { key: 'employeeCode', label: 'Employee', width: 20 },
+        { key: 'netAmount', label: 'Net Amount', width: 20 },
+        { key: 'paymentStatus', label: 'Status', width: 20 },
+      ],
+      rows: [],
+    };
+  }
+
+  private async getPayrollComponentRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    return {
+      title: 'Payroll Component Recap',
+      columns: [
+        { key: 'code', label: 'Code', width: 20 },
+        { key: 'name', label: 'Name', width: 30 },
+        { key: 'type', label: 'Type', width: 20 },
+        { key: 'defaultAmount', label: 'Default Amount', width: 20 },
+      ],
+      rows: [],
+    };
+  }
+
+  private async getPayrollPaymentRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    return {
+      title: 'Payroll Payment Recap',
+      columns: [
+        { key: 'periodCode', label: 'Period', width: 20 },
+        { key: 'employeeCode', label: 'Employee', width: 20 },
+        { key: 'paymentDate', label: 'Payment Date', width: 20 },
+        { key: 'paymentMethod', label: 'Method', width: 20 },
+      ],
+      rows: [],
     };
   }
 }

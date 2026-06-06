@@ -8,6 +8,8 @@ export enum ReportCategory {
   LETTERS = 'Letters',
   INVENTORY = 'Inventory',
   LIBRARY = 'Library',
+  HR = 'HR',
+  PAYROLL = 'Payroll',
 }
 
 export interface ReportFilterDefinition {

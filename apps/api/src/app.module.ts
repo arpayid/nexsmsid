@@ -64,6 +64,8 @@ import { TracerStudiesModule } from "./tracer-studies/tracer-studies.module";
 import { UsersModule } from "./users/users.module";
 import { InventoryModule } from "./inventory/inventory.module";
 import { LibraryModule } from "./library/library.module";
+import { HRModule } from "./hr/hr.module";
+import { PayrollModule } from "./payroll/payroll.module";
 
 @Module({
   imports: [
@@ -127,6 +129,8 @@ import { LibraryModule } from "./library/library.module";
     ReportCenterModule,
     InventoryModule,
     LibraryModule,
+    HRModule,
+    PayrollModule,
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => [

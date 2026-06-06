@@ -76,12 +76,24 @@ model User {
   rejectedInventoryLoans       InventoryLoan[]        @relation("LoanRejectedBy")
   createdInventoryLoans        InventoryLoan[]        @relation("LoanCreatedBy")
 
-  createdLibraryBooks  LibraryBook[]   @relation("LibraryBookCreatedBy")
-  updatedLibraryBooks  LibraryBook[]   @relation("LibraryBookUpdatedBy")
-  libraryMemberships   LibraryMember[] @relation("LibraryMemberUser")
-  borrowedLibraryLoans LibraryLoan[]   @relation("LibraryLoanBorrowedBy")
-  returnedLibraryLoans LibraryLoan[]   @relation("LibraryLoanReturnedBy")
-  handledLibraryFines  LibraryFine[]   @relation("LibraryFineHandledBy")
+  createdLibraryBooks     LibraryBook[]        @relation("LibraryBookCreatedBy")
+  updatedLibraryBooks     LibraryBook[]        @relation("LibraryBookUpdatedBy")
+  libraryMemberships      LibraryMember[]      @relation("LibraryMemberUser")
+  borrowedLibraryLoans    LibraryLoan[]        @relation("LibraryLoanBorrowedBy")
+  returnedLibraryLoans    LibraryLoan[]        @relation("LibraryLoanReturnedBy")
+  handledLibraryFines     LibraryFine[]        @relation("LibraryFineHandledBy")
+  employeeProfiles        EmployeeProfile[]    @relation("EmployeeUser")
+  employeeProfilesCreated EmployeeProfile[]    @relation("EmployeeCreatedBy")
+  employeeProfilesUpdated EmployeeProfile[]    @relation("EmployeeUpdatedBy")
+  payrollPeriodsCreated   PayrollPeriod[]      @relation("PayrollPeriodCreatedBy")
+  payrollPeriodsApproved  PayrollPeriod[]      @relation("PayrollPeriodApprovedBy")
+  payrollRunsApproved     PayrollRun[]         @relation("PayrollRunApprovedBy")
+  payrollRunsPaid         PayrollRun[]         @relation("PayrollRunPaidBy")
+  attendanceRecorded      EmployeeAttendance[] @relation("AttendanceRecordedBy")
+  leavesApproved          LeaveRequest[]       @relation("LeaveApprovedBy")
+  leavesRejected          LeaveRequest[]       @relation("LeaveRejectedBy")
+  leavesCreated           LeaveRequest[]       @relation("LeaveCreatedBy")
+  payrollApprovals        PayrollApproval[]    @relation("PayrollApprovalApprover")
 
   @@index([name])
   @@index([lockedUntil])
@@ -840,6 +852,7 @@ model Teacher {
   supervisedInternships Internship[]         @relation("InternshipSupervisor")
   letters               Letter[]
   libraryMemberships    LibraryMember[]      @relation("LibraryMemberTeacher")
+  employeeProfiles      EmployeeProfile[]    @relation("EmployeeTeacher")
 
   @@index([status])
   @@index([deletedAt])
@@ -849,23 +862,24 @@ model Teacher {
 }
 
 model Staff {
-  id                 String           @id @default(cuid())
-  nip                String?          @unique
+  id                 String            @id @default(cuid())
+  nip                String?           @unique
   name               String
   gender             Gender
   phone              String?
-  email              String?          @unique
+  email              String?           @unique
   address            String?
   position           String
   department         String?
-  employmentStatus   EmploymentStatus @default(PERMANENT) @map("employment_status")
-  status             PersonStatus     @default(ACTIVE)
-  photoUrl           String?          @map("photo_url")
-  createdAt          DateTime         @default(now()) @map("created_at")
-  updatedAt          DateTime         @updatedAt @map("updated_at")
-  deletedAt          DateTime?        @map("deleted_at")
+  employmentStatus   EmploymentStatus  @default(PERMANENT) @map("employment_status")
+  status             PersonStatus      @default(ACTIVE)
+  photoUrl           String?           @map("photo_url")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  deletedAt          DateTime?         @map("deleted_at")
   letters            Letter[]
-  libraryMemberships LibraryMember[]  @relation("LibraryMemberStaff")
+  libraryMemberships LibraryMember[]   @relation("LibraryMemberStaff")
+  employeeProfiles   EmployeeProfile[] @relation("EmployeeStaff")
 
   @@index([status])
   @@index([deletedAt])
@@ -2251,4 +2265,387 @@ model LibraryFine {
   @@index([createdAt])
   @@index([deletedAt])
   @@map("library_fines")
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  TERMINATED
+  RETIRED
+  CONTRACT_ENDED
+}
+
+enum EmploymentType {
+  PERMANENT
+  CONTRACT
+  HONORARY
+  PART_TIME
+  OUTSOURCED
+}
+
+enum PayrollComponentType {
+  EARNING
+  DEDUCTION
+}
+
+enum PayrollComponentCalculationType {
+  FIXED
+  PERCENTAGE
+  DAILY
+  HOURLY
+  PER_SESSION
+  MANUAL
+}
+
+enum PayrollPeriodStatus {
+  DRAFT
+  OPEN
+  CALCULATED
+  APPROVED
+  PAID
+  CLOSED
+  CANCELLED
+}
+
+enum PayrollRunStatus {
+  DRAFT
+  CALCULATED
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+enum PayslipStatus {
+  DRAFT
+  ISSUED
+  PAID
+  CANCELLED
+}
+
+enum PayrollPaymentMethod {
+  CASH
+  BANK_TRANSFER
+  OTHER
+}
+
+enum EmployeeAttendanceStatus {
+  PRESENT
+  ABSENT
+  SICK
+  PERMIT
+  LEAVE
+  LATE
+  HALF_DAY
+  BUSINESS_TRIP
+}
+
+enum LeaveRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  PERSONAL
+  MATERNITY
+  PATERNITY
+  UNPAID
+  OTHER
+}
+
+model HRPosition {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  name        String
+  description String?
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  employees EmployeeProfile[]
+
+  @@map("hr_positions")
+}
+
+model EmployeeProfile {
+  id                String         @id @default(cuid())
+  employeeCode      String         @unique @map("employee_code")
+  userId            String?        @map("user_id")
+  teacherId         String?        @map("teacher_id")
+  staffId           String?        @map("staff_id")
+  positionId        String?        @map("position_id")
+  fullName          String         @map("full_name")
+  employmentType    EmploymentType @default(PERMANENT) @map("employment_type")
+  status            EmployeeStatus @default(ACTIVE)
+  joinedAt          DateTime?      @map("joined_at")
+  endedAt           DateTime?      @map("ended_at")
+  bankName          String?        @map("bank_name")
+  bankAccountNumber String?        @map("bank_account_number")
+  bankAccountName   String?        @map("bank_account_name")
+  taxNumber         String?        @map("tax_number")
+  basicSalary       Decimal        @default(0) @map("basic_salary") @db.Decimal(12, 2)
+  notes             String?
+  createdById       String         @map("created_by_id")
+  updatedById       String?        @map("updated_by_id")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  deletedAt         DateTime?      @map("deleted_at")
+
+  user      User?       @relation("EmployeeUser", fields: [userId], references: [id], onDelete: SetNull)
+  teacher   Teacher?    @relation("EmployeeTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
+  staff     Staff?      @relation("EmployeeStaff", fields: [staffId], references: [id], onDelete: SetNull)
+  position  HRPosition? @relation(fields: [positionId], references: [id], onDelete: Restrict)
+  createdBy User        @relation("EmployeeCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy User?       @relation("EmployeeUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  salaryComponents EmployeeSalaryComponent[]
+  payrollRuns      PayrollRun[]
+  attendance       EmployeeAttendance[]
+  leaveRequests    LeaveRequest[]
+
+  @@index([employeeCode])
+  @@index([userId])
+  @@index([teacherId])
+  @@index([staffId])
+  @@index([positionId])
+  @@index([status])
+  @@index([employmentType])
+  @@index([deletedAt])
+  @@map("hr_employee_profiles")
+}
+
+model PayrollComponent {
+  id                String                          @id @default(cuid())
+  code              String                          @unique
+  name              String
+  type              PayrollComponentType
+  calculationType   PayrollComponentCalculationType @default(FIXED) @map("calculation_type")
+  defaultAmount     Decimal                         @default(0) @map("default_amount") @db.Decimal(12, 2)
+  defaultPercentage Decimal?                        @map("default_percentage") @db.Decimal(5, 2)
+  isTaxable         Boolean                         @default(false) @map("is_taxable")
+  isActive          Boolean                         @default(true) @map("is_active")
+  description       String?
+  createdAt         DateTime                        @default(now()) @map("created_at")
+  updatedAt         DateTime                        @updatedAt @map("updated_at")
+  deletedAt         DateTime?                       @map("deleted_at")
+
+  employeeSalaryComponents EmployeeSalaryComponent[]
+  payrollRunItems          PayrollRunItem[]
+
+  @@index([code])
+  @@index([type])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("payroll_components")
+}
+
+model EmployeeSalaryComponent {
+  id            String    @id @default(cuid())
+  employeeId    String    @map("employee_id")
+  componentId   String    @map("component_id")
+  amount        Decimal?  @db.Decimal(12, 2)
+  percentage    Decimal?  @db.Decimal(5, 2)
+  isActive      Boolean   @default(true) @map("is_active")
+  effectiveFrom DateTime? @map("effective_from")
+  effectiveTo   DateTime? @map("effective_to")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  employee  EmployeeProfile  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  component PayrollComponent @relation(fields: [componentId], references: [id], onDelete: Restrict)
+
+  @@index([employeeId])
+  @@index([componentId])
+  @@index([isActive])
+  @@index([effectiveFrom])
+  @@index([effectiveTo])
+  @@index([deletedAt])
+  @@map("payroll_employee_salary_components")
+}
+
+model PayrollPeriod {
+  id           String              @id @default(cuid())
+  code         String              @unique
+  name         String
+  month        Int
+  year         Int
+  startDate    DateTime            @map("start_date")
+  endDate      DateTime            @map("end_date")
+  paymentDate  DateTime?           @map("payment_date")
+  status       PayrollPeriodStatus @default(DRAFT)
+  createdById  String              @map("created_by_id")
+  approvedById String?             @map("approved_by_id")
+  approvedAt   DateTime?           @map("approved_at")
+  closedAt     DateTime?           @map("closed_at")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+  deletedAt    DateTime?           @map("deleted_at")
+
+  createdBy  User  @relation("PayrollPeriodCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  approvedBy User? @relation("PayrollPeriodApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  runs      PayrollRun[]
+  approvals PayrollApproval[]
+
+  @@index([code])
+  @@index([month])
+  @@index([year])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("payroll_periods")
+}
+
+model PayrollRun {
+  id              String           @id @default(cuid())
+  periodId        String           @map("period_id")
+  employeeId      String           @map("employee_id")
+  status          PayrollRunStatus @default(DRAFT)
+  grossAmount     Decimal          @default(0) @map("gross_amount") @db.Decimal(12, 2)
+  totalEarnings   Decimal          @default(0) @map("total_earnings") @db.Decimal(12, 2)
+  totalDeductions Decimal          @default(0) @map("total_deductions") @db.Decimal(12, 2)
+  netAmount       Decimal          @default(0) @map("net_amount") @db.Decimal(12, 2)
+  calculatedAt    DateTime?        @map("calculated_at")
+  approvedAt      DateTime?        @map("approved_at")
+  paidAt          DateTime?        @map("paid_at")
+  approvedById    String?          @map("approved_by_id")
+  paidById        String?          @map("paid_by_id")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  deletedAt       DateTime?        @map("deleted_at")
+
+  period     PayrollPeriod   @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  employee   EmployeeProfile @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  approvedBy User?           @relation("PayrollRunApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  paidBy     User?           @relation("PayrollRunPaidBy", fields: [paidById], references: [id], onDelete: SetNull)
+
+  items   PayrollRunItem[]
+  payslip Payslip?
+
+  @@unique([periodId, employeeId])
+  @@index([periodId])
+  @@index([employeeId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("payroll_runs")
+}
+
+model PayrollRunItem {
+  id              String                          @id @default(cuid())
+  payrollRunId    String                          @map("payroll_run_id")
+  componentId     String?                         @map("component_id")
+  name            String
+  type            PayrollComponentType
+  calculationType PayrollComponentCalculationType @map("calculation_type")
+  amount          Decimal                         @db.Decimal(12, 2)
+  note            String?
+  createdAt       DateTime                        @default(now()) @map("created_at")
+
+  payrollRun PayrollRun        @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  component  PayrollComponent? @relation(fields: [componentId], references: [id], onDelete: SetNull)
+
+  @@index([payrollRunId])
+  @@index([componentId])
+  @@map("payroll_run_items")
+}
+
+model Payslip {
+  id               String                @id @default(cuid())
+  payrollRunId     String                @unique @map("payroll_run_id")
+  payslipNumber    String                @unique @map("payslip_number")
+  status           PayslipStatus         @default(DRAFT)
+  issuedAt         DateTime?             @map("issued_at")
+  paidAt           DateTime?             @map("paid_at")
+  paymentMethod    PayrollPaymentMethod? @map("payment_method")
+  paymentReference String?               @map("payment_reference")
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+  deletedAt        DateTime?             @map("deleted_at")
+
+  payrollRun PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+
+  @@index([payslipNumber])
+  @@index([payrollRunId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("payroll_payslips")
+}
+
+model EmployeeAttendance {
+  id           String                   @id @default(cuid())
+  employeeId   String                   @map("employee_id")
+  date         DateTime                 @db.Date
+  status       EmployeeAttendanceStatus
+  checkInAt    DateTime?                @map("check_in_at")
+  checkOutAt   DateTime?                @map("check_out_at")
+  lateMinutes  Int                      @default(0) @map("late_minutes")
+  workMinutes  Int?                     @map("work_minutes")
+  note         String?
+  recordedById String                   @map("recorded_by_id")
+  createdAt    DateTime                 @default(now()) @map("created_at")
+  updatedAt    DateTime                 @updatedAt @map("updated_at")
+  deletedAt    DateTime?                @map("deleted_at")
+
+  employee   EmployeeProfile @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  recordedBy User            @relation("AttendanceRecordedBy", fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@unique([employeeId, date])
+  @@index([employeeId])
+  @@index([date])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("hr_employee_attendance")
+}
+
+model LeaveRequest {
+  id              String             @id @default(cuid())
+  employeeId      String             @map("employee_id")
+  type            LeaveType
+  status          LeaveRequestStatus @default(PENDING)
+  startDate       DateTime           @map("start_date")
+  endDate         DateTime           @map("end_date")
+  totalDays       Int                @map("total_days")
+  reason          String
+  approvedById    String?            @map("approved_by_id")
+  approvedAt      DateTime?          @map("approved_at")
+  rejectedById    String?            @map("rejected_by_id")
+  rejectedAt      DateTime?          @map("rejected_at")
+  rejectionReason String?            @map("rejection_reason")
+  createdById     String             @map("created_by_id")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  deletedAt       DateTime?          @map("deleted_at")
+
+  employee   EmployeeProfile @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  approvedBy User?           @relation("LeaveApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  rejectedBy User?           @relation("LeaveRejectedBy", fields: [rejectedById], references: [id], onDelete: SetNull)
+  createdBy  User            @relation("LeaveCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([employeeId])
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([deletedAt])
+  @@map("hr_leave_requests")
+}
+
+model PayrollApproval {
+  id         String             @id @default(cuid())
+  periodId   String             @map("period_id")
+  approverId String             @map("approver_id")
+  status     LeaveRequestStatus @default(PENDING)
+  note       String?
+  approvedAt DateTime?          @map("approved_at")
+  rejectedAt DateTime?          @map("rejected_at")
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+
+  period   PayrollPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  approver User          @relation("PayrollApprovalApprover", fields: [approverId], references: [id], onDelete: Restrict)
+
+  @@map("payroll_approvals")
 }

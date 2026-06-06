@@ -34,6 +34,12 @@ import {
   WalletCards,
   UsersRound,
   X,
+  UserCheck,
+  CalendarOff,
+  Wallet,
+  CalendarClock,
+  Receipt,
+  Coins,
   type LucideIcon
 } from "lucide-react";
 import Link from "next/link";
@@ -160,6 +166,19 @@ const navigationGroups: NavigationGroup[] = [
       { href: "/admin/library/loans", icon: HeartHandshake, label: "Peminjaman", permission: "library.borrow" },
       { href: "/admin/library/fines", icon: Banknote, label: "Denda", permission: "library.fine" },
       { href: "/admin/library/reports", icon: BarChart3, label: "Laporan", permission: "library.view" }
+    ]
+  },
+  {
+    label: "HR & Payroll",
+    items: [
+      { href: "/admin/hr", icon: Users, label: "Dashboard HR", permission: "hr.view" },
+      { href: "/admin/hr/employees", icon: UserCheck, label: "Data Pegawai", permission: "hr.view" },
+      { href: "/admin/hr/attendance", icon: Clock, label: "Kehadiran", permission: "hr.attendance" },
+      { href: "/admin/hr/leaves", icon: CalendarOff, label: "Cuti & Izin", permission: "hr.leave" },
+      { href: "/admin/payroll", icon: Wallet, label: "Dashboard Payroll", permission: "payroll.view" },
+      { href: "/admin/payroll/periods", icon: CalendarClock, label: "Periode Penggajian", permission: "payroll.view" },
+      { href: "/admin/payroll/runs", icon: Receipt, label: "Daftar Gaji", permission: "payroll.view" },
+      { href: "/admin/payroll/components", icon: Coins, label: "Komponen Gaji", permission: "payroll.view" },
     ]
   },
   {
