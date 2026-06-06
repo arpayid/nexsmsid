@@ -7,6 +7,7 @@ export enum ReportCategory {
   BK_DISCIPLINE = 'BK & Discipline',
   LETTERS = 'Letters',
   INVENTORY = 'Inventory',
+  LIBRARY = 'Library',
 }
 
 export interface ReportFilterDefinition {

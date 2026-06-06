@@ -1,7 +1,12 @@
 "use client";
 
 import {
+  DoorOpen,
+  Clock,
+  Users,
   Award,
+  Banknote,
+  BookOpen,
   BarChart3,
   Bell,
   BookOpenCheck,
@@ -11,8 +16,6 @@ import {
   ChevronRight,
   ClipboardCheck,
   ClipboardList,
-  Clock,
-  DoorOpen,
   FileText,
   GraduationCap,
   HeartHandshake,
@@ -28,7 +31,6 @@ import {
   Search,
   Settings,
   UserCog,
-  Users,
   WalletCards,
   UsersRound,
   X,
@@ -58,7 +60,6 @@ const navigationGroups: NavigationGroup[] = [
   {
     label: "People",
     items: [
-      { href: "/admin/students", icon: Users, label: "Data Siswa", permission: "students.view" },
       { href: "/admin/guardians", icon: HeartHandshake, label: "Wali/Orang Tua", permission: "guardians.view" },
       { href: "/admin/teachers", icon: UserCog, label: "Guru", permission: "teachers.view" },
       { href: "/admin/staffs", icon: BriefcaseBusiness, label: "Staff", permission: "staffs.view" }
@@ -72,9 +73,7 @@ const navigationGroups: NavigationGroup[] = [
       { href: "/admin/master-data/departments", icon: Building2, label: "Jurusan", permission: "master-data.view" },
       { href: "/admin/master-data/competencies", icon: GraduationCap, label: "Program Keahlian", permission: "master-data.view" },
       { href: "/admin/master-data/classrooms", icon: UsersRound, label: "Kelas", permission: "master-data.view" },
-      { href: "/admin/master-data/rooms", icon: DoorOpen, label: "Ruangan", permission: "master-data.view" },
       { href: "/admin/master-data/subjects", icon: BookOpenCheck, label: "Mata Pelajaran", permission: "master-data.view" },
-      { href: "/admin/master-data/lesson-hours", icon: Clock, label: "Jam Pelajaran", permission: "master-data.view" },
       { href: "/admin/master-data/payment-categories", icon: WalletCards, label: "Kategori Pembayaran", permission: "master-data.view" }
     ]
   },
@@ -116,7 +115,6 @@ const navigationGroups: NavigationGroup[] = [
       { href: "/admin/finance/expenses", icon: BriefcaseBusiness, label: "Pengeluaran", permission: "expenses.view" },
       { href: "/admin/ppdb", icon: GraduationCap, label: "PPDB", permission: "ppdb.view" },
       { href: "/admin/ppdb/periods", icon: CalendarDays, label: "Periode PPDB", permission: "ppdb.view" },
-      { href: "/admin/ppdb/registrations", icon: Users, label: "Pendaftaran", permission: "ppdb.view" }
     ]
   },
   {
@@ -146,12 +144,22 @@ const navigationGroups: NavigationGroup[] = [
     items: [
       { href: "/admin/inventory", icon: Building2, label: "Dashboard Inventaris", permission: "inventory.view" },
       { href: "/admin/inventory/categories", icon: ClipboardList, label: "Kategori", permission: "inventory.view" },
-      { href: "/admin/inventory/locations", icon: DoorOpen, label: "Lokasi", permission: "inventory.view" },
       { href: "/admin/inventory/items", icon: BriefcaseBusiness, label: "Data Barang", permission: "inventory.view" },
       { href: "/admin/inventory/movements", icon: ClipboardCheck, label: "Mutasi Barang", permission: "inventory.view" },
       { href: "/admin/inventory/maintenances", icon: Settings, label: "Pemeliharaan", permission: "inventory.maintenance" },
       { href: "/admin/inventory/loans", icon: HeartHandshake, label: "Peminjaman", permission: "inventory.borrow" },
       { href: "/admin/inventory/reports", icon: BarChart3, label: "Laporan Inventaris", permission: "inventory.view" }
+    ]
+  },
+  {
+    label: "Perpustakaan",
+    items: [
+      { href: "/admin/library", icon: BookOpen, label: "Dashboard Perpustakaan", permission: "library.view" },
+      { href: "/admin/library/categories", icon: ClipboardList, label: "Kategori", permission: "library.view" },
+      { href: "/admin/library/books", icon: BookOpen, label: "Data Buku", permission: "library.view" },
+      { href: "/admin/library/loans", icon: HeartHandshake, label: "Peminjaman", permission: "library.borrow" },
+      { href: "/admin/library/fines", icon: Banknote, label: "Denda", permission: "library.fine" },
+      { href: "/admin/library/reports", icon: BarChart3, label: "Laporan", permission: "library.view" }
     ]
   },
   {

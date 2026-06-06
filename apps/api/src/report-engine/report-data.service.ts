@@ -62,6 +62,20 @@ export class ReportDataService {
         return this.getInventoryLoanRecap(filters);
       case 'inventory-low-stock-recap':
         return this.getInventoryLowStockRecap(filters);
+      case 'library-book-recap':
+        return this.getLibraryBookRecap(filters);
+      case 'library-copy-recap':
+        return this.getLibraryCopyRecap(filters);
+      case 'library-loan-recap':
+        return this.getLibraryLoanRecap(filters);
+      case 'library-overdue-loan-recap':
+        return this.getLibraryOverdueLoanRecap(filters);
+      case 'library-fine-recap':
+        return this.getLibraryFineRecap(filters);
+      case 'library-member-recap':
+        return this.getLibraryMemberRecap(filters);
+      case 'library-popular-book-recap':
+        return this.getLibraryPopularBookRecap(filters);
       default:
         return this.getPlaceholderData(reportCode);
     }
@@ -1016,6 +1030,287 @@ export class ReportDataService {
         qty: i.quantity,
         min: i.minStock,
       })),
+    };
+  }
+
+  private async getLibraryBookRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.categoryId) where.categoryId = filters.categoryId;
+    
+    const items = await this.prisma.libraryBook.findMany({
+      where,
+      include: { category: true },
+      orderBy: { title: 'asc' },
+    });
+
+    const data = items.map((i: any) => ({
+      code: i.code,
+      title: i.title,
+      author: i.author,
+      publisher: i.publisher,
+      category: i.category?.name || '-',
+      publicationYear: i.publicationYear || '-',
+      status: i.status,
+    }));
+
+    return {
+      title: 'Library Book Recap',
+      columns: [
+        { key: 'code', label: 'Code', width: 15 },
+        { key: 'title', label: 'Title', width: 35 },
+        { key: 'author', label: 'Author', width: 20 },
+        { key: 'publisher', label: 'Publisher', width: 20 },
+        { key: 'category', label: 'Category', width: 15 },
+        { key: 'publicationYear', label: 'Year', width: 10 },
+        { key: 'status', label: 'Status', width: 15 },
+      ],
+      rows: data,
+    };
+  }
+
+  private async getLibraryCopyRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null, book: { deletedAt: null } };
+    if (filters.status) where.status = filters.status;
+    
+    const items = await this.prisma.libraryBookCopy.findMany({
+      where,
+      include: { book: true },
+      orderBy: { copyCode: 'asc' },
+    });
+
+    const data = items.map((i: any) => ({
+      copyCode: i.copyCode,
+      bookTitle: i.book?.title || '-',
+      barcode: i.barcode || '-',
+      condition: i.condition || '-',
+      status: i.status,
+    }));
+
+    return {
+      title: 'Library Book Copy Recap',
+      columns: [
+        { key: 'copyCode', label: 'Copy Code', width: 20 },
+        { key: 'bookTitle', label: 'Book Title', width: 40 },
+        { key: 'barcode', label: 'Barcode', width: 20 },
+        { key: 'condition', label: 'Condition', width: 15 },
+        { key: 'status', label: 'Status', width: 15 },
+      ],
+      rows: data,
+    };
+  }
+
+  private async getLibraryLoanRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.status) where.status = filters.status;
+    
+    const items = await this.prisma.libraryLoan.findMany({
+      where,
+      include: { member: true, copy: { include: { book: true } } },
+      orderBy: { borrowedAt: 'desc' },
+    });
+
+    const data = items.map((i: any) => ({
+      memberCode: i.member?.memberCode || '-',
+      bookTitle: i.copy?.book?.title || '-',
+      copyCode: i.copy?.copyCode || '-',
+      borrowedAt: i.borrowedAt ? i.borrowedAt.toISOString().split('T')[0] : '-',
+      dueAt: i.dueAt ? i.dueAt.toISOString().split('T')[0] : '-',
+      status: i.status,
+    }));
+
+    return {
+      title: 'Library Loan Recap',
+      columns: [
+        { key: 'memberCode', label: 'Member', width: 15 },
+        { key: 'bookTitle', label: 'Book Title', width: 35 },
+        { key: 'copyCode', label: 'Copy Code', width: 15 },
+        { key: 'borrowedAt', label: 'Borrowed At', width: 15 },
+        { key: 'dueAt', label: 'Due At', width: 15 },
+        { key: 'status', label: 'Status', width: 15 },
+      ],
+      rows: data,
+    };
+  }
+
+  private async getLibraryOverdueLoanRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null, status: 'BORROWED', dueAt: { lt: new Date() } };
+    
+    const items = await this.prisma.libraryLoan.findMany({
+      where,
+      include: { member: true, copy: { include: { book: true } } },
+      orderBy: { dueAt: 'asc' },
+    });
+
+    const data = items.map((i: any) => ({
+      memberCode: i.member?.memberCode || '-',
+      bookTitle: i.copy?.book?.title || '-',
+      dueAt: i.dueAt ? i.dueAt.toISOString().split('T')[0] : '-',
+    }));
+
+    return {
+      title: 'Library Overdue Loan Recap',
+      columns: [
+        { key: 'memberCode', label: 'Member', width: 20 },
+        { key: 'bookTitle', label: 'Book Title', width: 50 },
+        { key: 'dueAt', label: 'Due At', width: 20 },
+      ],
+      rows: data,
+    };
+  }
+
+  private async getLibraryFineRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.status) where.status = filters.status;
+    
+    const items = await this.prisma.libraryFine.findMany({
+      where,
+      include: { member: true, loan: { include: { copy: { include: { book: true } } } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const data = items.map((i: any) => ({
+      memberCode: i.member?.memberCode || '-',
+      bookTitle: i.loan?.copy?.book?.title || '-',
+      amount: i.amount ? i.amount.toNumber() : 0,
+      status: i.status,
+    }));
+
+    return {
+      title: 'Library Fine Recap',
+      columns: [
+        { key: 'memberCode', label: 'Member', width: 20 },
+        { key: 'bookTitle', label: 'Book Title', width: 40 },
+        { key: 'amount', label: 'Amount', width: 15 },
+        { key: 'status', label: 'Status', width: 15 },
+      ],
+      rows: data,
+    };
+  }
+
+  private async getLibraryMemberRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.type) where.type = filters.type;
+    if (filters.status) where.status = filters.status;
+    
+    const items = await this.prisma.libraryMember.findMany({
+      where,
+      include: { user: true, student: true, teacher: true, staff: true },
+      orderBy: { memberCode: 'asc' },
+    });
+
+    const data = items.map((i: any) => ({
+      memberCode: i.memberCode,
+      name: i.student?.name || i.teacher?.name || i.staff?.name || i.user?.name || i.externalName || '-',
+      type: i.type,
+      status: i.status,
+      joinedAt: i.joinedAt ? i.joinedAt.toISOString().split('T')[0] : '-',
+    }));
+
+    return {
+      title: 'Library Member Recap',
+      columns: [
+        { key: 'memberCode', label: 'Member Code', width: 20 },
+        { key: 'name', label: 'Name', width: 40 },
+        { key: 'type', label: 'Type', width: 15 },
+        { key: 'status', label: 'Status', width: 15 },
+        { key: 'joinedAt', label: 'Joined', width: 15 },
+      ],
+      rows: data,
+    };
+  }
+
+  private async getLibraryPopularBookRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const loanWhere: any = { deletedAt: null };
+    if (filters.startDate && filters.endDate) {
+      loanWhere.borrowedAt = {
+        gte: new Date(filters.startDate),
+        lte: new Date(filters.endDate),
+      };
+    } else if (filters.startDate) {
+      loanWhere.borrowedAt = { gte: new Date(filters.startDate) };
+    } else if (filters.endDate) {
+      loanWhere.borrowedAt = { lte: new Date(filters.endDate) };
+    }
+
+    const loans = await this.prisma.libraryLoan.findMany({
+      where: loanWhere,
+      include: {
+        copy: {
+          include: {
+            book: {
+              include: {
+                category: true,
+                copies: { where: { deletedAt: null } }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const bookStats = new Map<string, any>();
+
+    for (const loan of loans) {
+      if (!loan.copy || loan.copy.deletedAt || !loan.copy.book || loan.copy.book.deletedAt) continue;
+      const book = loan.copy.book;
+      const bookId = book.id;
+
+      if (!bookStats.has(bookId)) {
+        const availableCopies = book.copies.filter((c: any) => c.status === 'AVAILABLE').length;
+        bookStats.set(bookId, {
+          bookCode: book.code,
+          isbn: book.isbn || '-',
+          title: book.title,
+          author: book.author,
+          categoryName: book.category?.name || '-',
+          totalLoans: 0,
+          borrowedCount: 0,
+          returnedCount: 0,
+          overdueCount: 0,
+          lostCount: 0,
+          totalCopies: book.copies.length,
+          availableCopies,
+        });
+      }
+
+      const stats = bookStats.get(bookId);
+      stats.totalLoans += 1;
+      
+      switch (loan.status) {
+        case 'BORROWED':
+          stats.borrowedCount += 1;
+          break;
+        case 'RETURNED':
+          stats.returnedCount += 1;
+          break;
+        case 'OVERDUE':
+          stats.overdueCount += 1;
+          break;
+        case 'LOST':
+          stats.lostCount += 1;
+          break;
+      }
+    }
+
+    const data = Array.from(bookStats.values()).sort((a, b) => b.totalLoans - a.totalLoans);
+
+    return {
+      title: 'Library Popular Book Recap',
+      columns: [
+        { key: 'bookCode', label: 'Book Code', width: 15 },
+        { key: 'isbn', label: 'ISBN', width: 15 },
+        { key: 'title', label: 'Title', width: 40 },
+        { key: 'author', label: 'Author', width: 25 },
+        { key: 'categoryName', label: 'Category', width: 20 },
+        { key: 'totalLoans', label: 'Total Loans', width: 15 },
+        { key: 'borrowedCount', label: 'Borrowed', width: 15 },
+        { key: 'returnedCount', label: 'Returned', width: 15 },
+        { key: 'overdueCount', label: 'Overdue', width: 15 },
+        { key: 'lostCount', label: 'Lost', width: 15 },
+        { key: 'totalCopies', label: 'Total Copies', width: 15 },
+        { key: 'availableCopies', label: 'Available Copies', width: 15 },
+      ],
+      rows: data,
     };
   }
 }
