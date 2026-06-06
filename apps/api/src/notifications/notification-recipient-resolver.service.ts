@@ -71,6 +71,14 @@ export class NotificationRecipientResolverService {
     return guardians.map((link) => link.guardian.userId).filter((userId): userId is string => Boolean(userId));
   }
 
+  async guardianUser(guardianId: string) {
+    const guardian = await this.prisma.guardian.findFirst({
+      where: { id: guardianId },
+      select: { userId: true }
+    });
+    return guardian?.userId ? [guardian.userId] : [];
+  }
+
   async teachers(teacherIds: string[]) {
     if (!teacherIds.length) return [];
     const teachers = await this.prisma.teacher.findMany({
@@ -78,6 +86,15 @@ export class NotificationRecipientResolverService {
       select: { userId: true }
     });
     return teachers.map((teacher) => teacher.userId).filter((userId): userId is string => Boolean(userId));
+  }
+
+  async userByEmail(email?: string | null) {
+    if (!email) return [];
+    const user = await this.prisma.user.findFirst({
+      where: { email, deletedAt: null, status: "ACTIVE" },
+      select: { id: true }
+    });
+    return user ? [user.id] : [];
   }
 
   async ppdbConvertedStudentUser(registrationId: string) {

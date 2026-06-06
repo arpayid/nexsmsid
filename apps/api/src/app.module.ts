@@ -35,6 +35,7 @@ import { InternshipsModule } from "./internships/internships.module";
 import { JobApplicationsModule } from "./job-applications/job-applications.module";
 import { JobVacanciesModule } from "./job-vacancies/job-vacancies.module";
 import { LessonHoursModule } from "./lesson-hours/lesson-hours.module";
+import { LettersModule } from "./letters/letters.module";
 import { NotificationTemplatesModule } from "./notification-templates/notification-templates.module";
 import { NotificationsModule } from "./notifications/notifications.module";
 import { PaymentCategoriesModule } from "./payment-categories/payment-categories.module";
@@ -81,6 +82,7 @@ import { UsersModule } from "./users/users.module";
     RoomsModule,
     SubjectsModule,
     LessonHoursModule,
+    LettersModule,
     PaymentCategoriesModule,
     UsersModule,
     RolesModule,

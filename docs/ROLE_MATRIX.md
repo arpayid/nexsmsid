@@ -31,11 +31,11 @@ These roles are established now to be linked with future large-scale modules:
 8. **Approver** (`approver`): For the centralized Approval Center.
 
 ## Permission Groups
-The following permission groups are available. Counseling and Discipline are active in Phase 12.1; the remaining groups stay as foundations for later modules.
+The following permission groups are available. Counseling and Discipline are active in Phase 12.1; Letters are active in Phase 12.2; the remaining groups stay as foundations for later modules.
 
 - **Counseling (`counseling.*`)**: view, create, update, delete.
 - **Discipline (`discipline.*`)**: view, create, update, delete, report, notify-guardian, print.
-- **Letters (`letters.*`)**: view, create, update, delete, approve, print, export.
+- **Letters (`letters.*`)**: view, create, update, delete, approve, reject, issue, archive, print, report, manage-templates, export.
 - **Inventory (`inventory.*`)**: view, create, update, delete, borrow, return, maintenance, export, print.
 - **Library (`library.*`)**: view, create, update, delete, borrow, return, fine, export, print.
 - **Payroll (`payroll.*`)**: view, create, update, approve, pay, print, export.
@@ -53,12 +53,22 @@ Counseling and Discipline are no longer only placeholders. Phase 12.1 activates 
 - **Orang Tua/Wali (`orang-tua-wali`)**: no admin counseling/discipline permissions; only linked-child portal summary through `guardian-portal.view`.
 - **Super Admin (`super-admin`)**: all BK and Discipline permissions.
 
+## Phase 12.2 Active Letter Management Permissions
+Letter Management is no longer only a placeholder. Phase 12.2 activates the school letter workflow, templates, numbering, PDF print, archive, and reports:
+
+- **Petugas Surat (`petugas-surat`)**: `letters.view`, `letters.create`, `letters.update`, `letters.delete`, `letters.issue`, `letters.archive`, `letters.print`, `letters.report`, `letters.manage-templates`.
+- **Approver (`approver`)**: `letters.view`, `letters.approve`, `letters.reject`, `letters.print`.
+- **Staff TU (`staff-tu`)**: `letters.view`, `letters.create`, `letters.update`, `letters.print`.
+- **Siswa (`siswa`)**: no admin `letters.*` permission.
+- **Orang Tua/Wali (`orang-tua-wali`)**: no admin `letters.*` permission.
+- **Super Admin (`super-admin`)**: all Letter Management permissions.
+
 ## Recommended Module Sequence
 The system is now architecturally ready to consume these modules. The recommended sequence is:
 1. BK + Discipline
 2. Letter Management
-3. Approval Center
-4. Inventory
+3. Inventory
+4. Approval Center
 5. Library
 6. Exam (CBT)
 7. E-Learning

@@ -213,6 +213,44 @@ export class ReportRegistryService {
       optionalFilters: ['startDate', 'endDate', 'studentId', 'status', 'priority', 'category', 'counselorId'],
       permissions: ['counseling.view'],
     },
+
+    // Letter Management
+    {
+      code: 'letter-recap',
+      name: 'Letter Recap',
+      category: ReportCategory.LETTERS,
+      supportedFormats: ['XLSX', 'CSV'],
+      requiredFilters: [],
+      optionalFilters: ['startDate', 'endDate', 'status', 'category', 'recipientType'],
+      permissions: ['letters.report'],
+    },
+    {
+      code: 'outgoing-letter-recap',
+      name: 'Outgoing Letter Recap',
+      category: ReportCategory.LETTERS,
+      supportedFormats: ['XLSX', 'CSV'],
+      requiredFilters: [],
+      optionalFilters: ['startDate', 'endDate', 'status', 'category', 'recipientType'],
+      permissions: ['letters.report'],
+    },
+    {
+      code: 'incoming-letter-recap',
+      name: 'Incoming Letter Recap',
+      category: ReportCategory.LETTERS,
+      supportedFormats: ['XLSX', 'CSV'],
+      requiredFilters: [],
+      optionalFilters: ['startDate', 'endDate', 'status', 'category', 'recipientType'],
+      permissions: ['letters.report'],
+    },
+    {
+      code: 'letter-approval-recap',
+      name: 'Letter Approval Recap',
+      category: ReportCategory.LETTERS,
+      supportedFormats: ['XLSX', 'CSV'],
+      requiredFilters: [],
+      optionalFilters: ['startDate', 'endDate', 'status', 'category'],
+      permissions: ['letters.report'],
+    },
   ];
 
   getAll(): ReportDefinition[] {

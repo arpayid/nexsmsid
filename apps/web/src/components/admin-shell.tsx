@@ -98,6 +98,16 @@ const navigationGroups: NavigationGroup[] = [
     ]
   },
   {
+    label: "Surat Menyurat",
+    items: [
+      { href: "/admin/letters/templates", icon: ClipboardList, label: "Template Surat", permission: "letters.manage-templates" },
+      { href: "/admin/letters", icon: FileText, label: "Arsip Surat", permission: "letters.view" },
+      { href: "/admin/letters/create", icon: FileText, label: "Buat Surat", permission: "letters.create" },
+      { href: "/admin/letters/approvals", icon: ClipboardCheck, label: "Approval Surat", permission: "letters.approve" },
+      { href: "/admin/letters/reports", icon: BarChart3, label: "Rekap Surat", permission: "letters.report" }
+    ]
+  },
+  {
     label: "Keuangan & PPDB",
     items: [
       { href: "/admin/finance", icon: Landmark, label: "Keuangan", permission: "finance.view" },
