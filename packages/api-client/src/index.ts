@@ -387,6 +387,112 @@ export type ApiClientOptions = {
   fetcher?: typeof fetch;
 };
 
+export type ExamTypeRecord = {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ExamRoomRecord = {
+  id: string;
+  code: string;
+  name: string;
+  capacity: number;
+  location?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ExamRecord = {
+  id: string;
+  examTypeId: string;
+  academicYearId: string;
+  semesterId?: string | null;
+  code: string;
+  name: string;
+  description?: string | null;
+  duration: number;
+  totalQuestions?: number | null;
+  maxScore?: number | null;
+  passingScore?: number | null;
+  status: string;
+  isCbt: boolean;
+  instruction?: string | null;
+  notes?: string | null;
+  examType?: ExamTypeRecord;
+  academicYear?: any;
+  semester?: any;
+  _count?: { schedules: number; participants: number; questions: number };
+  schedules?: ExamScheduleRecord[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ExamScheduleRecord = {
+  id: string;
+  examId: string;
+  roomId?: string | null;
+  date: string;
+  startTime: string;
+  endTime: string;
+  supervisorId?: string | null;
+  notes?: string | null;
+  room?: ExamRoomRecord | null;
+  supervisor?: any;
+  sessions?: ExamSessionRecord[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ExamSessionRecord = {
+  id: string;
+  scheduleId: string;
+  code: string;
+  name?: string | null;
+  status: string;
+  startedAt?: string | null;
+  endedAt?: string | null;
+  token?: string | null;
+  _count?: { participants: number; attendances: number };
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ExamParticipantRecord = {
+  id: string;
+  examId: string;
+  sessionId?: string | null;
+  studentId: string;
+  number?: number | null;
+  status: string;
+  score?: number | null;
+  notes?: string | null;
+  student?: any;
+  session?: ExamSessionRecord | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ExamQuestionRecord = {
+  id: string;
+  examId: string;
+  bankId?: string | null;
+  number: number;
+  type: string;
+  content: string;
+  options?: any;
+  correctAnswer?: string | null;
+  score: number;
+  attachmentUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type ImportResult = {
   totalRows: number;
   successRows: number;
@@ -2572,6 +2678,178 @@ export function createApiClient(options: ApiClientOptions = {}) {
     async downloadPayslipPdf(id: string) {
       const blob = await downloadFile(`/payroll/payslips/${id}/pdf`, `payslip-${id}.pdf`);
       triggerBrowserDownload(blob, `payslip-${id}.pdf`);
+    },
+
+    // ── Exam / CBT Management ──────────────────────────────────────
+    async listExamTypes(params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/exams/types?${qs}`);
+      return normalizeListResponse(response);
+    },
+    async getExamType(id: string) {
+      const response = await request<any>(`/exams/types/${id}`);
+      return response.data;
+    },
+    async createExamType(data: any) {
+      const response = await request<any>("/exams/types", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async updateExamType(id: string, data: any) {
+      const response = await request<any>(`/exams/types/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deleteExamType(id: string) {
+      const response = await request<any>(`/exams/types/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+
+    async listExamRooms(params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/exams/rooms?${qs}`);
+      return normalizeListResponse(response);
+    },
+    async getExamRoom(id: string) {
+      const response = await request<any>(`/exams/rooms/${id}`);
+      return response.data;
+    },
+    async createExamRoom(data: any) {
+      const response = await request<any>("/exams/rooms", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async updateExamRoom(id: string, data: any) {
+      const response = await request<any>(`/exams/rooms/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deleteExamRoom(id: string) {
+      const response = await request<any>(`/exams/rooms/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+
+    async listExams(params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/exams?${qs}`);
+      return normalizeListResponse(response);
+    },
+    async getExam(id: string) {
+      const response = await request<any>(`/exams/${id}`);
+      return response.data;
+    },
+    async createExam(data: any) {
+      const response = await request<any>("/exams", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async updateExam(id: string, data: any) {
+      const response = await request<any>(`/exams/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deleteExam(id: string) {
+      const response = await request<any>(`/exams/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async updateExamStatus(id: string, status: string) {
+      const response = await request<any>(`/exams/${id}/status`, { method: "POST", body: JSON.stringify({ status }) });
+      return response.data;
+    },
+    async getExamSummary() {
+      const response = await request<any>("/exams/summary");
+      return response.data;
+    },
+
+    async listExamParticipants(examId: string, params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/exams/${examId}/participants?${qs}`);
+      return normalizeListResponse(response);
+    },
+    async addExamParticipant(examId: string, studentId: string) {
+      const response = await request<any>(`/exams/${examId}/participants`, { method: "POST", body: JSON.stringify({ studentId }) });
+      return response.data;
+    },
+    async addExamParticipantsBulk(examId: string, studentIds: string[]) {
+      const response = await request<any>(`/exams/${examId}/participants/bulk`, { method: "POST", body: JSON.stringify({ studentIds }) });
+      return response.data;
+    },
+    async removeExamParticipant(examId: string, participantId: string) {
+      const response = await request<any>(`/exams/${examId}/participants/${participantId}`, { method: "DELETE" });
+      return response.data;
+    },
+    async updateExamParticipantStatus(examId: string, participantId: string, status: string) {
+      const response = await request<any>(`/exams/${examId}/participants/${participantId}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
+      return response.data;
+    },
+
+    async listExamSchedules(examId: string) {
+      const response = await request<any>(`/exams/${examId}/schedules`);
+      return response.data;
+    },
+    async createExamSchedule(examId: string, data: any) {
+      const response = await request<any>(`/exams/${examId}/schedules`, { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async updateExamSchedule(scheduleId: string, data: any) {
+      const response = await request<any>(`/exams/schedules/${scheduleId}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deleteExamSchedule(scheduleId: string) {
+      const response = await request<any>(`/exams/schedules/${scheduleId}`, { method: "DELETE" });
+      return response.data;
+    },
+
+    async listExamSessions(scheduleId: string) {
+      const response = await request<any>(`/exams/schedules/${scheduleId}/sessions`);
+      return response.data;
+    },
+    async createExamSession(scheduleId: string, data: any) {
+      const response = await request<any>(`/exams/schedules/${scheduleId}/sessions`, { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async updateExamSessionStatus(sessionId: string, status: string) {
+      const response = await request<any>(`/exams/sessions/${sessionId}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
+      return response.data;
+    },
+
+    async listExamQuestions(examId: string) {
+      const response = await request<any>(`/exams/${examId}/questions`);
+      return response.data;
+    },
+    async addExamQuestion(examId: string, data: any) {
+      const response = await request<any>(`/exams/${examId}/questions`, { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async updateExamQuestion(questionId: string, data: any) {
+      const response = await request<any>(`/exams/questions/${questionId}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deleteExamQuestion(questionId: string) {
+      const response = await request<any>(`/exams/questions/${questionId}`, { method: "DELETE" });
+      return response.data;
+    },
+
+    async listExamBanks(params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/exams/banks?${qs}`);
+      return normalizeListResponse(response);
+    },
+    async createExamBank(data: any) {
+      const response = await request<any>("/exams/banks", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+
+    async listExamResults(examId: string, params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/exams/${examId}/results?${qs}`);
+      return normalizeListResponse(response);
+    },
+
+    async downloadExamCardPdf(examId: string) {
+      const blob = await downloadFile(`/exams/${examId}/print-card`, `exam-card-${examId}.pdf`);
+      triggerBrowserDownload(blob, `exam-card-${examId}.pdf`);
+    },
+    async downloadExamParticipantCardPdf(examId: string, participantId: string) {
+      const blob = await downloadFile(`/exams/${examId}/print-card-participant/${participantId}`, `exam-participant-card-${participantId}.pdf`);
+      triggerBrowserDownload(blob, `exam-participant-card-${participantId}.pdf`);
+    },
+    async downloadExamReport(examId: string, format: string = "xlsx") {
+      return downloadFile(`/exams/${examId}/report?format=${format}`, `exam-report-${examId}.${format}`);
     }
   };
 }
