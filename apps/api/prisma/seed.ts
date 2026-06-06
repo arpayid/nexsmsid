@@ -297,7 +297,7 @@ const rolePermissionMap: Record<string, string[]> = {
   "petugas-perpustakaan": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "library.view", "library.create", "library.update", "library.delete", "library.borrow", "library.return", "library.fine", "library.export", "library.print"],
   "hr-payroll": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "payroll.view", "payroll.create", "payroll.update", "payroll.approve", "payroll.pay", "payroll.print", "payroll.export", "teachers.view", "staffs.view", "reports.view", "reports.generate", "reports.download", "report-jobs.view", "report-jobs.create", "export-history.view"],
   "petugas-ujian": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "exams.view", "exams.create", "exams.update", "exams.delete", "exams.schedule", "exams.participants", "exams.print-card", "exams.export", "students.view", "teachers.view", "master-data.view"],
-  "approver": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "approvals.view", "approvals.approve", "approvals.reject", "approvals.delegate", "approvals.history", "letters.view", "letters.approve", "letters.reject", "letters.print"]
+  "approver": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "approvals.view", "approvals.approve", "approvals.reject", "approvals.delegate", "approvals.history", "letters.view", "letters.approve", "letters.reject", "letters.print", "payroll.view", "payroll.approve"]
 };
 
 function permissionGroup(key: string) {
