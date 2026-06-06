@@ -191,7 +191,12 @@ const permissions = [
   "letters.update",
   "letters.delete",
   "letters.approve",
+  "letters.reject",
+  "letters.issue",
+  "letters.archive",
   "letters.print",
+  "letters.report",
+  "letters.manage-templates",
   "letters.export",
   "inventory.view",
   "inventory.create",
@@ -281,18 +286,18 @@ const rolePermissionMap: Record<string, string[]> = {
   "siswa": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "students.view", "student-portal.view", "notifications.view", "notifications.read"],
   "orang-tua-wali": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "students.view", "guardians.view", "guardian-portal.view", "notifications.view", "notifications.read"],
   "bendahara": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "master-data.view", "staffs.view", "finance.view", "finance.export", "invoices.view", "invoices.create", "invoices.update", "invoices.print", "payments.view", "payments.create", "payments.print", "expenses.view", "expenses.create", "expenses.approve", "expenses.pay"],
-  "staff-tu": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "users.create", "users.update", "users.reset-password", "users.unlock", "users.force-change-password", "master-data.view", "master-data.create", "master-data.update", "master-data.import", "master-data.export", "students.view", "students.create", "students.update", "students.import", "students.export", "guardians.view", "guardians.create", "guardians.update", "guardians.import", "guardians.export", "teachers.view", "teachers.create", "teachers.update", "teachers.import", "teachers.export", "staffs.view", "staffs.create", "staffs.update", "staffs.import", "staffs.export", "teaching-assignments.view", "teaching-assignments.manage", "schedules.view", "schedules.manage", "attendance.view", "attendance.record", "attendance.update", "attendance.print", "grades.view", "grades.input", "grades.update", "grades.print", "invoices.view", "invoices.print", "payments.view", "payments.print", "ppdb.view", "ppdb.print", "announcements.view", "announcements.create", "announcements.update", "announcements.publish", "announcements.archive", "messages.view", "messages.send", "messages.read", "notifications.view", "notifications.create", "notifications.read", "notification-templates.view", "reports.view", "reports.generate", "report-jobs.view", "report-jobs.create", "export-history.view"],
+  "staff-tu": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "users.create", "users.update", "users.reset-password", "users.unlock", "users.force-change-password", "master-data.view", "master-data.create", "master-data.update", "master-data.import", "master-data.export", "students.view", "students.create", "students.update", "students.import", "students.export", "guardians.view", "guardians.create", "guardians.update", "guardians.import", "guardians.export", "teachers.view", "teachers.create", "teachers.update", "teachers.import", "teachers.export", "staffs.view", "staffs.create", "staffs.update", "staffs.import", "staffs.export", "teaching-assignments.view", "teaching-assignments.manage", "schedules.view", "schedules.manage", "attendance.view", "attendance.record", "attendance.update", "attendance.print", "grades.view", "grades.input", "grades.update", "grades.print", "invoices.view", "invoices.print", "payments.view", "payments.print", "ppdb.view", "ppdb.print", "announcements.view", "announcements.create", "announcements.update", "announcements.publish", "announcements.archive", "messages.view", "messages.send", "messages.read", "notifications.view", "notifications.create", "notifications.read", "notification-templates.view", "letters.view", "letters.create", "letters.update", "letters.print", "reports.view", "reports.generate", "report-jobs.view", "report-jobs.create", "export-history.view"],
   "panitia-ppdb": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "users.create", "users.update", "master-data.view", "students.view", "ppdb.view", "ppdb.create", "ppdb.update", "ppdb.verify", "ppdb.approve", "ppdb.reject", "ppdb.convert", "ppdb.export", "ppdb.print"],
   "pembimbing-pkl": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "master-data.view", "students.view", "teachers.view", "industry-partners.view", "internships.view", "internships.create", "internships.update", "internships.start", "internships.complete", "internships.cancel", "internships.score", "internship-logs.view", "internship-logs.create", "internship-logs.update", "internship-logs.approve", "internship-logs.reject"],
   "admin-bkk": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "users.view", "master-data.view", "students.view", "staffs.view", "industry-partners.view", "industry-partners.create", "industry-partners.update", "alumni.view", "alumni.create", "alumni.update", "alumni.convert", "job-vacancies.view", "job-vacancies.create", "job-vacancies.update", "job-vacancies.publish", "job-vacancies.close", "job-applications.view", "job-applications.update", "job-applications.review", "job-applications.accept", "job-applications.reject", "tracer-studies.view", "tracer-studies.create", "tracer-studies.update", "bkk.view", "bkk.export", "reports.view", "reports.generate", "report-jobs.view", "report-jobs.create", "export-history.view"],
   "konselor-bk": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "counseling.view", "counseling.create", "counseling.update", "counseling.delete", "discipline.view", "discipline.create", "discipline.update", "discipline.report", "discipline.notify-guardian", "discipline.print"],
   "petugas-tata-tertib": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "discipline.view", "discipline.create", "discipline.update", "discipline.delete", "discipline.report", "discipline.notify-guardian", "discipline.print", "students.view", "guardians.view", "notifications.view"],
-  "petugas-surat": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "letters.view", "letters.create", "letters.update", "letters.delete", "letters.approve", "letters.print", "letters.export", "students.view", "teachers.view", "staffs.view", "guardians.view"],
+  "petugas-surat": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "letters.view", "letters.create", "letters.update", "letters.delete", "letters.issue", "letters.archive", "letters.print", "letters.report", "letters.manage-templates", "students.view", "teachers.view", "staffs.view", "guardians.view", "reports.view", "reports.generate", "report-jobs.view", "report-jobs.create", "export-history.view"],
   "petugas-sarpras": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "inventory.view", "inventory.create", "inventory.update", "inventory.delete", "inventory.borrow", "inventory.return", "inventory.maintenance", "inventory.export", "inventory.print"],
   "petugas-perpustakaan": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "library.view", "library.create", "library.update", "library.delete", "library.borrow", "library.return", "library.fine", "library.export", "library.print"],
   "hr-payroll": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "payroll.view", "payroll.create", "payroll.update", "payroll.approve", "payroll.pay", "payroll.print", "payroll.export", "teachers.view", "staffs.view"],
   "petugas-ujian": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "exams.view", "exams.create", "exams.update", "exams.delete", "exams.schedule", "exams.participants", "exams.print-card", "exams.export", "students.view", "teachers.view", "master-data.view"],
-  "approver": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "approvals.view", "approvals.approve", "approvals.reject", "approvals.delegate", "approvals.history"]
+  "approver": ["dashboard.view", "auth.change-password", "auth.logout-all", "auth.login-history", "approvals.view", "approvals.approve", "approvals.reject", "approvals.delegate", "approvals.history", "letters.view", "letters.approve", "letters.reject", "letters.print"]
 };
 
 function permissionGroup(key: string) {
@@ -417,6 +422,7 @@ async function main() {
   await seedPhase10CommunicationReports();
   await seedPortalUsers(superAdminPassword);
   await seedPhase121BkDiscipline();
+  await seedPhase122LetterManagement();
 
   await prisma.auditLog.create({
     data: {
@@ -1536,6 +1542,7 @@ async function seedPhase10CommunicationReports() {
   const sarprasRole = await prisma.role.findUniqueOrThrow({ where: { slug: "petugas-sarpras" } });
   const perpustakaanRole = await prisma.role.findUniqueOrThrow({ where: { slug: "petugas-perpustakaan" } });
   const suratRole = await prisma.role.findUniqueOrThrow({ where: { slug: "petugas-surat" } });
+  const approverRole = await prisma.role.findUniqueOrThrow({ where: { slug: "approver" } });
 
   const createDemoUser = async (email: string, name: string, roleId: string) => {
     const defaultPasswordHash = await bcrypt.hash("ChangeMe123!", 12);
@@ -1556,6 +1563,7 @@ async function seedPhase10CommunicationReports() {
   await createDemoUser("sarpras@nexsmsid.dev", "Demo Sarpras", sarprasRole.id);
   await createDemoUser("perpustakaan@nexsmsid.dev", "Demo Perpustakaan", perpustakaanRole.id);
   await createDemoUser("surat@nexsmsid.dev", "Demo Petugas Surat", suratRole.id);
+  await createDemoUser("approver@nexsmsid.dev", "Demo Approver", approverRole.id);
 
   console.log("Phase 10 communication, notification, and report data seeded.");
   console.log("Phase 12.0B permission foundation and demo users seeded.");
@@ -1722,6 +1730,349 @@ async function seedPhase121BkDiscipline() {
   });
 
   console.log("Phase 12.1 BK and discipline sample data seeded.");
+}
+
+async function seedPhase122LetterManagement() {
+  const [superAdmin, petugasSurat, approver] = await Promise.all([
+    prisma.user.findFirst({ where: { email: process.env.SEED_SUPER_ADMIN_EMAIL ?? "superadmin@nexsmsid.dev", deletedAt: null } }),
+    prisma.user.findFirst({ where: { email: "surat@nexsmsid.dev", deletedAt: null } }),
+    prisma.user.findFirst({ where: { email: "approver@nexsmsid.dev", deletedAt: null } })
+  ]);
+  const [student, guardian, teacher, staff] = await Promise.all([
+    prisma.student.findFirst({ where: { deletedAt: null, status: "ACTIVE" as any }, orderBy: { name: "asc" } }),
+    prisma.guardian.findFirst({ orderBy: { name: "asc" } }),
+    prisma.teacher.findFirst({ where: { deletedAt: null, status: "ACTIVE" as any }, orderBy: { name: "asc" } }),
+    prisma.staff.findFirst({ where: { deletedAt: null, status: "ACTIVE" as any }, orderBy: { name: "asc" } })
+  ]);
+
+  if (!superAdmin || !student || !guardian || !teacher || !staff) {
+    console.log("Phase 12.2 letter management seed: missing prerequisite data, skipping.");
+    return;
+  }
+
+  const actorId = petugasSurat?.id ?? superAdmin.id;
+  const approverId = approver?.id ?? superAdmin.id;
+
+  await seedLetterSequences();
+
+  const templates = [
+    {
+      id: "seed-letter-template-skl",
+      code: "SKL",
+      name: "Surat Keterangan Siswa",
+      category: "SKL",
+      requiresApproval: false,
+      subjectTemplate: "Surat Keterangan Siswa {{studentName}}",
+      bodyTemplate: "Dengan ini menerangkan bahwa {{studentName}} adalah siswa aktif NexSMSID School.",
+      variables: ["studentName", "nis", "classroom"]
+    },
+    {
+      id: "seed-letter-template-spo",
+      code: "SPO",
+      name: "Surat Panggilan Orang Tua",
+      category: "SPO",
+      requiresApproval: true,
+      subjectTemplate: "Panggilan Orang Tua/Wali {{studentName}}",
+      bodyTemplate: "Orang tua/wali siswa {{studentName}} diundang hadir ke sekolah untuk koordinasi pembinaan.",
+      variables: ["studentName", "guardianName", "agenda"]
+    },
+    {
+      id: "seed-letter-template-stg",
+      code: "STG",
+      name: "Surat Tugas Guru",
+      category: "STG",
+      requiresApproval: true,
+      subjectTemplate: "Surat Tugas {{teacherName}}",
+      bodyTemplate: "Menugaskan {{teacherName}} untuk melaksanakan kegiatan sekolah sesuai jadwal yang ditentukan.",
+      variables: ["teacherName", "activity", "date"]
+    },
+    {
+      id: "seed-letter-template-und",
+      code: "UND",
+      name: "Undangan Rapat",
+      category: "UND",
+      requiresApproval: false,
+      subjectTemplate: "Undangan Rapat {{agenda}}",
+      bodyTemplate: "Dengan hormat, kami mengundang Bapak/Ibu untuk menghadiri rapat {{agenda}}.",
+      variables: ["agenda", "date", "place"]
+    }
+  ];
+
+  for (const template of templates) {
+    await prisma.letterTemplate.upsert({
+      where: { code: template.code },
+      update: {
+        name: template.name,
+        category: template.category,
+        status: "ACTIVE",
+        subjectTemplate: template.subjectTemplate,
+        bodyTemplate: template.bodyTemplate,
+        variables: template.variables,
+        requiresApproval: template.requiresApproval,
+        createdById: actorId,
+        updatedById: actorId,
+        deletedAt: null
+      },
+      create: {
+        id: template.id,
+        code: template.code,
+        name: template.name,
+        category: template.category,
+        status: "ACTIVE",
+        subjectTemplate: template.subjectTemplate,
+        bodyTemplate: template.bodyTemplate,
+        variables: template.variables,
+        requiresApproval: template.requiresApproval,
+        createdById: actorId
+      }
+    });
+  }
+
+  await prisma.letter.upsert({
+    where: { id: "seed-letter-draft" },
+    update: {
+      templateId: "seed-letter-template-skl",
+      letterNumber: null,
+      subject: "Draft Surat Keterangan Siswa",
+      body: `Draft keterangan bahwa ${student.name} adalah siswa aktif sekolah.`,
+      direction: "OUTGOING",
+      status: "DRAFT",
+      priority: "NORMAL",
+      category: "SKL",
+      recipientType: "STUDENT",
+      recipientName: student.name,
+      recipientEmail: student.email,
+      recipientAddress: student.address,
+      studentId: student.id,
+      guardianId: null,
+      teacherId: null,
+      staffId: null,
+      createdById: actorId,
+      updatedById: actorId,
+      approvedById: null,
+      rejectedById: null,
+      rejectionReason: null,
+      issuedAt: null,
+      submittedAt: null,
+      approvedAt: null,
+      rejectedAt: null,
+      archivedAt: null,
+      cancelledAt: null,
+      deletedAt: null
+    },
+    create: {
+      id: "seed-letter-draft",
+      templateId: "seed-letter-template-skl",
+      subject: "Draft Surat Keterangan Siswa",
+      body: `Draft keterangan bahwa ${student.name} adalah siswa aktif sekolah.`,
+      direction: "OUTGOING",
+      status: "DRAFT",
+      priority: "NORMAL",
+      category: "SKL",
+      recipientType: "STUDENT",
+      recipientName: student.name,
+      recipientEmail: student.email,
+      recipientAddress: student.address,
+      studentId: student.id,
+      createdById: actorId
+    }
+  });
+
+  await prisma.letter.upsert({
+    where: { id: "seed-letter-submitted" },
+    update: {
+      templateId: "seed-letter-template-spo",
+      letterNumber: null,
+      subject: "Panggilan Orang Tua - Pembinaan Siswa",
+      body: `Orang tua/wali ${student.name} diundang hadir untuk koordinasi pembinaan siswa.`,
+      direction: "OUTGOING",
+      status: "SUBMITTED",
+      priority: "HIGH",
+      category: "SPO",
+      recipientType: "GUARDIAN",
+      recipientName: guardian.name,
+      recipientEmail: guardian.email,
+      recipientAddress: guardian.address,
+      studentId: student.id,
+      guardianId: guardian.id,
+      teacherId: null,
+      staffId: null,
+      createdById: actorId,
+      updatedById: actorId,
+      approvedById: null,
+      rejectedById: null,
+      rejectionReason: null,
+      submittedAt: new Date("2026-06-04T02:00:00Z"),
+      approvedAt: null,
+      rejectedAt: null,
+      issuedAt: null,
+      archivedAt: null,
+      cancelledAt: null,
+      deletedAt: null
+    },
+    create: {
+      id: "seed-letter-submitted",
+      templateId: "seed-letter-template-spo",
+      subject: "Panggilan Orang Tua - Pembinaan Siswa",
+      body: `Orang tua/wali ${student.name} diundang hadir untuk koordinasi pembinaan siswa.`,
+      direction: "OUTGOING",
+      status: "SUBMITTED",
+      priority: "HIGH",
+      category: "SPO",
+      recipientType: "GUARDIAN",
+      recipientName: guardian.name,
+      recipientEmail: guardian.email,
+      recipientAddress: guardian.address,
+      studentId: student.id,
+      guardianId: guardian.id,
+      submittedAt: new Date("2026-06-04T02:00:00Z"),
+      createdById: actorId
+    }
+  });
+
+  await prisma.letterApproval.upsert({
+    where: { id: "seed-letter-approval-submitted" },
+    update: { letterId: "seed-letter-submitted", approverId, status: "PENDING", note: null, approvedAt: null, rejectedAt: null },
+    create: { id: "seed-letter-approval-submitted", letterId: "seed-letter-submitted", approverId, status: "PENDING" }
+  });
+
+  await prisma.letter.upsert({
+    where: { id: "seed-letter-approved" },
+    update: {
+      templateId: "seed-letter-template-stg",
+      letterNumber: null,
+      subject: "Surat Tugas Guru Pendamping",
+      body: `Menugaskan ${teacher.name} untuk mendampingi kegiatan sekolah.`,
+      direction: "OUTGOING",
+      status: "APPROVED",
+      priority: "NORMAL",
+      category: "STG",
+      recipientType: "TEACHER",
+      recipientName: teacher.name,
+      recipientEmail: teacher.email,
+      recipientAddress: teacher.address,
+      studentId: null,
+      guardianId: null,
+      teacherId: teacher.id,
+      staffId: null,
+      createdById: actorId,
+      updatedById: actorId,
+      approvedById: approverId,
+      rejectedById: null,
+      rejectionReason: null,
+      submittedAt: new Date("2026-06-04T03:00:00Z"),
+      approvedAt: new Date("2026-06-04T04:00:00Z"),
+      rejectedAt: null,
+      issuedAt: null,
+      archivedAt: null,
+      cancelledAt: null,
+      deletedAt: null
+    },
+    create: {
+      id: "seed-letter-approved",
+      templateId: "seed-letter-template-stg",
+      subject: "Surat Tugas Guru Pendamping",
+      body: `Menugaskan ${teacher.name} untuk mendampingi kegiatan sekolah.`,
+      direction: "OUTGOING",
+      status: "APPROVED",
+      priority: "NORMAL",
+      category: "STG",
+      recipientType: "TEACHER",
+      recipientName: teacher.name,
+      recipientEmail: teacher.email,
+      recipientAddress: teacher.address,
+      teacherId: teacher.id,
+      submittedAt: new Date("2026-06-04T03:00:00Z"),
+      approvedAt: new Date("2026-06-04T04:00:00Z"),
+      approvedById: approverId,
+      createdById: actorId
+    }
+  });
+
+  await prisma.letterApproval.upsert({
+    where: { id: "seed-letter-approval-approved" },
+    update: { letterId: "seed-letter-approved", approverId, status: "APPROVED", note: "Disetujui untuk diterbitkan.", approvedAt: new Date("2026-06-04T04:00:00Z"), rejectedAt: null },
+    create: { id: "seed-letter-approval-approved", letterId: "seed-letter-approved", approverId, status: "APPROVED", note: "Disetujui untuk diterbitkan.", approvedAt: new Date("2026-06-04T04:00:00Z") }
+  });
+
+  await prisma.letter.upsert({
+    where: { id: "seed-letter-issued" },
+    update: {
+      templateId: "seed-letter-template-skl",
+      letterNumber: "001/SKL/NEXSMSID/VI/2026",
+      subject: "Surat Keterangan Siswa Aktif",
+      body: `Dengan ini menerangkan bahwa ${student.name} adalah siswa aktif NexSMSID School.`,
+      direction: "OUTGOING",
+      status: "ISSUED",
+      priority: "NORMAL",
+      category: "SKL",
+      recipientType: "STAFF",
+      recipientName: staff.name,
+      recipientEmail: staff.email,
+      recipientAddress: staff.address,
+      studentId: student.id,
+      guardianId: null,
+      teacherId: null,
+      staffId: staff.id,
+      createdById: actorId,
+      updatedById: actorId,
+      approvedById: approverId,
+      rejectedById: null,
+      rejectionReason: null,
+      submittedAt: new Date("2026-06-05T01:00:00Z"),
+      approvedAt: new Date("2026-06-05T02:00:00Z"),
+      issuedAt: new Date("2026-06-05T03:00:00Z"),
+      rejectedAt: null,
+      archivedAt: null,
+      cancelledAt: null,
+      deletedAt: null
+    },
+    create: {
+      id: "seed-letter-issued",
+      templateId: "seed-letter-template-skl",
+      letterNumber: "001/SKL/NEXSMSID/VI/2026",
+      subject: "Surat Keterangan Siswa Aktif",
+      body: `Dengan ini menerangkan bahwa ${student.name} adalah siswa aktif NexSMSID School.`,
+      direction: "OUTGOING",
+      status: "ISSUED",
+      priority: "NORMAL",
+      category: "SKL",
+      recipientType: "STAFF",
+      recipientName: staff.name,
+      recipientEmail: staff.email,
+      recipientAddress: staff.address,
+      studentId: student.id,
+      staffId: staff.id,
+      submittedAt: new Date("2026-06-05T01:00:00Z"),
+      approvedAt: new Date("2026-06-05T02:00:00Z"),
+      issuedAt: new Date("2026-06-05T03:00:00Z"),
+      approvedById: approverId,
+      createdById: actorId
+    }
+  });
+
+  await ensureLetterSequence("SKL", 2026, 6, 1);
+  console.log("Phase 12.2 letter management sample data seeded.");
+}
+
+async function seedLetterSequences() {
+  const categories = ["SKL", "SPT", "SPO", "STG", "UND", "INT"];
+  for (const category of categories) {
+    await ensureLetterSequence(category, 2026, 6, 0);
+  }
+}
+
+async function ensureLetterSequence(category: string, year: number, month: number, minimumCurrentNumber: number) {
+  const existing = await prisma.letterNumberSequence.findUnique({ where: { category_year_month: { category, year, month } } });
+  if (existing) {
+    if (existing.currentNumber < minimumCurrentNumber) {
+      await prisma.letterNumberSequence.update({ where: { id: existing.id }, data: { currentNumber: minimumCurrentNumber, format: "{number}/{category}/NEXSMSID/{romanMonth}/{year}" } });
+    }
+    return;
+  }
+  await prisma.letterNumberSequence.create({
+    data: { category, year, month, currentNumber: minimumCurrentNumber, format: "{number}/{category}/NEXSMSID/{romanMonth}/{year}" }
+  });
 }
 
 main()

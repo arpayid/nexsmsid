@@ -56,6 +56,14 @@ model User {
   disciplineViolationsReported  DisciplineViolation[]  @relation("DisciplineViolationReportedBy")
   disciplineViolationsConfirmed DisciplineViolation[]  @relation("DisciplineViolationConfirmedBy")
   studentAchievementsAwarded    StudentAchievement[]   @relation("StudentAchievementAwardedBy")
+  createdLetterTemplates        LetterTemplate[]       @relation("LetterTemplateCreatedBy")
+  updatedLetterTemplates        LetterTemplate[]       @relation("LetterTemplateUpdatedBy")
+  createdLetters                Letter[]               @relation("LetterCreatedBy")
+  updatedLetters                Letter[]               @relation("LetterUpdatedBy")
+  approvedLetters               Letter[]               @relation("LetterApprovedBy")
+  rejectedLetters               Letter[]               @relation("LetterRejectedBy")
+  letterApprovals               LetterApproval[]       @relation("LetterApprovalApprover")
+  uploadedLetterAttachments     LetterAttachment[]     @relation("LetterAttachmentUploadedBy")
 
   @@index([name])
   @@index([lockedUntil])
@@ -580,6 +588,7 @@ model Student {
   counselingCases      CounselingCase[]
   disciplineViolations DisciplineViolation[]
   achievements         StudentAchievement[]
+  letters              Letter[]
 
   @@index([classroomId])
   @@index([status])
@@ -602,6 +611,7 @@ model Guardian {
   updatedAt  DateTime          @updatedAt @map("updated_at")
   user       User?             @relation("GuardianUser", fields: [userId], references: [id], onDelete: SetNull)
   students   StudentGuardian[]
+  letters    Letter[]
 
   @@index([name])
   @@index([userId])
@@ -680,6 +690,7 @@ model CounselingCase {
   createdBy User             @relation("CounselingCaseCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   updatedBy User?            @relation("CounselingCaseUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   notes     CounselingNote[]
+  letters   Letter[]
 
   @@index([studentId])
   @@index([counselorId])
@@ -750,6 +761,7 @@ model DisciplineViolation {
   rule        DisciplineRule @relation(fields: [ruleId], references: [id], onDelete: Restrict)
   reportedBy  User           @relation("DisciplineViolationReportedBy", fields: [reportedById], references: [id], onDelete: Restrict)
   confirmedBy User?          @relation("DisciplineViolationConfirmedBy", fields: [confirmedById], references: [id], onDelete: SetNull)
+  letters     Letter[]
 
   @@index([studentId])
   @@index([ruleId])
@@ -806,6 +818,7 @@ model Teacher {
   user                  User?                @relation("TeacherUser", fields: [userId], references: [id], onDelete: SetNull)
   teachingAssignments   TeachingAssignment[]
   supervisedInternships Internship[]         @relation("InternshipSupervisor")
+  letters               Letter[]
 
   @@index([status])
   @@index([deletedAt])
@@ -830,12 +843,207 @@ model Staff {
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
   deletedAt        DateTime?        @map("deleted_at")
+  letters          Letter[]
 
   @@index([status])
   @@index([deletedAt])
   @@index([name])
   @@index([position])
   @@map("staffs")
+}
+
+// Phase 12.2 - Letter Management / Surat Menyurat
+enum LetterDirection {
+  INCOMING
+  OUTGOING
+  INTERNAL
+}
+
+enum LetterStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  ISSUED
+  ARCHIVED
+  CANCELLED
+}
+
+enum LetterPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum LetterRecipientType {
+  STUDENT
+  GUARDIAN
+  TEACHER
+  STAFF
+  USER
+  EXTERNAL
+}
+
+enum LetterTemplateStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum LetterApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model LetterTemplate {
+  id               String               @id @default(cuid())
+  code             String               @unique
+  name             String
+  description      String?
+  category         String
+  status           LetterTemplateStatus @default(ACTIVE)
+  subjectTemplate  String               @map("subject_template")
+  bodyTemplate     String               @map("body_template")
+  variables        Json?
+  requiresApproval Boolean              @default(false) @map("requires_approval")
+  createdById      String               @map("created_by_id")
+  updatedById      String?              @map("updated_by_id")
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+  deletedAt        DateTime?            @map("deleted_at")
+
+  createdBy User     @relation("LetterTemplateCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy User?    @relation("LetterTemplateUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  letters   Letter[]
+
+  @@index([code])
+  @@index([category])
+  @@index([status])
+  @@index([createdById])
+  @@index([deletedAt])
+  @@map("letter_templates")
+}
+
+model Letter {
+  id                           String              @id @default(cuid())
+  templateId                   String?             @map("template_id")
+  letterNumber                 String?             @unique @map("letter_number")
+  subject                      String
+  body                         String
+  direction                    LetterDirection     @default(OUTGOING)
+  status                       LetterStatus        @default(DRAFT)
+  priority                     LetterPriority      @default(NORMAL)
+  category                     String
+  recipientType                LetterRecipientType @map("recipient_type")
+  recipientName                String              @map("recipient_name")
+  recipientEmail               String?             @map("recipient_email")
+  recipientAddress             String?             @map("recipient_address")
+  studentId                    String?             @map("student_id")
+  guardianId                   String?             @map("guardian_id")
+  teacherId                    String?             @map("teacher_id")
+  staffId                      String?             @map("staff_id")
+  relatedCounselingCaseId      String?             @map("related_counseling_case_id")
+  relatedDisciplineViolationId String?             @map("related_discipline_violation_id")
+  issuedAt                     DateTime?           @map("issued_at")
+  submittedAt                  DateTime?           @map("submitted_at")
+  approvedAt                   DateTime?           @map("approved_at")
+  rejectedAt                   DateTime?           @map("rejected_at")
+  archivedAt                   DateTime?           @map("archived_at")
+  cancelledAt                  DateTime?           @map("cancelled_at")
+  createdById                  String              @map("created_by_id")
+  updatedById                  String?             @map("updated_by_id")
+  approvedById                 String?             @map("approved_by_id")
+  rejectedById                 String?             @map("rejected_by_id")
+  rejectionReason              String?             @map("rejection_reason")
+  createdAt                    DateTime            @default(now()) @map("created_at")
+  updatedAt                    DateTime            @updatedAt @map("updated_at")
+  deletedAt                    DateTime?           @map("deleted_at")
+
+  template                   LetterTemplate?      @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  student                    Student?             @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  guardian                   Guardian?            @relation(fields: [guardianId], references: [id], onDelete: SetNull)
+  teacher                    Teacher?             @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  staff                      Staff?               @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  relatedCounselingCase      CounselingCase?      @relation(fields: [relatedCounselingCaseId], references: [id], onDelete: SetNull)
+  relatedDisciplineViolation DisciplineViolation? @relation(fields: [relatedDisciplineViolationId], references: [id], onDelete: SetNull)
+  createdBy                  User                 @relation("LetterCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy                  User?                @relation("LetterUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  approvedBy                 User?                @relation("LetterApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  rejectedBy                 User?                @relation("LetterRejectedBy", fields: [rejectedById], references: [id], onDelete: SetNull)
+  approvals                  LetterApproval[]
+  attachments                LetterAttachment[]
+
+  @@index([letterNumber])
+  @@index([status])
+  @@index([direction])
+  @@index([category])
+  @@index([recipientType])
+  @@index([studentId])
+  @@index([guardianId])
+  @@index([teacherId])
+  @@index([staffId])
+  @@index([createdById])
+  @@index([approvedById])
+  @@index([issuedAt])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("letters")
+}
+
+model LetterApproval {
+  id         String               @id @default(cuid())
+  letterId   String               @map("letter_id")
+  approverId String               @map("approver_id")
+  status     LetterApprovalStatus @default(PENDING)
+  note       String?
+  approvedAt DateTime?            @map("approved_at")
+  rejectedAt DateTime?            @map("rejected_at")
+  createdAt  DateTime             @default(now()) @map("created_at")
+  updatedAt  DateTime             @updatedAt @map("updated_at")
+
+  letter   Letter @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  approver User   @relation("LetterApprovalApprover", fields: [approverId], references: [id], onDelete: Restrict)
+
+  @@index([letterId])
+  @@index([approverId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("letter_approvals")
+}
+
+model LetterAttachment {
+  id           String   @id @default(cuid())
+  letterId     String   @map("letter_id")
+  filename     String
+  originalName String   @map("original_name")
+  mimeType     String   @map("mime_type")
+  size         Int
+  path         String
+  uploadedById String   @map("uploaded_by_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  letter     Letter @relation(fields: [letterId], references: [id], onDelete: Cascade)
+  uploadedBy User   @relation("LetterAttachmentUploadedBy", fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@index([letterId])
+  @@index([uploadedById])
+  @@index([createdAt])
+  @@map("letter_attachments")
+}
+
+model LetterNumberSequence {
+  id            String   @id @default(cuid())
+  category      String
+  year          Int
+  month         Int?
+  currentNumber Int      @default(0) @map("current_number")
+  format        String
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([category, year, month])
+  @@map("letter_number_sequences")
 }
 
 // Phase 8 - Finance

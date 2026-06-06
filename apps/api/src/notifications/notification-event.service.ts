@@ -5,6 +5,21 @@ import { NotificationDispatchService } from "./notification-dispatch.service";
 import { NotificationRecipientResolverService } from "./notification-recipient-resolver.service";
 
 type EventActor = Pick<AuthenticatedUser, "id"> | string | null | undefined;
+type LetterEventPayload = {
+  id: string;
+  letterNumber?: string | null;
+  subject: string;
+  status: string;
+  createdById: string;
+  recipientType: string;
+  recipientEmail?: string | null;
+  studentId?: string | null;
+  guardianId?: string | null;
+  teacherId?: string | null;
+  staffId?: string | null;
+  rejectionReason?: string | null;
+  approvals?: Array<{ approverId: string }>;
+};
 
 @Injectable()
 export class NotificationEventService {
@@ -292,12 +307,128 @@ export class NotificationEventService {
     });
   }
 
+  async letterSubmitted(letter: LetterEventPayload, actor: EventActor, meta: RequestMeta = {}) {
+    const userIds = await this.recipients.roleUsers("approver");
+    return this.dispatch.notifyUsers(userIds, {
+      action: "submitted",
+      body: `Surat "${letter.subject}" menunggu persetujuan.`,
+      dedupeKey: `letter:${letter.id}:submitted`,
+      entityId: letter.id,
+      entityType: "Letter",
+      metadata: { letterNumber: letter.letterNumber ?? null, status: letter.status },
+      title: "Surat menunggu approval",
+      type: "LETTER_SUBMITTED",
+      url: "/admin/letters/approvals"
+    }, {
+      ...meta,
+      action: "notification.dispatch.letter-submitted",
+      actorId: actorId(actor),
+      entity: "Letter",
+      entityId: letter.id,
+      metadata: { status: letter.status }
+    });
+  }
+
+  async letterApproved(letter: LetterEventPayload, actor: EventActor, meta: RequestMeta = {}) {
+    return this.dispatch.notifyUsers([letter.createdById], {
+      action: "approved",
+      body: `Surat "${letter.subject}" telah disetujui.`,
+      dedupeKey: `letter:${letter.id}:approved`,
+      entityId: letter.id,
+      entityType: "Letter",
+      metadata: { letterNumber: letter.letterNumber ?? null, status: letter.status },
+      title: "Surat disetujui",
+      type: "LETTER_APPROVED",
+      url: "/admin/letters"
+    }, {
+      ...meta,
+      action: "notification.dispatch.letter-approved",
+      actorId: actorId(actor),
+      entity: "Letter",
+      entityId: letter.id,
+      metadata: { status: letter.status }
+    });
+  }
+
+  async letterRejected(letter: LetterEventPayload, actor: EventActor, meta: RequestMeta = {}) {
+    return this.dispatch.notifyUsers([letter.createdById], {
+      action: "rejected",
+      body: `Surat "${letter.subject}" ditolak${letter.rejectionReason ? `: ${trimBody(letter.rejectionReason)}` : "."}`,
+      dedupeKey: `letter:${letter.id}:rejected`,
+      entityId: letter.id,
+      entityType: "Letter",
+      metadata: { letterNumber: letter.letterNumber ?? null, status: letter.status },
+      title: "Surat ditolak",
+      type: "LETTER_REJECTED",
+      url: "/admin/letters"
+    }, {
+      ...meta,
+      action: "notification.dispatch.letter-rejected",
+      actorId: actorId(actor),
+      entity: "Letter",
+      entityId: letter.id,
+      metadata: { status: letter.status }
+    });
+  }
+
+  async letterIssued(letter: LetterEventPayload, actor: EventActor, meta: RequestMeta = {}) {
+    const userIds = await this.letterRecipientUsers(letter);
+    return this.dispatch.notifyUsers(userIds, {
+      action: "issued",
+      body: `Surat "${letter.subject}" telah diterbitkan${letter.letterNumber ? ` dengan nomor ${letter.letterNumber}` : ""}.`,
+      dedupeKey: `letter:${letter.id}:issued`,
+      entityId: letter.id,
+      entityType: "Letter",
+      metadata: { letterNumber: letter.letterNumber ?? null, recipientType: letter.recipientType, status: letter.status },
+      title: "Surat diterbitkan",
+      type: "LETTER_ISSUED",
+      url: "/notifications"
+    }, {
+      ...meta,
+      action: "notification.dispatch.letter-issued",
+      actorId: actorId(actor),
+      entity: "Letter",
+      entityId: letter.id,
+      metadata: { recipientType: letter.recipientType, status: letter.status }
+    });
+  }
+
+  async letterCancelled(letter: LetterEventPayload, actor: EventActor, meta: RequestMeta = {}) {
+    const approverIds = (letter.approvals ?? []).map((approval) => approval.approverId);
+    return this.dispatch.notifyUsers([letter.createdById, ...approverIds], {
+      action: "cancelled",
+      body: `Surat "${letter.subject}" dibatalkan.`,
+      dedupeKey: `letter:${letter.id}:cancelled`,
+      entityId: letter.id,
+      entityType: "Letter",
+      metadata: { letterNumber: letter.letterNumber ?? null, status: letter.status },
+      title: "Surat dibatalkan",
+      type: "LETTER_CANCELLED",
+      url: "/admin/letters"
+    }, {
+      ...meta,
+      action: "notification.dispatch.letter-cancelled",
+      actorId: actorId(actor),
+      entity: "Letter",
+      entityId: letter.id,
+      metadata: { status: letter.status }
+    });
+  }
+
   private async studentAndGuardianUsers(studentId: string) {
     const [studentUsers, guardianUsers] = await Promise.all([
       this.recipients.studentUser(studentId),
       this.recipients.guardiansOfStudent(studentId)
     ]);
     return [...studentUsers, ...guardianUsers];
+  }
+
+  private async letterRecipientUsers(letter: LetterEventPayload) {
+    if (letter.recipientType === "STUDENT" && letter.studentId) return this.recipients.studentUser(letter.studentId);
+    if (letter.recipientType === "GUARDIAN" && letter.guardianId) return this.recipients.guardianUser(letter.guardianId);
+    if (letter.recipientType === "TEACHER" && letter.teacherId) return this.recipients.teachers([letter.teacherId]);
+    if (letter.recipientType === "USER") return this.recipients.userByEmail(letter.recipientEmail);
+    return [];
   }
 }
 

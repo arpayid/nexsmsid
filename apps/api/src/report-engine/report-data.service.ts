@@ -44,6 +44,14 @@ export class ReportDataService {
         return this.getStudentDisciplineSummary(filters);
       case 'counseling-case-recap':
         return this.getCounselingCaseRecap(filters);
+      case 'letter-recap':
+        return this.getLetterRecap(filters);
+      case 'outgoing-letter-recap':
+        return this.getLetterRecap({ ...filters, direction: 'OUTGOING' });
+      case 'incoming-letter-recap':
+        return this.getLetterRecap({ ...filters, direction: 'INCOMING' });
+      case 'letter-approval-recap':
+        return this.getLetterApprovalRecap(filters);
       default:
         return this.getPlaceholderData(reportCode);
     }
@@ -739,6 +747,65 @@ export class ReportDataService {
     };
   }
 
+  private async getLetterRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.direction) where.direction = filters.direction;
+    if (filters.status) where.status = filters.status;
+    if (filters.category) where.category = String(filters.category).trim().toUpperCase().replace(/[^A-Z0-9]+/g, '');
+    if (filters.recipientType) where.recipientType = filters.recipientType;
+    if (filters.startDate || filters.endDate) {
+      where.createdAt = {
+        ...(filters.startDate ? { gte: new Date(filters.startDate) } : {}),
+        ...(filters.endDate ? { lte: new Date(filters.endDate) } : {}),
+      };
+    }
+
+    const letters = await this.prisma.letter.findMany({
+      where,
+      include: { createdBy: { select: { name: true } }, approvedBy: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      title: filters.direction === 'OUTGOING' ? 'Outgoing Letter Recap' : filters.direction === 'INCOMING' ? 'Incoming Letter Recap' : 'Letter Recap',
+      columns: letterReportColumns(),
+      rows: letters.map((letter) => letterReportRow(letter)),
+    };
+  }
+
+  private async getLetterApprovalRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { letter: { deletedAt: null } };
+    if (filters.status) where.status = filters.status;
+    if (filters.category) where.letter.category = String(filters.category).trim().toUpperCase().replace(/[^A-Z0-9]+/g, '');
+    if (filters.startDate || filters.endDate) {
+      where.createdAt = {
+        ...(filters.startDate ? { gte: new Date(filters.startDate) } : {}),
+        ...(filters.endDate ? { lte: new Date(filters.endDate) } : {}),
+      };
+    }
+    const approvals = await this.prisma.letterApproval.findMany({
+      where,
+      include: { approver: { select: { name: true } }, letter: { include: { createdBy: { select: { name: true } }, approvedBy: { select: { name: true } } } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      title: 'Letter Approval Recap',
+      columns: [
+        ...letterReportColumns(),
+        { key: 'approver', label: 'Approver', width: 25 },
+        { key: 'approvalStatus', label: 'Approval Status', width: 18 },
+        { key: 'approvalNote', label: 'Approval Note', width: 35 },
+      ],
+      rows: approvals.map((approval) => ({
+        ...letterReportRow(approval.letter),
+        approver: approval.approver.name,
+        approvalStatus: approval.status,
+        approvalNote: approval.note || '-',
+      })),
+    };
+  }
+
   private async getPlaceholderData(reportCode: string): Promise<ReportDataResult> {
     return {
       title: `Report: ${reportCode}`,
@@ -750,4 +817,34 @@ export class ReportDataService {
       ],
     };
   }
+}
+
+function letterReportColumns() {
+  return [
+    { key: 'letterNumber', label: 'Letter Number', width: 24 },
+    { key: 'subject', label: 'Subject', width: 40 },
+    { key: 'category', label: 'Category', width: 14 },
+    { key: 'direction', label: 'Direction', width: 14 },
+    { key: 'status', label: 'Status', width: 14 },
+    { key: 'recipientName', label: 'Recipient', width: 30 },
+    { key: 'createdBy', label: 'Created By', width: 25 },
+    { key: 'approvedBy', label: 'Approved By', width: 25 },
+    { key: 'issuedAt', label: 'Issued At', width: 16 },
+    { key: 'createdAt', label: 'Created At', width: 16 },
+  ];
+}
+
+function letterReportRow(letter: any) {
+  return {
+    letterNumber: letter.letterNumber || '-',
+    subject: letter.subject,
+    category: letter.category,
+    direction: letter.direction,
+    status: letter.status,
+    recipientName: letter.recipientName,
+    createdBy: letter.createdBy?.name || '-',
+    approvedBy: letter.approvedBy?.name || '-',
+    issuedAt: letter.issuedAt ? letter.issuedAt.toISOString().split('T')[0] : '-',
+    createdAt: letter.createdAt.toISOString().split('T')[0],
+  };
 }
