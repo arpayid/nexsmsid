@@ -32,7 +32,7 @@ export default function InvoicesPage() {
 
   async function loadReferenceData() {
     try {
-      const studentsRes = await api.listStudents({ limit: 500 });
+      const studentsRes = await api.listStudents({ limit: 100 });
       setStudents(studentsRes.items);
     } catch { /* ignore reference load errors */ }
   }
@@ -41,10 +41,9 @@ export default function InvoicesPage() {
     setError(null);
     setLoading(true);
     try {
-      const response = await api.listInvoices({ limit: 50, page: 1, search: search || undefined });
-      const resp = response as unknown as { data: InvoiceRecord[]; meta?: { total?: number } };
-      setItems(resp.data);
-      setTotal(resp.meta?.total ?? resp.data.length);
+      const result = await api.listInvoices({ limit: 50, page: 1, search: search || undefined });
+      setItems(result.items);
+      setTotal(result.meta?.total ?? result.items.length);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Gagal memuat data invoice");
     } finally {

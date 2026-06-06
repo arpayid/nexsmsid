@@ -22,7 +22,7 @@ export default function PpdbPeriodsPage() {
 
   async function loadReferenceData() {
     try {
-      const yearsRes = await api.masterDataList("academic-years", { limit: 500 });
+      const yearsRes = await api.masterDataList("academic-years", { limit: 100 });
       setAcademicYears(yearsRes.data);
     } catch { /* ignore reference load errors */ }
   }

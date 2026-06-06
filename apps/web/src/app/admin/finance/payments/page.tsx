@@ -30,9 +30,8 @@ export default function PaymentsPage() {
 
   async function loadReferenceData() {
     try {
-      const invoicesRes = await api.listInvoices({ limit: 500 });
-      const resp = invoicesRes as unknown as { data: InvoiceRecord[] };
-      setInvoices(resp.data);
+      const result = await api.listInvoices({ limit: 100 });
+      setInvoices(result.items);
     } catch { /* ignore reference load errors */ }
   }
 
@@ -40,10 +39,9 @@ export default function PaymentsPage() {
     setError(null);
     setLoading(true);
     try {
-      const response = await api.listPayments({ limit: 50, page: 1, search: search || undefined });
-      const resp = response as unknown as { data: PaymentRecord[]; meta?: { total?: number } };
-      setItems(resp.data);
-      setTotal(resp.meta?.total ?? resp.data.length);
+      const result = await api.listPayments({ limit: 50, page: 1, search: search || undefined });
+      setItems(result.items);
+      setTotal(result.meta?.total ?? result.items.length);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Gagal memuat data pembayaran");
     } finally {
