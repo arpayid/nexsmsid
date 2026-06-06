@@ -1,9 +1,22 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import * as ExcelJS from "exceljs";
 
 import { AuthenticatedUser, RequestWithUser } from "../auth/auth.types";
 import { PrismaService } from "../database/prisma.service";
 import { PdfService } from "../pdf/pdf.service";
+
+type ExamReportData = Prisma.ExamGetPayload<{
+  include: {
+    examType: true;
+    academicYear: true;
+    participants: {
+      where: { deletedAt: null };
+      include: { student: { include: { user: { select: { id: true; name: true } } } } };
+      orderBy: { number: "asc" };
+    };
+  };
+}>;
 
 @Injectable()
 export class ExamReportService {
@@ -54,7 +67,7 @@ export class ExamReportService {
       { header: "Skor", key: "score", width: 10 }
     ];
 
-    exam.participants.forEach((p: any, i: number) => {
+    exam.participants.forEach((p, i: number) => {
       ws.addRow({
         no: i + 1,
         name: p.student.user?.name ?? "-",
@@ -69,7 +82,7 @@ export class ExamReportService {
     return { buffer: Buffer.from(buffer), contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename: `exam-report-${exam.code}.xlsx` };
   }
 
-  private async generatePdfReport(exam: any): Promise<{ buffer: Buffer; contentType: string; filename: string }> {
+  private async generatePdfReport(exam: ExamReportData): Promise<{ buffer: Buffer; contentType: string; filename: string }> {
     const header = { ...(await this.pdf.getSchoolHeader()), title: `Laporan Ujian: ${exam.name}` };
 
     const buffer = await this.pdf.render(header, (doc) => {
@@ -92,7 +105,7 @@ export class ExamReportService {
         { header: "Status", width: 80 },
         { header: "Skor", width: 60 }
       ];
-      const rows = exam.participants.map((p: any, i: number) => ({
+      const rows = exam.participants.map((p, i: number) => ({
         cells: [
           { text: i + 1, align: "center" } as const,
           { text: p.student.user?.name ?? "-" },

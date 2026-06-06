@@ -160,7 +160,9 @@ export class ExamsService {
 
   async addParticipant(examId: string, studentId: string) {
     await this.getExam(examId);
-    const existing = await this.prisma.examParticipant.findUnique({ where: { examId_studentId: { examId, studentId } } });
+    const student = await this.prisma.student.findUnique({ where: { id: studentId } });
+    if (!student) throw new NotFoundException("Student not found");
+    const existing = await this.prisma.examParticipant.findFirst({ where: { examId, studentId, deletedAt: null } });
     if (existing) throw new ConflictException("Student already registered for this exam");
     const maxNumber = await this.prisma.examParticipant.aggregate({ where: { examId }, _max: { number: true } });
     return this.prisma.examParticipant.create({
@@ -171,9 +173,10 @@ export class ExamsService {
 
   async addParticipantsBulk(examId: string, studentIds: string[]) {
     await this.getExam(examId);
-    const existing = await this.prisma.examParticipant.findMany({ where: { examId, studentId: { in: studentIds } }, select: { studentId: true } });
+    const existing = await this.prisma.examParticipant.findMany({ where: { examId, studentId: { in: studentIds }, deletedAt: null }, select: { studentId: true } });
     const existingIds = new Set(existing.map(e => e.studentId));
     const newIds = studentIds.filter(id => !existingIds.has(id));
+    if (newIds.length === 0) return { added: 0, skipped: studentIds.length };
     const maxNumber = await this.prisma.examParticipant.aggregate({ where: { examId }, _max: { number: true } });
     let nextNumber = (maxNumber._max.number ?? 0) + 1;
     await this.prisma.examParticipant.createMany({
@@ -203,9 +206,9 @@ export class ExamsService {
     });
   }
 
-  async createSchedule(examId: string, data: Prisma.ExamScheduleCreateInput) {
+  async createSchedule(examId: string, data: Prisma.ExamScheduleUncheckedCreateInput) {
     await this.getExam(examId);
-    return this.prisma.examSchedule.create({ data, include: scheduleInclude });
+    return this.prisma.examSchedule.create({ data: { ...data, examId }, include: scheduleInclude });
   }
 
   async updateSchedule(id: string, data: Prisma.ExamScheduleUpdateInput) {
@@ -213,6 +216,8 @@ export class ExamsService {
   }
 
   async deleteSchedule(id: string) {
+    const schedule = await this.prisma.examSchedule.findFirst({ where: { id, deletedAt: null } });
+    if (!schedule) throw new NotFoundException("Schedule not found");
     return this.prisma.examSchedule.update({ where: { id }, data: { deletedAt: new Date() } });
   }
 
@@ -225,6 +230,8 @@ export class ExamsService {
   }
 
   async createSession(scheduleId: string, data: { code: string; name?: string }) {
+    const schedule = await this.prisma.examSchedule.findFirst({ where: { id: scheduleId, deletedAt: null } });
+    if (!schedule) throw new NotFoundException("Schedule not found");
     return this.prisma.examSession.create({ data: { ...data, scheduleId } });
   }
 
@@ -247,9 +254,9 @@ export class ExamsService {
     });
   }
 
-  async addQuestion(examId: string, data: Prisma.ExamQuestionCreateInput) {
+  async addQuestion(examId: string, data: Prisma.ExamQuestionUncheckedCreateInput) {
     await this.getExam(examId);
-    return this.prisma.examQuestion.create({ data });
+    return this.prisma.examQuestion.create({ data: { ...data, examId } });
   }
 
   async updateQuestion(id: string, data: Prisma.ExamQuestionUpdateInput) {
@@ -273,6 +280,8 @@ export class ExamsService {
   }
 
   async createBank(data: { code: string; name: string; description?: string }) {
+    const existing = await this.prisma.questionBank.findUnique({ where: { code: data.code } });
+    if (existing) throw new ConflictException("Question bank code already exists");
     return this.prisma.questionBank.create({ data });
   }
 
