@@ -52,6 +52,16 @@ export class ReportDataService {
         return this.getLetterRecap({ ...filters, direction: 'INCOMING' });
       case 'letter-approval-recap':
         return this.getLetterApprovalRecap(filters);
+      case 'inventory-item-recap':
+        return this.getInventoryItemRecap(filters);
+      case 'inventory-movement-recap':
+        return this.getInventoryMovementRecap(filters);
+      case 'inventory-maintenance-recap':
+        return this.getInventoryMaintenanceRecap(filters);
+      case 'inventory-loan-recap':
+        return this.getInventoryLoanRecap(filters);
+      case 'inventory-low-stock-recap':
+        return this.getInventoryLowStockRecap(filters);
       default:
         return this.getPlaceholderData(reportCode);
     }
@@ -815,6 +825,197 @@ export class ReportDataService {
       rows: [
         { info: `Data for ${reportCode} is coming soon.` },
       ],
+    };
+  }
+
+  private async getInventoryItemRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.categoryId) where.categoryId = filters.categoryId;
+    if (filters.locationId) where.locationId = filters.locationId;
+    if (filters.type) where.type = filters.type;
+    if (filters.status) where.status = filters.status;
+    if (filters.condition) where.condition = filters.condition;
+
+    const items = await this.prisma.inventoryItem.findMany({
+      where,
+      include: { category: true, location: true },
+      orderBy: { code: 'asc' },
+    });
+
+    return {
+      title: 'Inventory Item Recap',
+      columns: [
+        { key: 'code', label: 'Item Code', width: 15 },
+        { key: 'name', label: 'Name', width: 30 },
+        { key: 'category', label: 'Category', width: 20 },
+        { key: 'location', label: 'Location', width: 20 },
+        { key: 'type', label: 'Type', width: 15 },
+        { key: 'quantity', label: 'Qty', width: 10 },
+        { key: 'condition', label: 'Condition', width: 15 },
+        { key: 'status', label: 'Status', width: 15 },
+      ],
+      rows: items.map(i => ({
+        code: i.code,
+        name: i.name,
+        category: i.category?.name ?? '-',
+        location: i.location?.name ?? '-',
+        type: i.type,
+        quantity: i.quantity,
+        condition: i.condition,
+        status: i.status,
+      })),
+    };
+  }
+
+  private async getInventoryMovementRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = {};
+    if (filters.startDate && filters.endDate) {
+      where.performedAt = {
+        gte: new Date(filters.startDate),
+        lte: new Date(filters.endDate),
+      };
+    }
+    if (filters.fromLocationId) where.fromLocationId = filters.fromLocationId;
+    if (filters.toLocationId) where.toLocationId = filters.toLocationId;
+
+    const movements = await this.prisma.inventoryMovement.findMany({
+      where,
+      include: { item: true, fromLocation: true, toLocation: true, performedBy: true },
+      orderBy: { performedAt: 'desc' },
+    });
+
+    return {
+      title: 'Inventory Movement Recap',
+      subtitle: `Period: ${filters.startDate} to ${filters.endDate}`,
+      columns: [
+        { key: 'date', label: 'Date', width: 15 },
+        { key: 'item', label: 'Item', width: 30 },
+        { key: 'type', label: 'Movement Type', width: 15 },
+        { key: 'qty', label: 'Qty', width: 10 },
+        { key: 'from', label: 'From Location', width: 20 },
+        { key: 'to', label: 'To Location', width: 20 },
+        { key: 'user', label: 'Performed By', width: 20 },
+      ],
+      rows: movements.map(m => ({
+        date: m.performedAt.toISOString().split('T')[0],
+        item: m.item.name,
+        type: m.type,
+        qty: m.quantity,
+        from: m.fromLocation?.name ?? '-',
+        to: m.toLocation?.name ?? '-',
+        user: m.performedBy?.name ?? '-',
+      })),
+    };
+  }
+
+  private async getInventoryMaintenanceRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.startDate && filters.endDate) {
+      where.scheduledAt = {
+        gte: new Date(filters.startDate),
+        lte: new Date(filters.endDate),
+      };
+    }
+    if (filters.status) where.status = filters.status;
+
+    const maintenances = await this.prisma.inventoryMaintenance.findMany({
+      where,
+      include: { item: true, handledBy: true },
+      orderBy: { scheduledAt: 'desc' },
+    });
+
+    return {
+      title: 'Inventory Maintenance Recap',
+      subtitle: `Period: ${filters.startDate} to ${filters.endDate}`,
+      columns: [
+        { key: 'scheduled', label: 'Scheduled At', width: 15 },
+        { key: 'item', label: 'Item', width: 30 },
+        { key: 'title', label: 'Activity', width: 30 },
+        { key: 'status', label: 'Status', width: 15 },
+        { key: 'handledBy', label: 'Handled By', width: 20 },
+        { key: 'cost', label: 'Cost', width: 15 },
+      ],
+      rows: maintenances.map(m => ({
+        scheduled: m.scheduledAt ? m.scheduledAt.toISOString().split('T')[0] : '-',
+        item: m.item.name,
+        title: m.title,
+        status: m.status,
+        handledBy: m.handledBy?.name ?? '-',
+        cost: m.cost ?? '-',
+      })),
+    };
+  }
+
+  private async getInventoryLoanRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.startDate && filters.endDate) {
+      where.requestedAt = {
+        gte: new Date(filters.startDate),
+        lte: new Date(filters.endDate),
+      };
+    }
+    if (filters.status) where.status = filters.status;
+    if (filters.borrowerType) where.borrowerType = filters.borrowerType;
+
+    const loans = await this.prisma.inventoryLoan.findMany({
+      where,
+      include: { item: true },
+      orderBy: { requestedAt: 'desc' },
+    });
+
+    return {
+      title: 'Inventory Loan Recap',
+      subtitle: `Period: ${filters.startDate} to ${filters.endDate}`,
+      columns: [
+        { key: 'date', label: 'Request Date', width: 15 },
+        { key: 'item', label: 'Item', width: 30 },
+        { key: 'borrower', label: 'Borrower', width: 25 },
+        { key: 'qty', label: 'Qty', width: 10 },
+        { key: 'status', label: 'Status', width: 15 },
+        { key: 'dueAt', label: 'Due Date', width: 15 },
+      ],
+      rows: loans.map(l => ({
+        date: l.requestedAt.toISOString().split('T')[0],
+        item: l.item.name,
+        borrower: l.borrowerName,
+        qty: l.quantity,
+        status: l.status,
+        dueAt: l.dueAt ? l.dueAt.toISOString().split('T')[0] : '-',
+      })),
+    };
+  }
+
+  private async getInventoryLowStockRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.categoryId) where.categoryId = filters.categoryId;
+    if (filters.locationId) where.locationId = filters.locationId;
+
+    const items = await this.prisma.inventoryItem.findMany({
+      where,
+      include: { category: true, location: true },
+      orderBy: { code: 'asc' },
+    });
+
+    const lowStock = items.filter(i => i.minStock !== null && i.quantity <= i.minStock);
+
+    return {
+      title: 'Inventory Low Stock Recap',
+      columns: [
+        { key: 'code', label: 'Item Code', width: 15 },
+        { key: 'name', label: 'Name', width: 30 },
+        { key: 'category', label: 'Category', width: 20 },
+        { key: 'location', label: 'Location', width: 20 },
+        { key: 'qty', label: 'Current Qty', width: 15 },
+        { key: 'min', label: 'Min Stock', width: 15 },
+      ],
+      rows: lowStock.map(i => ({
+        code: i.code,
+        name: i.name,
+        category: i.category?.name ?? '-',
+        location: i.location?.name ?? '-',
+        qty: i.quantity,
+        min: i.minStock,
+      })),
     };
   }
 }

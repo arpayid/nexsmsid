@@ -423,6 +423,7 @@ async function main() {
   await seedPortalUsers(superAdminPassword);
   await seedPhase121BkDiscipline();
   await seedPhase122LetterManagement();
+  await seedPhase123InventorySarpras(superAdmin.id);
 
   await prisma.auditLog.create({
     data: {
@@ -2083,3 +2084,261 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
+async function seedPhase123InventorySarpras(adminId: string) {
+  let actorId = adminId;
+  const petugasRole = await prisma.role.findUnique({ where: { slug: "petugas-sarpras" } });
+  
+  if (petugasRole) {
+    const passwordHash = await bcrypt.hash("ChangeMe123!", 12);
+    const petugas = await prisma.user.upsert({
+      where: { email: "sarpras@nexsmsid.dev" },
+      update: { name: "Petugas Sarpras", passwordHash, status: "ACTIVE", forceChangePassword: true, deletedAt: null },
+      create: {
+        email: "sarpras@nexsmsid.dev",
+        name: "Petugas Sarpras",
+        passwordHash,
+        status: "ACTIVE",
+        forceChangePassword: true
+      }
+    });
+    
+    await prisma.userRole.upsert({
+      where: { userId_roleId: { userId: petugas.id, roleId: petugasRole.id } },
+      update: {},
+      create: { userId: petugas.id, roleId: petugasRole.id }
+    });
+    actorId = petugas.id;
+  }
+
+  const catElektronik = await prisma.inventoryCategory.upsert({
+    where: { code: "ELEKTRONIK" },
+    update: {},
+    create: { code: "ELEKTRONIK", name: "Elektronik", description: "Perangkat elektronik" }
+  });
+
+  const catFurniture = await prisma.inventoryCategory.upsert({
+    where: { code: "FURNITURE" },
+    update: {},
+    create: { code: "FURNITURE", name: "Furniture", description: "Perabot kelas dan kantor" }
+  });
+
+  const catLab = await prisma.inventoryCategory.upsert({
+    where: { code: "LAB" },
+    update: {},
+    create: { code: "LAB", name: "Alat Lab", description: "Peralatan laboratorium" }
+  });
+
+  const catAtk = await prisma.inventoryCategory.upsert({
+    where: { code: "ATK" },
+    update: {},
+    create: { code: "ATK", name: "ATK", description: "Alat tulis kantor" }
+  });
+
+  const locGudang = await prisma.inventoryLocation.upsert({
+    where: { code: "GUDANG" },
+    update: {},
+    create: { code: "GUDANG", name: "Gudang Utama" }
+  });
+
+  const locGuru = await prisma.inventoryLocation.upsert({
+    where: { code: "RUANG-GURU" },
+    update: {},
+    create: { code: "RUANG-GURU", name: "Ruang Guru" }
+  });
+
+  const locLabKomputer = await prisma.inventoryLocation.upsert({
+    where: { code: "LAB-KOMPUTER" },
+    update: {},
+    create: { code: "LAB-KOMPUTER", name: "Lab Komputer" }
+  });
+
+  const locPerpus = await prisma.inventoryLocation.upsert({
+    where: { code: "PERPUSTAKAAN" },
+    update: {},
+    create: { code: "PERPUSTAKAAN", name: "Perpustakaan" }
+  });
+
+  const itemLaptop = await prisma.inventoryItem.upsert({
+    where: { code: "INV-LP-001" },
+    update: {},
+    create: {
+      code: "INV-LP-001",
+      name: "Laptop Inventaris",
+      categoryId: catElektronik.id,
+      locationId: locGudang.id,
+      type: "ASSET",
+      quantity: 5,
+      minStock: 1,
+      status: "ACTIVE",
+      condition: "GOOD",
+      createdById: actorId
+    }
+  });
+
+  const itemProyektor = await prisma.inventoryItem.upsert({
+    where: { code: "INV-PRJ-001" },
+    update: {},
+    create: {
+      code: "INV-PRJ-001",
+      name: "Proyektor",
+      categoryId: catElektronik.id,
+      locationId: locLabKomputer.id,
+      type: "ASSET",
+      quantity: 2,
+      minStock: 1,
+      status: "ACTIVE",
+      condition: "GOOD",
+      createdById: actorId
+    }
+  });
+
+  const itemMeja = await prisma.inventoryItem.upsert({
+    where: { code: "INV-MJ-001" },
+    update: {},
+    create: {
+      code: "INV-MJ-001",
+      name: "Meja Siswa",
+      categoryId: catFurniture.id,
+      locationId: locGudang.id,
+      type: "ASSET",
+      quantity: 100,
+      minStock: 10,
+      status: "ACTIVE",
+      condition: "GOOD",
+      createdById: actorId
+    }
+  });
+
+  const itemKursi = await prisma.inventoryItem.upsert({
+    where: { code: "INV-KR-001" },
+    update: {},
+    create: {
+      code: "INV-KR-001",
+      name: "Kursi Siswa",
+      categoryId: catFurniture.id,
+      locationId: locGudang.id,
+      type: "ASSET",
+      quantity: 100,
+      minStock: 10,
+      status: "ACTIVE",
+      condition: "GOOD",
+      createdById: actorId
+    }
+  });
+
+  const itemSpidol = await prisma.inventoryItem.upsert({
+    where: { code: "INV-SPD-001" },
+    update: {},
+    create: {
+      code: "INV-SPD-001",
+      name: "Spidol Boardmarker",
+      categoryId: catAtk.id,
+      locationId: locGuru.id,
+      type: "CONSUMABLE",
+      quantity: 50,
+      minStock: 20,
+      status: "ACTIVE",
+      condition: "NEW",
+      createdById: actorId
+    }
+  });
+
+  const initialStockMovement = await prisma.inventoryMovement.findFirst({
+    where: { itemId: itemLaptop.id, type: "IN" }
+  });
+
+  if (!initialStockMovement) {
+    await prisma.inventoryMovement.create({
+      data: {
+        itemId: itemLaptop.id,
+        type: "IN",
+        quantity: 5,
+        toLocationId: locGudang.id,
+        note: "Initial stock",
+        performedById: actorId
+      }
+    });
+  }
+
+  const transferSample = await prisma.inventoryMovement.findFirst({
+    where: { itemId: itemMeja.id, type: "TRANSFER" }
+  });
+
+  if (!transferSample) {
+    await prisma.inventoryMovement.create({
+      data: {
+        itemId: itemMeja.id,
+        type: "TRANSFER",
+        quantity: 20,
+        fromLocationId: locGudang.id,
+        toLocationId: locGuru.id,
+        note: "Transfer to ruang guru",
+        performedById: actorId
+      }
+    });
+  }
+
+  const maint = await prisma.inventoryMaintenance.findFirst({
+    where: { itemId: itemProyektor.id }
+  });
+
+  if (!maint) {
+    await prisma.inventoryMaintenance.create({
+      data: {
+        itemId: itemProyektor.id,
+        title: "Pembersihan Lensa Proyektor",
+        description: "Pembersihan rutin lensa proyektor",
+        status: "SCHEDULED",
+        scheduledAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        createdById: actorId
+      }
+    });
+  }
+
+  const teacherUser = await prisma.user.findUnique({ where: { email: "guru@nexsmsid.dev" } });
+  
+  if (teacherUser) {
+    const reqLoan = await prisma.inventoryLoan.findFirst({
+      where: { itemId: itemProyektor.id, borrowerUserId: teacherUser.id, status: "REQUESTED" }
+    });
+    if (!reqLoan) {
+      await prisma.inventoryLoan.create({
+        data: {
+          itemId: itemProyektor.id,
+          borrowerUserId: teacherUser.id,
+          borrowerName: teacherUser.name,
+          borrowerType: "TEACHER",
+          quantity: 1,
+          purpose: "Kegiatan belajar mengajar ekstra",
+          status: "REQUESTED",
+          createdById: teacherUser.id
+        }
+      });
+    }
+
+    const borrowedLoan = await prisma.inventoryLoan.findFirst({
+      where: { itemId: itemLaptop.id, borrowerUserId: teacherUser.id, status: "BORROWED" }
+    });
+    if (!borrowedLoan) {
+      await prisma.inventoryLoan.create({
+        data: {
+          itemId: itemLaptop.id,
+          borrowerUserId: teacherUser.id,
+          borrowerName: teacherUser.name,
+          borrowerType: "TEACHER",
+          quantity: 1,
+          purpose: "Dinas luar kota",
+          status: "BORROWED",
+          borrowedAt: new Date(),
+          dueAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+          approvedById: actorId,
+          approvedAt: new Date(),
+          createdById: teacherUser.id
+        }
+      });
+    }
+  }
+
+  console.log("Phase 12.3 inventory sarpras sample data seeded.");
+}
