@@ -10,6 +10,7 @@ import {
   Download,
   Eye,
   Loader2,
+  Plus,
   Printer,
   RefreshCcw,
   Search,
@@ -193,7 +194,10 @@ export default function PpdbRegistrationsPage() {
     <div className="space-y-8">
       <PageHeader
         actions={
-          <Button onClick={loadData} variant="outline"><RefreshCcw className="h-4 w-4" /> Refresh</Button>
+          <>
+            <Button onClick={loadData} variant="outline"><RefreshCcw className="h-4 w-4" /> Refresh</Button>
+            <Button onClick={() => window.alert("Pendaftaran PPDB dilakukan oleh calon siswa melalui portal publik.")}><Plus className="h-4 w-4" /> Tambah</Button>
+          </>
         }
         breadcrumb={["Admin", "PPDB", "Pendaftaran"]}
         description="Kelola pendaftaran PPDB."

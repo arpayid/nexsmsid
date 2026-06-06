@@ -58,7 +58,9 @@ export default function PayrollSettingsPage() {
         actions={
           <>
             <Button onClick={loadData} variant="outline"><RefreshCcw className="h-4 w-4" /> Refresh</Button>
-            <Button><Plus className="h-4 w-4" /> Tambah Komponen Pegawai</Button>
+            <Button onClick={() => window.alert("Komponen gaji pegawai dapat dikelola dari detail data pegawai di menu 'Data Pegawai'.")}>
+              <Plus className="h-4 w-4" /> Tambah Komponen Pegawai
+            </Button>
           </>
         }
       />
