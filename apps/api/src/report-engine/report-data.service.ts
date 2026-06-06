@@ -1069,7 +1069,7 @@ export class ReportDataService {
   }
 
   private async getLibraryCopyRecap(filters: Record<string, any>): Promise<ReportDataResult> {
-    const where: any = { deletedAt: null };
+    const where: any = { deletedAt: null, book: { deletedAt: null } };
     if (filters.status) where.status = filters.status;
     
     const items = await this.prisma.libraryBookCopy.findMany({
@@ -1251,7 +1251,7 @@ export class ReportDataService {
     const bookStats = new Map<string, any>();
 
     for (const loan of loans) {
-      if (!loan.copy || !loan.copy.book) continue;
+      if (!loan.copy || loan.copy.deletedAt || !loan.copy.book || loan.copy.book.deletedAt) continue;
       const book = loan.copy.book;
       const bookId = book.id;
 

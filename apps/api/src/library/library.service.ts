@@ -374,9 +374,15 @@ export class LibraryService {
     });
     if (loans > 0) throw new BadRequestException('Cannot delete book with active loans');
 
-    await this.prisma.libraryBook.update({
-      where: { id },
-      data: { deletedAt: new Date() },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.libraryBook.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
+      await tx.libraryBookCopy.updateMany({
+        where: { bookId: id, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
     });
 
     await this.audit.record({ actorId: userId, action: "library.book.delete", entity: "Deleted library book", metadata: {
@@ -1054,9 +1060,9 @@ export class LibraryService {
   async getSummary() {
     const [totalBooks, totalCopies, availableCopies, borrowedCopies, overdueLoans, unpaidFinesAgg] = await Promise.all([
       this.prisma.libraryBook.count({ where: { deletedAt: null } }),
-      this.prisma.libraryBookCopy.count({ where: { deletedAt: null } }),
-      this.prisma.libraryBookCopy.count({ where: { status: 'AVAILABLE', deletedAt: null } }),
-      this.prisma.libraryBookCopy.count({ where: { status: 'BORROWED', deletedAt: null } }),
+      this.prisma.libraryBookCopy.count({ where: { deletedAt: null, book: { deletedAt: null } } }),
+      this.prisma.libraryBookCopy.count({ where: { status: 'AVAILABLE', deletedAt: null, book: { deletedAt: null } } }),
+      this.prisma.libraryBookCopy.count({ where: { status: 'BORROWED', deletedAt: null, book: { deletedAt: null } } }),
       this.prisma.libraryLoan.count({ where: { status: { in: ['BORROWED', 'OVERDUE'] }, dueAt: { lt: new Date() }, deletedAt: null } }),
       this.prisma.libraryFine.aggregate({ _sum: { amount: true }, where: { status: 'UNPAID', deletedAt: null } }),
     ]);
