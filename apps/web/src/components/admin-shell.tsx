@@ -142,6 +142,19 @@ const navigationGroups: NavigationGroup[] = [
     ]
   },
   {
+    label: "Inventaris / Sarpras",
+    items: [
+      { href: "/admin/inventory", icon: Building2, label: "Dashboard Inventaris", permission: "inventory.view" },
+      { href: "/admin/inventory/categories", icon: ClipboardList, label: "Kategori", permission: "inventory.view" },
+      { href: "/admin/inventory/locations", icon: DoorOpen, label: "Lokasi", permission: "inventory.view" },
+      { href: "/admin/inventory/items", icon: BriefcaseBusiness, label: "Data Barang", permission: "inventory.view" },
+      { href: "/admin/inventory/movements", icon: ClipboardCheck, label: "Mutasi Barang", permission: "inventory.view" },
+      { href: "/admin/inventory/maintenances", icon: Settings, label: "Pemeliharaan", permission: "inventory.maintenance" },
+      { href: "/admin/inventory/loans", icon: HeartHandshake, label: "Peminjaman", permission: "inventory.borrow" },
+      { href: "/admin/inventory/reports", icon: BarChart3, label: "Laporan Inventaris", permission: "inventory.view" }
+    ]
+  },
+  {
     label: "Laporan",
     items: [
       { href: "/admin/reports", icon: BarChart3, label: "Report Center", permission: "reports.view" },

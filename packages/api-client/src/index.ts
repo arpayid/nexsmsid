@@ -2051,9 +2051,63 @@ export function createApiClient(options: ApiClientOptions = {}) {
       const response = await request<any>("/inventory/summary");
       return response.data;
     },
+    async getInventoryLowStock() {
+      return request<any>("/inventory/reports/low-stock");
+    },
+    async getInventoryMaintenanceDue() {
+      return request<any>("/inventory/reports/maintenance-due");
+    },
+    async getInventoryLoansOverdue() {
+      return request<any>("/inventory/reports/loans-overdue");
+    },
+
+    async updateInventoryMaintenance(id: string, data: Record<string, any>) {
+      const response = await request<any>(`/inventory/maintenances/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async startInventoryMaintenance(id: string) {
+      const response = await request<any>(`/inventory/maintenances/${id}/start`, { method: "POST" });
+      return response.data;
+    },
+    async completeInventoryMaintenance(id: string) {
+      const response = await request<any>(`/inventory/maintenances/${id}/complete`, { method: "POST" });
+      return response.data;
+    },
+    async cancelInventoryMaintenance(id: string) {
+      const response = await request<any>(`/inventory/maintenances/${id}/cancel`, { method: "POST" });
+      return response.data;
+    },
+    async deleteInventoryMaintenance(id: string) {
+      const response = await request<any>(`/inventory/maintenances/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async updateInventoryLoan(id: string, data: Record<string, any>) {
+      const response = await request<any>(`/inventory/loans/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async rejectInventoryLoan(id: string) {
+      const response = await request<any>(`/inventory/loans/${id}/reject`, { method: "POST" });
+      return response.data;
+    },
+    async cancelInventoryLoan(id: string) {
+      const response = await request<any>(`/inventory/loans/${id}/cancel`, { method: "POST" });
+      return response.data;
+    },
+    async markInventoryLoanBorrowed(id: string) {
+      const response = await request<any>(`/inventory/loans/${id}/borrowed`, { method: "POST" });
+      return response.data;
+    },
+    async deleteInventoryLoan(id: string) {
+      const response = await request<any>(`/inventory/loans/${id}`, { method: "DELETE" });
+      return response.data;
+    },
     async downloadInventoryItemPdf(id: string) {
       const blob = await downloadFile(`/inventory/items/${id}/print`, `item-${id}.pdf`);
       triggerBrowserDownload(blob, `item-${id}.pdf`);
+    },
+    async downloadInventoryLoanPdf(id: string) {
+      const blob = await downloadFile(`/inventory/loans/${id}/print`, `loan-${id}.pdf`);
+      triggerBrowserDownload(blob, `loan-${id}.pdf`);
     },
     async downloadInventorySummaryPdf() {
       const blob = await downloadFile("/inventory/summary.pdf", "inventory-summary.pdf");
