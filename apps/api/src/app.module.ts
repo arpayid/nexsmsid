@@ -62,6 +62,7 @@ import { TeacherPortalModule } from "./teacher-portal/teacher-portal.module";
 import { TeachingAssignmentsModule } from "./teaching-assignments/teaching-assignments.module";
 import { TracerStudiesModule } from "./tracer-studies/tracer-studies.module";
 import { UsersModule } from "./users/users.module";
+import { InventoryModule } from "./inventory/inventory.module";
 
 @Module({
   imports: [
@@ -123,6 +124,7 @@ import { UsersModule } from "./users/users.module";
     ReportJobsModule,
     ExportHistoryModule,
     ReportCenterModule,
+    InventoryModule,
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => [

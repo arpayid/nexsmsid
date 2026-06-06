@@ -65,6 +65,17 @@ model User {
   letterApprovals               LetterApproval[]       @relation("LetterApprovalApprover")
   uploadedLetterAttachments     LetterAttachment[]     @relation("LetterAttachmentUploadedBy")
 
+  locationResponsibleFor       InventoryLocation[]    @relation("LocationResponsibleUser")
+  createdInventoryItems        InventoryItem[]        @relation("ItemCreatedBy")
+  updatedInventoryItems        InventoryItem[]        @relation("ItemUpdatedBy")
+  performedInventoryMovements  InventoryMovement[]    @relation("MovementPerformedBy")
+  handledInventoryMaintenances InventoryMaintenance[] @relation("MaintenanceHandledBy")
+  createdInventoryMaintenances InventoryMaintenance[] @relation("MaintenanceCreatedBy")
+  borrowedInventoryLoans       InventoryLoan[]        @relation("LoanBorrowerUser")
+  approvedInventoryLoans       InventoryLoan[]        @relation("LoanApprovedBy")
+  rejectedInventoryLoans       InventoryLoan[]        @relation("LoanRejectedBy")
+  createdInventoryLoans        InventoryLoan[]        @relation("LoanCreatedBy")
+
   @@index([name])
   @@index([lockedUntil])
   @@index([forceChangePassword])
@@ -291,16 +302,17 @@ model Classroom {
 }
 
 model Room {
-  id        String     @id @default(cuid())
-  code      String     @unique
-  name      String
-  type      String?
-  capacity  Int?
-  isActive  Boolean    @default(true) @map("is_active")
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
-  deletedAt DateTime?  @map("deleted_at")
-  schedules Schedule[]
+  id                 String              @id @default(cuid())
+  code               String              @unique
+  name               String
+  type               String?
+  capacity           Int?
+  isActive           Boolean             @default(true) @map("is_active")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  deletedAt          DateTime?           @map("deleted_at")
+  schedules          Schedule[]
+  inventoryLocations InventoryLocation[]
 
   @@index([isActive])
   @@index([deletedAt])
@@ -1718,4 +1730,240 @@ model ExportHistory {
   @@index([entity])
   @@index([requestedById])
   @@map("export_histories")
+}
+
+// Phase 12.3 - Inventory / Sarpras
+
+enum InventoryAssetStatus {
+  ACTIVE
+  INACTIVE
+  LOST
+  DISPOSED
+  BORROWED
+  MAINTENANCE
+}
+
+enum InventoryAssetCondition {
+  NEW
+  GOOD
+  FAIR
+  DAMAGED
+  HEAVILY_DAMAGED
+}
+
+enum InventoryItemType {
+  ASSET
+  CONSUMABLE
+}
+
+enum InventoryMovementType {
+  IN
+  OUT
+  TRANSFER
+  ADJUSTMENT
+  BORROW
+  RETURN
+  DISPOSAL
+}
+
+enum InventoryMaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum InventoryLoanStatus {
+  REQUESTED
+  APPROVED
+  BORROWED
+  RETURNED
+  REJECTED
+  CANCELLED
+  OVERDUE
+}
+
+model InventoryCategory {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  name        String
+  description String?
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  items InventoryItem[]
+
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("inventory_categories")
+}
+
+model InventoryLocation {
+  id                String    @id @default(cuid())
+  code              String    @unique
+  name              String
+  description       String?
+  roomId            String?   @map("room_id")
+  responsibleUserId String?   @map("responsible_user_id")
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  room            Room?               @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  responsibleUser User?               @relation("LocationResponsibleUser", fields: [responsibleUserId], references: [id], onDelete: SetNull)
+  items           InventoryItem[]
+  movementsFrom   InventoryMovement[] @relation("MovementFromLocation")
+  movementsTo     InventoryMovement[] @relation("MovementToLocation")
+
+  @@index([roomId])
+  @@index([responsibleUserId])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("inventory_locations")
+}
+
+model InventoryItem {
+  id            String                  @id @default(cuid())
+  categoryId    String                  @map("category_id")
+  locationId    String?                 @map("location_id")
+  code          String                  @unique
+  name          String
+  type          InventoryItemType       @default(ASSET)
+  description   String?
+  brand         String?
+  model         String?
+  unit          String                  @default("unit")
+  quantity      Int                     @default(1)
+  minStock      Int?                    @map("min_stock")
+  purchaseDate  DateTime?               @map("purchase_date")
+  purchasePrice Decimal?                @map("purchase_price")
+  supplier      String?
+  status        InventoryAssetStatus    @default(ACTIVE)
+  condition     InventoryAssetCondition @default(GOOD)
+  qrCode        String?                 @map("qr_code")
+  barcode       String?
+  createdById   String                  @map("created_by_id")
+  updatedById   String?                 @map("updated_by_id")
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+  deletedAt     DateTime?               @map("deleted_at")
+
+  category  InventoryCategory  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  location  InventoryLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  createdBy User               @relation("ItemCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy User?              @relation("ItemUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  movements    InventoryMovement[]
+  maintenances InventoryMaintenance[]
+  loans        InventoryLoan[]
+
+  @@index([categoryId])
+  @@index([locationId])
+  @@index([code])
+  @@index([name])
+  @@index([type])
+  @@index([status])
+  @@index([condition])
+  @@index([createdById])
+  @@index([deletedAt])
+  @@map("inventory_items")
+}
+
+model InventoryMovement {
+  id             String                @id @default(cuid())
+  itemId         String                @map("item_id")
+  type           InventoryMovementType
+  quantity       Int                   @default(1)
+  fromLocationId String?               @map("from_location_id")
+  toLocationId   String?               @map("to_location_id")
+  note           String?
+  referenceType  String?               @map("reference_type")
+  referenceId    String?               @map("reference_id")
+  performedById  String                @map("performed_by_id")
+  performedAt    DateTime              @default(now()) @map("performed_at")
+  createdAt      DateTime              @default(now()) @map("created_at")
+
+  item         InventoryItem      @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  fromLocation InventoryLocation? @relation("MovementFromLocation", fields: [fromLocationId], references: [id], onDelete: SetNull)
+  toLocation   InventoryLocation? @relation("MovementToLocation", fields: [toLocationId], references: [id], onDelete: SetNull)
+  performedBy  User               @relation("MovementPerformedBy", fields: [performedById], references: [id], onDelete: Restrict)
+
+  @@index([itemId])
+  @@index([type])
+  @@index([fromLocationId])
+  @@index([toLocationId])
+  @@index([performedById])
+  @@index([performedAt])
+  @@map("inventory_movements")
+}
+
+model InventoryMaintenance {
+  id          String                     @id @default(cuid())
+  itemId      String                     @map("item_id")
+  title       String
+  description String?
+  status      InventoryMaintenanceStatus @default(SCHEDULED)
+  scheduledAt DateTime?                  @map("scheduled_at")
+  startedAt   DateTime?                  @map("started_at")
+  completedAt DateTime?                  @map("completed_at")
+  cost        Decimal?
+  vendor      String?
+  handledById String?                    @map("handled_by_id")
+  createdById String                     @map("created_by_id")
+  createdAt   DateTime                   @default(now()) @map("created_at")
+  updatedAt   DateTime                   @updatedAt @map("updated_at")
+  deletedAt   DateTime?                  @map("deleted_at")
+
+  item      InventoryItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  handledBy User?         @relation("MaintenanceHandledBy", fields: [handledById], references: [id], onDelete: SetNull)
+  createdBy User          @relation("MaintenanceCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([itemId])
+  @@index([status])
+  @@index([handledById])
+  @@index([createdById])
+  @@index([deletedAt])
+  @@map("inventory_maintenances")
+}
+
+model InventoryLoan {
+  id             String              @id @default(cuid())
+  itemId         String              @map("item_id")
+  borrowerUserId String?             @map("borrower_user_id")
+  borrowerName   String              @map("borrower_name")
+  borrowerType   String              @map("borrower_type")
+  quantity       Int                 @default(1)
+  purpose        String
+  status         InventoryLoanStatus @default(REQUESTED)
+  requestedAt    DateTime            @default(now()) @map("requested_at")
+  approvedAt     DateTime?           @map("approved_at")
+  borrowedAt     DateTime?           @map("borrowed_at")
+  dueAt          DateTime?           @map("due_at")
+  returnedAt     DateTime?           @map("returned_at")
+  rejectedAt     DateTime?           @map("rejected_at")
+  cancelledAt    DateTime?           @map("cancelled_at")
+  approvedById   String?             @map("approved_by_id")
+  rejectedById   String?             @map("rejected_by_id")
+  createdById    String              @map("created_by_id")
+  note           String?
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  deletedAt      DateTime?           @map("deleted_at")
+
+  item         InventoryItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  borrowerUser User?         @relation("LoanBorrowerUser", fields: [borrowerUserId], references: [id], onDelete: SetNull)
+  approvedBy   User?         @relation("LoanApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  rejectedBy   User?         @relation("LoanRejectedBy", fields: [rejectedById], references: [id], onDelete: SetNull)
+  createdBy    User          @relation("LoanCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([itemId])
+  @@index([borrowerUserId])
+  @@index([status])
+  @@index([dueAt])
+  @@index([createdById])
+  @@index([deletedAt])
+  @@map("inventory_loans")
 }

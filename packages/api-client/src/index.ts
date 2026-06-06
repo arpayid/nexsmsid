@@ -1972,6 +1972,92 @@ export function createApiClient(options: ApiClientOptions = {}) {
     async getGuardianPortalRecentAnnouncements() {
       const response = await request<unknown[]>("/guardian-portal/recent-announcements");
       return response.data;
+    },
+
+    // Inventory
+    async getInventoryCategories() {
+      const response = await request<any[]>("/inventory/categories");
+      return response.data;
+    },
+    async createInventoryCategory(data: Record<string, any>) {
+      const response = await request<any>("/inventory/categories", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async getInventoryLocations() {
+      const response = await request<any[]>("/inventory/locations");
+      return response.data;
+    },
+    async createInventoryLocation(data: Record<string, any>) {
+      const response = await request<any>("/inventory/locations", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async getInventoryItems(query?: Record<string, any>) {
+      const qs = query ? new URLSearchParams(query as any).toString() : "";
+      const response = await request<any>(`/inventory/items${qs ? "?" + qs : ""}`);
+      return response.data;
+    },
+    async getInventoryItem(id: string) {
+      const response = await request<any>(`/inventory/items/${id}`);
+      return response.data;
+    },
+    async createInventoryItem(data: Record<string, any>) {
+      const response = await request<any>("/inventory/items", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async updateInventoryItem(id: string, data: Record<string, any>) {
+      const response = await request<any>(`/inventory/items/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deleteInventoryItem(id: string) {
+      const response = await request<any>(`/inventory/items/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async getInventoryMovements(query?: Record<string, any>) {
+      const qs = query ? new URLSearchParams(query as any).toString() : "";
+      const response = await request<any>(`/inventory/movements${qs ? "?" + qs : ""}`);
+      return response.data;
+    },
+    async createInventoryMovement(data: Record<string, any>) {
+      const response = await request<any>("/inventory/movements", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async getInventoryMaintenances(query?: Record<string, any>) {
+      const qs = query ? new URLSearchParams(query as any).toString() : "";
+      const response = await request<any>(`/inventory/maintenances${qs ? "?" + qs : ""}`);
+      return response.data;
+    },
+    async createInventoryMaintenance(data: Record<string, any>) {
+      const response = await request<any>("/inventory/maintenances", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async getInventoryLoans(query?: Record<string, any>) {
+      const qs = query ? new URLSearchParams(query as any).toString() : "";
+      const response = await request<any>(`/inventory/loans${qs ? "?" + qs : ""}`);
+      return response.data;
+    },
+    async createInventoryLoan(data: Record<string, any>) {
+      const response = await request<any>("/inventory/loans", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async approveInventoryLoan(id: string) {
+      const response = await request<any>(`/inventory/loans/${id}/approve`, { method: "POST" });
+      return response.data;
+    },
+    async returnInventoryLoan(id: string) {
+      const response = await request<any>(`/inventory/loans/${id}/return`, { method: "POST" });
+      return response.data;
+    },
+    async getInventorySummary() {
+      const response = await request<any>("/inventory/summary");
+      return response.data;
+    },
+    async downloadInventoryItemPdf(id: string) {
+      const blob = await downloadFile(`/inventory/items/${id}/print`, `item-${id}.pdf`);
+      triggerBrowserDownload(blob, `item-${id}.pdf`);
+    },
+    async downloadInventorySummaryPdf() {
+      const blob = await downloadFile("/inventory/summary.pdf", "inventory-summary.pdf");
+      triggerBrowserDownload(blob, "inventory-summary.pdf");
     }
   };
 }

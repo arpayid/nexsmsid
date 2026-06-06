@@ -251,6 +251,53 @@ export class ReportRegistryService {
       optionalFilters: ['startDate', 'endDate', 'status', 'category'],
       permissions: ['letters.report'],
     },
+
+    // Inventory
+    {
+      code: 'inventory-item-recap',
+      name: 'Inventory Item Recap',
+      category: ReportCategory.INVENTORY,
+      supportedFormats: ['XLSX', 'CSV', 'PDF'],
+      requiredFilters: [],
+      optionalFilters: ['categoryId', 'locationId', 'status', 'condition', 'type'],
+      permissions: ['inventory.view'],
+    },
+    {
+      code: 'inventory-movement-recap',
+      name: 'Inventory Movement Recap',
+      category: ReportCategory.INVENTORY,
+      supportedFormats: ['XLSX', 'CSV', 'PDF'],
+      requiredFilters: ['startDate', 'endDate'],
+      optionalFilters: ['fromLocationId', 'toLocationId'],
+      permissions: ['inventory.view'],
+    },
+    {
+      code: 'inventory-maintenance-recap',
+      name: 'Inventory Maintenance Recap',
+      category: ReportCategory.INVENTORY,
+      supportedFormats: ['XLSX', 'CSV', 'PDF'],
+      requiredFilters: ['startDate', 'endDate'],
+      optionalFilters: ['status'],
+      permissions: ['inventory.maintenance'],
+    },
+    {
+      code: 'inventory-loan-recap',
+      name: 'Inventory Loan Recap',
+      category: ReportCategory.INVENTORY,
+      supportedFormats: ['XLSX', 'CSV', 'PDF'],
+      requiredFilters: ['startDate', 'endDate'],
+      optionalFilters: ['status', 'borrowerType'],
+      permissions: ['inventory.view'],
+    },
+    {
+      code: 'inventory-low-stock-recap',
+      name: 'Inventory Low Stock Recap',
+      category: ReportCategory.INVENTORY,
+      supportedFormats: ['XLSX', 'CSV', 'PDF'],
+      requiredFilters: [],
+      optionalFilters: ['categoryId', 'locationId'],
+      permissions: ['inventory.view'],
+    },
   ];
 
   getAll(): ReportDefinition[] {
