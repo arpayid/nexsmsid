@@ -21,11 +21,13 @@ import {
   HeartHandshake,
   Landmark,
   LayoutDashboard,
+  Library,
   Loader2,
   LogOut,
   Menu,
   Newspaper,
   PanelLeftClose,
+  PlusCircle,
   PanelLeftOpen,
   School,
   Search,
@@ -143,6 +145,17 @@ const navigationGroups: NavigationGroup[] = [
       { href: "/admin/communication/messages", icon: FileText, label: "Pesan Internal", permission: "messages.view" },
       { href: "/admin/communication/notifications", icon: Bell, label: "Notifikasi", permission: "notifications.view" },
       { href: "/admin/communication/templates", icon: ClipboardList, label: "Template Notif", permission: "notification-templates.view" }
+    ]
+  },
+  {
+    label: "Ujian / CBT",
+    items: [
+      { href: "/admin/exams/types", icon: ClipboardList, label: "Tipe Ujian", permission: "exams.view" },
+      { href: "/admin/exams/rooms", icon: DoorOpen, label: "Ruangan", permission: "exams.view" },
+      { href: "/admin/exams", icon: GraduationCap, label: "Data Ujian", permission: "exams.view" },
+      { href: "/admin/exams/create", icon: PlusCircle, label: "Buat Ujian", permission: "exams.create" },
+      { href: "/admin/exams/banks", icon: Library, label: "Bank Soal", permission: "exams.view" },
+      { href: "/admin/exams/reports", icon: BarChart3, label: "Laporan", permission: "exams.view" }
     ]
   },
   {

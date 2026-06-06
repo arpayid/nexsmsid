@@ -236,6 +236,7 @@ model AcademicYear {
   teachingAssignments TeachingAssignment[]
   invoices            Invoice[]
   ppdbPeriods         PpdbPeriod[]
+  exams               Exam[]
 
   @@index([isActive])
   @@index([deletedAt])
@@ -256,6 +257,7 @@ model Semester {
   academicYear        AcademicYear         @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
   teachingAssignments TeachingAssignment[]
   invoices            Invoice[]
+  exams               Exam[]
 
   @@index([academicYearId])
   @@index([isActive])
@@ -621,6 +623,7 @@ model Student {
   achievements         StudentAchievement[]
   letters              Letter[]
   libraryMemberships   LibraryMember[]       @relation("LibraryMemberStudent")
+  examParticipants     ExamParticipant[]
 
   @@index([classroomId])
   @@index([status])
@@ -853,6 +856,7 @@ model Teacher {
   letters               Letter[]
   libraryMemberships    LibraryMember[]      @relation("LibraryMemberTeacher")
   employeeProfiles      EmployeeProfile[]    @relation("EmployeeTeacher")
+  examSupervisions      ExamSchedule[]       @relation("ExamSupervisor")
 
   @@index([status])
   @@index([deletedAt])
@@ -2648,4 +2652,263 @@ model PayrollApproval {
   approver User          @relation("PayrollApprovalApprover", fields: [approverId], references: [id], onDelete: Restrict)
 
   @@map("payroll_approvals")
+}
+
+// Phase 12.6 - Exam / CBT Management
+
+enum ExamStatus {
+  DRAFT
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  GRADED
+  CANCELLED
+}
+
+enum ExamSessionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ExamParticipantStatus {
+  REGISTERED
+  PRESENT
+  ABSENT
+  EXCUSED
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  ESSAY
+  TRUE_FALSE
+  MATCHING
+  SHORT_ANSWER
+}
+
+model ExamType {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  name        String
+  description String?
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  exams Exam[]
+
+  @@index([deletedAt])
+  @@map("exam_types")
+}
+
+model Exam {
+  id            String     @id @default(cuid())
+  examTypeId    String     @map("exam_type_id")
+  academicYearId String    @map("academic_year_id")
+  semesterId    String?    @map("semester_id")
+  code          String     @unique
+  name          String
+  description   String?
+  duration      Int        @map("duration") // minutes
+  totalQuestions Int?      @map("total_questions")
+  maxScore      Int?       @map("max_score")
+  passingScore  Int?       @map("passing_score")
+  status        ExamStatus @default(DRAFT)
+  isCbt         Boolean    @default(false) @map("is_cbt")
+  instruction   String?
+  notes         String?
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  deletedAt     DateTime?  @map("deleted_at")
+
+  examType      ExamType       @relation(fields: [examTypeId], references: [id], onDelete: Restrict)
+  academicYear  AcademicYear   @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
+  semester      Semester?      @relation(fields: [semesterId], references: [id], onDelete: SetNull)
+  schedules     ExamSchedule[]
+  participants  ExamParticipant[]
+  questions     ExamQuestion[]
+  results       ExamResult[]
+
+  @@index([examTypeId])
+  @@index([academicYearId])
+  @@index([semesterId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("exams")
+}
+
+model ExamSchedule {
+  id          String             @id @default(cuid())
+  examId      String             @map("exam_id")
+  roomId      String?            @map("room_id")
+  date        DateTime           @map("date")
+  startTime   String             @map("start_time")
+  endTime     String             @map("end_time")
+  supervisorId String?           @map("supervisor_id")
+  notes       String?
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  deletedAt   DateTime?          @map("deleted_at")
+
+  exam       Exam        @relation(fields: [examId], references: [id], onDelete: Cascade)
+  room       ExamRoom?   @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  supervisor Teacher?    @relation("ExamSupervisor", fields: [supervisorId], references: [id], onDelete: SetNull)
+  sessions   ExamSession[]
+
+  @@index([examId])
+  @@index([roomId])
+  @@index([date])
+  @@index([deletedAt])
+  @@map("exam_schedules")
+}
+
+model ExamRoom {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  capacity    Int      @default(0)
+  location    String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  schedules ExamSchedule[]
+
+  @@index([deletedAt])
+  @@index([isActive])
+  @@map("exam_rooms")
+}
+
+model ExamSession {
+  id         String             @id @default(cuid())
+  scheduleId String             @map("schedule_id")
+  code       String             @unique
+  name       String?
+  status     ExamSessionStatus  @default(PENDING)
+  startedAt  DateTime?          @map("started_at")
+  endedAt    DateTime?          @map("ended_at")
+  token      String?            @unique
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+  deletedAt  DateTime?          @map("deleted_at")
+
+  schedule     ExamSchedule       @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  attendances  ExamAttendance[]
+  participants ExamParticipant[]
+
+  @@index([scheduleId])
+  @@index([deletedAt])
+  @@map("exam_sessions")
+}
+
+model ExamParticipant {
+  id         String                  @id @default(cuid())
+  examId     String                  @map("exam_id")
+  sessionId  String?                 @map("session_id")
+  studentId  String                  @map("student_id")
+  number     Int?                    @map("number")
+  status     ExamParticipantStatus   @default(REGISTERED)
+  score      Float?
+  notes      String?
+  createdAt  DateTime                @default(now()) @map("created_at")
+  updatedAt  DateTime                @updatedAt @map("updated_at")
+  deletedAt  DateTime?               @map("deleted_at")
+
+  exam        Exam          @relation(fields: [examId], references: [id], onDelete: Cascade)
+  session     ExamSession?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  student     Student       @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  attendances ExamAttendance[]
+  results     ExamResult[]
+
+  @@unique([examId, studentId])
+  @@index([examId])
+  @@index([sessionId])
+  @@index([studentId])
+  @@index([deletedAt])
+  @@map("exam_participants")
+}
+
+model ExamAttendance {
+  id            String   @id @default(cuid())
+  sessionId     String   @map("session_id")
+  participantId String   @map("participant_id")
+  checkInAt     DateTime? @map("check_in_at")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  session     ExamSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  participant ExamParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, participantId])
+  @@index([sessionId])
+  @@index([participantId])
+  @@map("exam_attendances")
+}
+
+model QuestionBank {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  questions ExamQuestion[]
+
+  @@index([deletedAt])
+  @@map("question_banks")
+}
+
+model ExamQuestion {
+  id              String       @id @default(cuid())
+  examId          String       @map("exam_id")
+  bankId          String?      @map("bank_id")
+  number          Int          @map("number")
+  type            QuestionType @default(MULTIPLE_CHOICE)
+  content         String
+  options         Json?        @map("options")
+  correctAnswer   String?      @map("correct_answer")
+  score           Int          @default(0)
+  attachmentUrl   String?      @map("attachment_url")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  deletedAt       DateTime?    @map("deleted_at")
+
+  exam    Exam          @relation(fields: [examId], references: [id], onDelete: Cascade)
+  bank    QuestionBank? @relation(fields: [bankId], references: [id], onDelete: SetNull)
+  results ExamResult[]
+
+  @@index([examId])
+  @@index([bankId])
+  @@index([deletedAt])
+  @@map("exam_questions")
+}
+
+model ExamResult {
+  id            String   @id @default(cuid())
+  examId        String   @map("exam_id")
+  participantId String   @map("participant_id")
+  questionId    String   @map("question_id")
+  answer        String?
+  isCorrect     Boolean?
+  score         Float?
+  gradedAt      DateTime? @map("graded_at")
+  gradedById    String?   @map("graded_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  exam        Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  participant ExamParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  question    ExamQuestion    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([examId])
+  @@index([participantId])
+  @@index([questionId])
+  @@map("exam_results")
 }

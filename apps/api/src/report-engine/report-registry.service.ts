@@ -428,6 +428,35 @@ export class ReportRegistryService {
       optionalFilters: ['periodId'],
       permissions: ['reports.view', 'payroll.view'],
     },
+
+    // Exam / CBT
+    {
+      code: 'exam-recap',
+      name: 'Exam Recap',
+      category: ReportCategory.ACADEMIC,
+      supportedFormats: ['XLSX', 'PDF', 'CSV'],
+      requiredFilters: [],
+      optionalFilters: ['status', 'examTypeId', 'academicYearId'],
+      permissions: ['reports.view', 'exams.view'],
+    },
+    {
+      code: 'exam-participant-list',
+      name: 'Exam Participant List',
+      category: ReportCategory.ACADEMIC,
+      supportedFormats: ['XLSX', 'PDF', 'CSV'],
+      requiredFilters: ['examId'],
+      optionalFilters: ['status'],
+      permissions: ['reports.view', 'exams.participants'],
+    },
+    {
+      code: 'exam-results',
+      name: 'Exam Results',
+      category: ReportCategory.ACADEMIC,
+      supportedFormats: ['XLSX', 'PDF', 'CSV'],
+      requiredFilters: ['examId'],
+      optionalFilters: [],
+      permissions: ['reports.view', 'exams.view'],
+    },
   ];
 
 
