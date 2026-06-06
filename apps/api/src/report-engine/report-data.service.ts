@@ -1220,13 +1220,95 @@ export class ReportDataService {
   }
 
   private async getLibraryPopularBookRecap(filters: Record<string, any>): Promise<ReportDataResult> {
-    const data: any[] = []; 
+    const loanWhere: any = { deletedAt: null };
+    if (filters.startDate && filters.endDate) {
+      loanWhere.borrowedAt = {
+        gte: new Date(filters.startDate),
+        lte: new Date(filters.endDate),
+      };
+    } else if (filters.startDate) {
+      loanWhere.borrowedAt = { gte: new Date(filters.startDate) };
+    } else if (filters.endDate) {
+      loanWhere.borrowedAt = { lte: new Date(filters.endDate) };
+    }
+
+    const loans = await this.prisma.libraryLoan.findMany({
+      where: loanWhere,
+      include: {
+        copy: {
+          include: {
+            book: {
+              include: {
+                category: true,
+                copies: { where: { deletedAt: null } }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const bookStats = new Map<string, any>();
+
+    for (const loan of loans) {
+      if (!loan.copy || !loan.copy.book) continue;
+      const book = loan.copy.book;
+      const bookId = book.id;
+
+      if (!bookStats.has(bookId)) {
+        const availableCopies = book.copies.filter((c: any) => c.status === 'AVAILABLE').length;
+        bookStats.set(bookId, {
+          bookCode: book.code,
+          isbn: book.isbn || '-',
+          title: book.title,
+          author: book.author,
+          categoryName: book.category?.name || '-',
+          totalLoans: 0,
+          borrowedCount: 0,
+          returnedCount: 0,
+          overdueCount: 0,
+          lostCount: 0,
+          totalCopies: book.copies.length,
+          availableCopies,
+        });
+      }
+
+      const stats = bookStats.get(bookId);
+      stats.totalLoans += 1;
+      
+      switch (loan.status) {
+        case 'BORROWED':
+          stats.borrowedCount += 1;
+          break;
+        case 'RETURNED':
+          stats.returnedCount += 1;
+          break;
+        case 'OVERDUE':
+          stats.overdueCount += 1;
+          break;
+        case 'LOST':
+          stats.lostCount += 1;
+          break;
+      }
+    }
+
+    const data = Array.from(bookStats.values()).sort((a, b) => b.totalLoans - a.totalLoans);
+
     return {
       title: 'Library Popular Book Recap',
       columns: [
-        { key: 'code', label: 'Book Code', width: 20 },
-        { key: 'title', label: 'Title', width: 50 },
-        { key: 'loanCount', label: 'Total Loans', width: 20 },
+        { key: 'bookCode', label: 'Book Code', width: 15 },
+        { key: 'isbn', label: 'ISBN', width: 15 },
+        { key: 'title', label: 'Title', width: 40 },
+        { key: 'author', label: 'Author', width: 25 },
+        { key: 'categoryName', label: 'Category', width: 20 },
+        { key: 'totalLoans', label: 'Total Loans', width: 15 },
+        { key: 'borrowedCount', label: 'Borrowed', width: 15 },
+        { key: 'returnedCount', label: 'Returned', width: 15 },
+        { key: 'overdueCount', label: 'Overdue', width: 15 },
+        { key: 'lostCount', label: 'Lost', width: 15 },
+        { key: 'totalCopies', label: 'Total Copies', width: 15 },
+        { key: 'availableCopies', label: 'Available Copies', width: 15 },
       ],
       rows: data,
     };

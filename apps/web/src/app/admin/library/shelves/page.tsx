@@ -18,7 +18,7 @@ export default function LibraryShelvesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [formData, setFormData] = useState({ id: "", code: "", name: "", description: "" });
+  const [formData, setFormData] = useState({ id: "", code: "", name: "", location: "", description: "", isActive: true });
 
   async function loadData() {
     try {
@@ -44,10 +44,10 @@ export default function LibraryShelvesPage() {
     setSaving(true);
     try {
       if (formData.id) {
-        await api.updateLibraryCategory(formData.id, { code: formData.code, name: formData.name, description: formData.description });
+        await api.updateLibraryShelf(formData.id, { code: formData.code, name: formData.name, location: formData.location, description: formData.description, isActive: formData.isActive });
         alert('Rak berhasil diperbarui.');
       } else {
-        await api.createLibraryCategory({ code: formData.code, name: formData.name, description: formData.description });
+        await api.createLibraryShelf({ code: formData.code, name: formData.name, location: formData.location, description: formData.description, isActive: formData.isActive });
         alert('Rak berhasil ditambahkan.');
       }
       setIsModalOpen(false);
@@ -62,7 +62,7 @@ export default function LibraryShelvesPage() {
   async function handleDelete(id: string) {
     if (!confirm("Apakah Anda yakin ingin menghapus rak ini?")) return;
     try {
-      await api.deleteLibraryCategory(id);
+      await api.deleteLibraryShelf(id);
       alert('Rak berhasil dihapus.');
       void loadData();
     } catch (err) {
@@ -71,12 +71,12 @@ export default function LibraryShelvesPage() {
   }
 
   function openCreate() {
-    setFormData({ id: "", code: "", name: "", description: "" });
+    setFormData({ id: "", code: "", name: "", location: "", description: "", isActive: true });
     setIsModalOpen(true);
   }
 
   function openEdit(item: any) {
-    setFormData({ id: item.id, code: item.code, name: item.name, description: item.description || "" });
+    setFormData({ id: item.id, code: item.code, name: item.name, location: item.location || "", description: item.description || "", isActive: item.isActive ?? true });
     setIsModalOpen(true);
   }
 
@@ -180,12 +180,32 @@ export default function LibraryShelvesPage() {
             />
           </div>
           <div className="space-y-2">
+            <label className="text-sm font-medium">Lokasi</label>
+            <Input
+              placeholder="Lantai 1, Sudut Kanan..."
+              value={formData.location}
+              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
             <label className="text-sm font-medium">Deskripsi</label>
             <Input
               placeholder="Penjelasan rak..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
+          </div>
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              type="checkbox"
+              id="isActive"
+              checked={formData.isActive}
+              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+              className="h-4 w-4 rounded border-slate-300"
+            />
+            <label htmlFor="isActive" className="text-sm font-medium cursor-pointer">
+              Aktif
+            </label>
           </div>
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
