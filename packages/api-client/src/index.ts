@@ -2112,6 +2112,240 @@ export function createApiClient(options: ApiClientOptions = {}) {
     async downloadInventorySummaryPdf() {
       const blob = await downloadFile("/inventory/summary.pdf", "inventory-summary.pdf");
       triggerBrowserDownload(blob, "inventory-summary.pdf");
+    },
+
+    // =========================================================================
+    // LIBRARY MANAGEMENT
+    // =========================================================================
+
+    // Categories
+    async listLibraryCategories(params?: any) {
+      const response = await request<any>(`/library/categories?${new URLSearchParams(params as any).toString()}`);
+      return response.data;
+    },
+    async createLibraryCategory(data: any) {
+      const response = await request<any>("/library/categories", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async getLibraryCategory(id: string) {
+      const response = await request<any>(`/library/categories/${id}`);
+      return response.data;
+    },
+    async updateLibraryCategory(id: string, data: any) {
+      const response = await request<any>(`/library/categories/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deleteLibraryCategory(id: string) {
+      const response = await request<any>(`/library/categories/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+
+    // Shelves
+    async listLibraryShelves(params?: any) {
+      const response = await request<any>(`/library/shelves?${new URLSearchParams(params as any).toString()}`);
+      return response.data;
+    },
+    async createLibraryShelf(data: any) {
+      const response = await request<any>("/library/shelves", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async getLibraryShelf(id: string) {
+      const response = await request<any>(`/library/shelves/${id}`);
+      return response.data;
+    },
+    async updateLibraryShelf(id: string, data: any) {
+      const response = await request<any>(`/library/shelves/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deleteLibraryShelf(id: string) {
+      const response = await request<any>(`/library/shelves/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+
+    // Books
+    async listLibraryBooks(params?: any) {
+      const response = await request<any>(`/library/books?${new URLSearchParams(params as any).toString()}`);
+      return response.data;
+    },
+    async createLibraryBook(data: any) {
+      const response = await request<any>("/library/books", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async getLibraryBook(id: string) {
+      const response = await request<any>(`/library/books/${id}`);
+      return response.data;
+    },
+    async updateLibraryBook(id: string, data: any) {
+      const response = await request<any>(`/library/books/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deleteLibraryBook(id: string) {
+      const response = await request<any>(`/library/books/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+
+    // Copies
+    async listLibraryBookCopies(bookId: string, params?: any) {
+      const response = await request<any>(`/library/books/${bookId}/copies?${new URLSearchParams(params as any).toString()}`);
+      return response.data;
+    },
+    async createLibraryBookCopy(bookId: string, data: any) {
+      const response = await request<any>(`/library/books/${bookId}/copies`, { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async getLibraryCopy(id: string) {
+      const response = await request<any>(`/library/copies/${id}`);
+      return response.data;
+    },
+    async updateLibraryCopy(id: string, data: any) {
+      const response = await request<any>(`/library/copies/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deleteLibraryCopy(id: string) {
+      const response = await request<any>(`/library/copies/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+
+    // Members
+    async listLibraryMembers(params?: any) {
+      const response = await request<any>(`/library/members?${new URLSearchParams(params as any).toString()}`);
+      return response.data;
+    },
+    async createLibraryMember(data: any) {
+      const response = await request<any>("/library/members", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async getLibraryMember(id: string) {
+      const response = await request<any>(`/library/members/${id}`);
+      return response.data;
+    },
+    async updateLibraryMember(id: string, data: any) {
+      const response = await request<any>(`/library/members/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deleteLibraryMember(id: string) {
+      const response = await request<any>(`/library/members/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+
+    // Loans
+    async listLibraryLoans(params?: any) {
+      const response = await request<any>(`/library/loans?${new URLSearchParams(params as any).toString()}`);
+      return response.data;
+    },
+    async createLibraryLoan(data: any) {
+      const response = await request<any>("/library/loans", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async getLibraryLoan(id: string) {
+      const response = await request<any>(`/library/loans/${id}`);
+      return response.data;
+    },
+    async updateLibraryLoan(id: string, data: any) {
+      const response = await request<any>(`/library/loans/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async returnLibraryLoan(id: string, data: any) {
+      const response = await request<any>(`/library/loans/${id}/return`, { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async markLibraryLoanLost(id: string, data: any) {
+      const response = await request<any>(`/library/loans/${id}/mark-lost`, { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async cancelLibraryLoan(id: string) {
+      const response = await request<any>(`/library/loans/${id}/cancel`, { method: "POST" });
+      return response.data;
+    },
+    async deleteLibraryLoan(id: string) {
+      const response = await request<any>(`/library/loans/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+
+    // Reservations
+    async listLibraryReservations(params?: any) {
+      const response = await request<any>(`/library/reservations?${new URLSearchParams(params as any).toString()}`);
+      return response.data;
+    },
+    async createLibraryReservation(data: any) {
+      const response = await request<any>("/library/reservations", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async getLibraryReservation(id: string) {
+      const response = await request<any>(`/library/reservations/${id}`);
+      return response.data;
+    },
+    async markLibraryReservationReady(id: string) {
+      const response = await request<any>(`/library/reservations/${id}/mark-ready`, { method: "POST" });
+      return response.data;
+    },
+    async cancelLibraryReservation(id: string) {
+      const response = await request<any>(`/library/reservations/${id}/cancel`, { method: "POST" });
+      return response.data;
+    },
+    async expireLibraryReservation(id: string) {
+      const response = await request<any>(`/library/reservations/${id}/expire`, { method: "POST" });
+      return response.data;
+    },
+
+    // Fines
+    async listLibraryFines(params?: any) {
+      const response = await request<any>(`/library/fines?${new URLSearchParams(params as any).toString()}`);
+      return response.data;
+    },
+    async getLibraryFine(id: string) {
+      const response = await request<any>(`/library/fines/${id}`);
+      return response.data;
+    },
+    async payLibraryFine(id: string, data: any) {
+      const response = await request<any>(`/library/fines/${id}/pay`, { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async waiveLibraryFine(id: string, data: any) {
+      const response = await request<any>(`/library/fines/${id}/waive`, { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async cancelLibraryFine(id: string) {
+      const response = await request<any>(`/library/fines/${id}/cancel`, { method: "POST" });
+      return response.data;
+    },
+
+    // Summary & PDFs
+    async getLibrarySummary() {
+      const response = await request<any>("/library/summary");
+      return response.data;
+    },
+    async getLibraryOverdue() {
+      const response = await request<any>("/library/overdue");
+      return response.data;
+    },
+    async getLibraryAvailableBooks() {
+      const response = await request<any>("/library/available-books");
+      return response.data;
+    },
+    async getLibraryPopularBooks() {
+      const response = await request<any>("/library/popular-books");
+      return response.data;
+    },
+    async downloadLibraryBookPdf(id: string) {
+      const blob = await downloadFile(`/library/books/${id}/print`, `book-${id}.pdf`);
+      triggerBrowserDownload(blob, `book-${id}.pdf`);
+    },
+    async downloadLibraryCopyLabelPdf(id: string) {
+      const blob = await downloadFile(`/library/copies/${id}/label`, `label-${id}.pdf`);
+      triggerBrowserDownload(blob, `label-${id}.pdf`);
+    },
+    async downloadLibraryLoanReceiptPdf(id: string) {
+      const blob = await downloadFile(`/library/loans/${id}/receipt`, `receipt-${id}.pdf`);
+      triggerBrowserDownload(blob, `receipt-${id}.pdf`);
+    },
+    async downloadLibraryMemberCardPdf(id: string) {
+      const blob = await downloadFile(`/library/members/${id}/card`, `member-card-${id}.pdf`);
+      triggerBrowserDownload(blob, `member-card-${id}.pdf`);
+    },
+    async downloadLibrarySummaryPdf() {
+      const blob = await downloadFile("/library/summary.pdf", "library-summary.pdf");
+      triggerBrowserDownload(blob, "library-summary.pdf");
     }
   };
 }

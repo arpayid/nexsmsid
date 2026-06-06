@@ -2341,4 +2341,105 @@ async function seedPhase123InventorySarpras(adminId: string) {
   }
 
   console.log("Phase 12.3 inventory sarpras sample data seeded.");
+
+  // =========================================================================
+  // Phase 12.4 Library Management Seed
+  // =========================================================================
+
+  const libCat = await prisma.libraryCategory.upsert({
+    where: { code: "FIK" },
+    update: {},
+    create: {
+      name: "Fiksi",
+      description: "Buku fiksi dan novel",
+      code: "FIK"
+    }
+  });
+
+  const libShelf = await prisma.libraryShelf.upsert({
+    where: { code: "RAK-01" },
+    update: {},
+    create: {
+      name: "Rak Utama 1",
+      code: "RAK-01",
+      location: "Lantai 1"
+    }
+  });
+
+  const libBook = await prisma.libraryBook.upsert({
+    where: { code: "BK-001" },
+    update: {},
+    create: {
+      title: "Laskar Pelangi",
+      code: "BK-001",
+      author: "Andrea Hirata",
+      publisher: "Bentang Pustaka",
+      isbn: "978-979-3062-79-2",
+      publicationYear: 2005,
+      categoryId: libCat.id,
+      shelfId: libShelf.id,
+      description: "Novel Laskar Pelangi",
+      createdById: actorId
+    }
+  });
+
+  const libCopy1 = await prisma.libraryBookCopy.upsert({
+    where: { copyCode: "CP-001" },
+    update: {},
+    create: {
+      bookId: libBook.id,
+      copyCode: "CP-001",
+      barcode: "BC-CP-001",
+      condition: "GOOD",
+      status: "AVAILABLE"
+    }
+  });
+
+  const libCopy2 = await prisma.libraryBookCopy.upsert({
+    where: { copyCode: "CP-002" },
+    update: {},
+    create: {
+      bookId: libBook.id,
+      copyCode: "CP-002",
+      barcode: "BC-CP-002",
+      condition: "GOOD",
+      status: "AVAILABLE"
+    }
+  });
+
+  if (teacherUser) {
+    const libMember = await prisma.libraryMember.upsert({
+      where: { memberCode: "MEM-001" },
+      update: {},
+      create: {
+        userId: teacherUser.id,
+        memberCode: "MEM-001",
+        type: "TEACHER",
+        status: "ACTIVE",
+        joinedAt: new Date(),
+        expiredAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+      }
+    });
+    
+    // Add loan, reservation, fine
+    const loan = await prisma.libraryLoan.findFirst({ where: { copyId: libCopy1.id } });
+    if (!loan) {
+      await prisma.libraryLoan.create({
+        data: {
+          memberId: libMember.id,
+          copyId: libCopy1.id,
+          status: "BORROWED",
+          borrowedAt: new Date(),
+          dueAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          borrowedById: actorId
+        }
+      });
+      await prisma.libraryBookCopy.update({
+        where: { id: libCopy1.id },
+        data: { status: "BORROWED" }
+      });
+    }
+  }
+
+  console.log("Phase 12.4 library management sample data seeded.");
 }
