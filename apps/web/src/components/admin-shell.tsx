@@ -183,7 +183,7 @@ const navigationGroups: NavigationGroup[] = [
       { href: "/admin/payroll/runs", icon: Receipt, label: "Daftar Gaji", permission: "payroll.view" },
       { href: "/admin/payroll/payslips", icon: FileText, label: "Slip Gaji", permission: "payroll.view" },
       { href: "/admin/payroll/payments", icon: Wallet, label: "Pembayaran Gaji", permission: "payroll.pay" },
-      { href: "/admin/payroll/reports", icon: BarChart3, label: "Laporan Payroll", permission: "reports.view" },
+      { href: "/admin/payroll/reports", icon: BarChart3, label: "Laporan Payroll", permission: "payroll.view" },
     ]
   },
   {
