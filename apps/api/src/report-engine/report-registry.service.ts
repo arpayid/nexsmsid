@@ -363,7 +363,73 @@ export class ReportRegistryService {
       optionalFilters: [],
       permissions: ['reports.view', 'library.view'],
     },
+
+    // HR & Payroll
+    {
+      code: 'hr-employee-recap',
+      name: 'Employee Data Recap',
+      category: ReportCategory.HR,
+      supportedFormats: ['XLSX', 'CSV', 'PDF'],
+      requiredFilters: [],
+      optionalFilters: ['status', 'employmentType', 'positionId'],
+      permissions: ['reports.view', 'payroll.view'],
+    },
+    {
+      code: 'hr-attendance-recap',
+      name: 'Employee Attendance Recap',
+      category: ReportCategory.HR,
+      supportedFormats: ['XLSX', 'CSV'],
+      requiredFilters: ['startDate', 'endDate'],
+      optionalFilters: ['employeeId'],
+      permissions: ['reports.view', 'payroll.view'],
+    },
+    {
+      code: 'hr-leave-recap',
+      name: 'Employee Leave Recap',
+      category: ReportCategory.HR,
+      supportedFormats: ['XLSX', 'CSV'],
+      requiredFilters: [],
+      optionalFilters: ['employeeId', 'status'],
+      permissions: ['reports.view', 'payroll.view'],
+    },
+    {
+      code: 'payroll-period-recap',
+      name: 'Payroll Period Recap',
+      category: ReportCategory.PAYROLL,
+      supportedFormats: ['XLSX', 'CSV'],
+      requiredFilters: [],
+      optionalFilters: ['year', 'status'],
+      permissions: ['reports.view', 'payroll.view'],
+    },
+    {
+      code: 'payroll-run-recap',
+      name: 'Payroll Run Recap',
+      category: ReportCategory.PAYROLL,
+      supportedFormats: ['XLSX', 'CSV', 'PDF'],
+      requiredFilters: ['periodId'],
+      optionalFilters: ['paymentStatus'],
+      permissions: ['reports.view', 'payroll.view'],
+    },
+    {
+      code: 'payroll-component-recap',
+      name: 'Payroll Component Recap',
+      category: ReportCategory.PAYROLL,
+      supportedFormats: ['XLSX', 'CSV'],
+      requiredFilters: [],
+      optionalFilters: ['type'],
+      permissions: ['reports.view', 'payroll.view'],
+    },
+    {
+      code: 'payroll-payment-recap',
+      name: 'Payroll Payment Recap',
+      category: ReportCategory.PAYROLL,
+      supportedFormats: ['XLSX', 'CSV', 'PDF'],
+      requiredFilters: ['startDate', 'endDate'],
+      optionalFilters: ['periodId'],
+      permissions: ['reports.view', 'payroll.view'],
+    },
   ];
+
 
   getAll(): ReportDefinition[] {
     return this.reports;

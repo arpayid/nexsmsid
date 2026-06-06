@@ -469,6 +469,12 @@ export function createApiClient(options: ApiClientOptions = {}) {
     return query ? `?${query}` : "";
   }
 
+  function normalizeListResponse(response: ApiResponse<any>) {
+    const payload = response.data;
+    if (Array.isArray(payload)) return { data: payload, meta: response.meta };
+    return { data: payload?.data ?? [], meta: payload?.meta ?? response.meta };
+  }
+
   async function uploadFile<TData>(path: string, file: Blob | File, fieldName = "file", fallbackFilename = "upload.xlsx") {
     const formData = new FormData();
     const filename = (file as { name?: string }).name ?? fallbackFilename;
@@ -2346,6 +2352,226 @@ export function createApiClient(options: ApiClientOptions = {}) {
     async downloadLibrarySummaryPdf() {
       const blob = await downloadFile("/library/summary.pdf", "library-summary.pdf");
       triggerBrowserDownload(blob, "library-summary.pdf");
+    },
+
+    // HR & PAYROLL
+    async getHRSummary() {
+      const response = await request<any>("/hr/summary");
+      return response.data;
+    },
+    async listHRPositions(params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/hr/positions?${qs}`);
+      return normalizeListResponse(response);
+    },
+    async getHRPosition(id: string) {
+      const response = await request<any>(`/hr/positions/${id}`);
+      return response.data;
+    },
+    async createHRPosition(data: any) {
+      const response = await request<any>("/hr/positions", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async updateHRPosition(id: string, data: any) {
+      const response = await request<any>(`/hr/positions/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deleteHRPosition(id: string) {
+      const response = await request<any>(`/hr/positions/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async listEmployees(params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/hr/employees?${qs}`);
+      return normalizeListResponse(response);
+    },
+    async getEmployee(id: string) {
+      const response = await request<any>(`/hr/employees/${id}`);
+      return response.data;
+    },
+    async createEmployee(data: any) {
+      const response = await request<any>("/hr/employees", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async updateEmployee(id: string, data: any) {
+      const response = await request<any>(`/hr/employees/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deleteEmployee(id: string) {
+      const response = await request<any>(`/hr/employees/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async listEmployeeAttendance(params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/hr/attendance?${qs}`);
+      return normalizeListResponse(response);
+    },
+    async createEmployeeAttendance(data: any) {
+      const response = await request<any>("/hr/attendance", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async updateEmployeeAttendance(id: string, data: any) {
+      const response = await request<any>(`/hr/attendance/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deleteEmployeeAttendance(id: string) {
+      const response = await request<any>(`/hr/attendance/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async listLeaveRequests(params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/hr/leaves?${qs}`);
+      return normalizeListResponse(response);
+    },
+    async getLeaveRequest(id: string) {
+      const response = await request<any>(`/hr/leaves/${id}`);
+      return response.data;
+    },
+    async createLeaveRequest(data: any) {
+      const response = await request<any>("/hr/leaves", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async updateLeaveRequest(id: string, data: any) {
+      const response = await request<any>(`/hr/leaves/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async approveLeaveRequest(id: string) {
+      const response = await request<any>(`/hr/leaves/${id}/approve`, { method: "POST" });
+      return response.data;
+    },
+    async rejectLeaveRequest(id: string, data: any) {
+      const response = await request<any>(`/hr/leaves/${id}/reject`, { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async cancelLeaveRequest(id: string) {
+      const response = await request<any>(`/hr/leaves/${id}/cancel`, { method: "POST" });
+      return response.data;
+    },
+    async deleteLeaveRequest(id: string) {
+      const response = await request<any>(`/hr/leaves/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    
+    async getPayrollSummary() {
+      const response = await request<any>("/payroll/summary");
+      return response.data;
+    },
+    async listPayrollComponents(params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/payroll/components?${qs}`);
+      return normalizeListResponse(response);
+    },
+    async getPayrollComponent(id: string) {
+      const response = await request<any>(`/payroll/components/${id}`);
+      return response.data;
+    },
+    async createPayrollComponent(data: any) {
+      const response = await request<any>("/payroll/components", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async updatePayrollComponent(id: string, data: any) {
+      const response = await request<any>(`/payroll/components/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deletePayrollComponent(id: string) {
+      const response = await request<any>(`/payroll/components/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async listEmployeeComponents(employeeId: string) {
+      const response = await request<any>(`/payroll/employees/${employeeId}/components`);
+      return response.data;
+    },
+    async createEmployeeSalaryComponent(data: any) {
+      const response = await request<any>("/payroll/employee-components", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async updateEmployeeSalaryComponent(id: string, data: any) {
+      const response = await request<any>(`/payroll/employee-components/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deleteEmployeeSalaryComponent(id: string) {
+      const response = await request<any>(`/payroll/employee-components/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async listPayrollPeriods(params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/payroll/periods?${qs}`);
+      return normalizeListResponse(response);
+    },
+    async getPayrollPeriod(id: string) {
+      const response = await request<any>(`/payroll/periods/${id}`);
+      return response.data;
+    },
+    async createPayrollPeriod(data: any) {
+      const response = await request<any>("/payroll/periods", { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async updatePayrollPeriod(id: string, data: any) {
+      const response = await request<any>(`/payroll/periods/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async deletePayrollPeriod(id: string) {
+      const response = await request<any>(`/payroll/periods/${id}`, { method: "DELETE" });
+      return response.data;
+    },
+    async openPayrollPeriod(id: string) {
+      const response = await request<any>(`/payroll/periods/${id}/open`, { method: "POST" });
+      return response.data;
+    },
+    async calculatePayrollPeriod(id: string) {
+      const response = await request<any>(`/payroll/periods/${id}/calculate`, { method: "POST" });
+      return response.data;
+    },
+    async approvePayrollPeriod(id: string) {
+      const response = await request<any>(`/payroll/periods/${id}/approve`, { method: "POST" });
+      return response.data;
+    },
+    async payPayrollPeriod(id: string) {
+      const response = await request<any>(`/payroll/periods/${id}/pay`, { method: "POST" });
+      return response.data;
+    },
+    async closePayrollPeriod(id: string) {
+      const response = await request<any>(`/payroll/periods/${id}/close`, { method: "POST" });
+      return response.data;
+    },
+    async cancelPayrollPeriod(id: string) {
+      const response = await request<any>(`/payroll/periods/${id}/cancel`, { method: "POST" });
+      return response.data;
+    },
+    async listPayrollRuns(params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/payroll/runs?${qs}`);
+      return normalizeListResponse(response);
+    },
+    async getPayrollRun(id: string) {
+      const response = await request<any>(`/payroll/runs/${id}`);
+      return response.data;
+    },
+    async updatePayrollRun(id: string, data: any) {
+      const response = await request<any>(`/payroll/runs/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async listPayslips(params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/payroll/payslips?${qs}`);
+      return normalizeListResponse(response);
+    },
+    async listPayrollPayments(params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/payroll/payments?${qs}`);
+      return normalizeListResponse(response);
+    },
+    async getPayslip(id: string) {
+      const response = await request<any>(`/payroll/payslips/${id}`);
+      return response.data;
+    },
+    async markPayslipPaid(id: string, data: any) {
+      const response = await request<any>(`/payroll/payslips/${id}/mark-paid`, { method: "POST", body: JSON.stringify(data) });
+      return response.data;
+    },
+    async downloadPayslipPdf(id: string) {
+      const blob = await downloadFile(`/payroll/payslips/${id}/pdf`, `payslip-${id}.pdf`);
+      triggerBrowserDownload(blob, `payslip-${id}.pdf`);
     }
   };
 }

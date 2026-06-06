@@ -18,7 +18,7 @@ export class ReportRendererService {
     }
   }
 
-  async render(data: ReportDataResult, format: 'XLSX' | 'PDF' | 'CSV', fileName: string): Promise<string> {
+  async render(data: ReportDataResult, format: 'XLSX' | 'PDF' | 'CSV' | 'JSON', fileName: string): Promise<string> {
     const fullPath = path.join(this.storagePath, fileName);
 
     switch (format) {
@@ -30,6 +30,9 @@ export class ReportRendererService {
         break;
       case 'PDF':
         await this.renderPdf(data, fullPath);
+        break;
+      case 'JSON':
+        await this.renderJson(data, fullPath);
         break;
       default:
         throw new Error(`Unsupported format: ${format}`);
@@ -57,6 +60,10 @@ export class ReportRendererService {
     );
     const content = [headers, ...rows].join('\n');
     fs.writeFileSync(filePath, content);
+  }
+
+  private async renderJson(data: ReportDataResult, filePath: string) {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
   }
 
   private async renderPdf(data: ReportDataResult, filePath: string) {
