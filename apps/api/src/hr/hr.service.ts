@@ -223,8 +223,33 @@ export class HRService {
 
   async createAttendance(data: CreateEmployeeAttendanceDto, userId: string) {
     const date = new Date(data.date);
-    const existing = await this.prisma.employeeAttendance.findFirst({ where: { employeeId: data.employeeId, date, deletedAt: null } });
-    if (existing) throw new BadRequestException('Attendance already recorded for this date');
+
+    // Check for any existing row with same employeeId + date, including soft-deleted
+    const existing = await this.prisma.employeeAttendance.findFirst({
+      where: { employeeId: data.employeeId, date },
+    });
+
+    if (existing) {
+      if (existing.deletedAt === null) {
+        throw new BadRequestException('Attendance already recorded for this date');
+      }
+      // Restore soft-deleted row
+      const restored = await this.prisma.employeeAttendance.update({
+        where: { id: existing.id },
+        data: {
+          deletedAt: null,
+          status: data.status,
+          checkInAt: data.checkInAt ? new Date(data.checkInAt) : null,
+          checkOutAt: data.checkOutAt ? new Date(data.checkOutAt) : null,
+          lateMinutes: data.lateMinutes,
+          workMinutes: data.workMinutes,
+          note: data.note,
+          recordedById: userId,
+        },
+      });
+      await this.audit.record({ actorId: userId, action: "hr.attendance.create", entity: "Restored employee attendance", metadata: { attendanceId: restored.id } });
+      return restored;
+    }
 
     const created = await this.prisma.employeeAttendance.create({
       data: {

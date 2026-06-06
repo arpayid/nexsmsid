@@ -3,6 +3,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../auth/guards/permission.guard';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { PayrollService } from './payroll.service';
+import { apiSuccess } from '../common/api-response';
 import { Response } from 'express';
 import { 
   CreatePayrollComponentDto, UpdatePayrollComponentDto, 
@@ -22,8 +23,9 @@ export class PayrollController {
 
   @Get('summary')
   @RequirePermissions('payroll.view')
-  getSummary() {
-    return this.payrollService.getSummary();
+  async getSummary() {
+    const data = await this.payrollService.getSummary();
+    return apiSuccess('Payroll summary retrieved', data);
   }
 
   // =========================================================================
@@ -32,32 +34,37 @@ export class PayrollController {
 
   @Get('components')
   @RequirePermissions('payroll.view')
-  getComponents(@Query() params: any) {
-    return this.payrollService.getComponents(params);
+  async getComponents(@Query() params: any) {
+    const result = await this.payrollService.getComponents(params);
+    return apiSuccess('Payroll components retrieved', result.data, result.meta);
   }
 
   @Post('components')
   @RequirePermissions('payroll.create')
-  createComponent(@Body() data: CreatePayrollComponentDto, @Request() req: any) {
-    return this.payrollService.createComponent(data, req.user.id);
+  async createComponent(@Body() data: CreatePayrollComponentDto, @Request() req: any) {
+    const result = await this.payrollService.createComponent(data, req.user.id);
+    return apiSuccess('Payroll component created', result);
   }
 
   @Get('components/:id')
   @RequirePermissions('payroll.view')
-  getComponent(@Param('id') id: string) {
-    return this.payrollService.getComponent(id);
+  async getComponent(@Param('id') id: string) {
+    const result = await this.payrollService.getComponent(id);
+    return apiSuccess('Payroll component retrieved', result);
   }
 
   @Patch('components/:id')
   @RequirePermissions('payroll.update')
-  updateComponent(@Param('id') id: string, @Body() data: UpdatePayrollComponentDto, @Request() req: any) {
-    return this.payrollService.updateComponent(id, data, req.user.id);
+  async updateComponent(@Param('id') id: string, @Body() data: UpdatePayrollComponentDto, @Request() req: any) {
+    const result = await this.payrollService.updateComponent(id, data, req.user.id);
+    return apiSuccess('Payroll component updated', result);
   }
 
   @Delete('components/:id')
   @RequirePermissions('payroll.update')
-  deleteComponent(@Param('id') id: string, @Request() req: any) {
-    return this.payrollService.deleteComponent(id, req.user.id);
+  async deleteComponent(@Param('id') id: string, @Request() req: any) {
+    const result = await this.payrollService.deleteComponent(id, req.user.id);
+    return apiSuccess('Payroll component deleted', result);
   }
 
   // =========================================================================
@@ -66,26 +73,30 @@ export class PayrollController {
 
   @Get('employees/:employeeId/components')
   @RequirePermissions('payroll.view')
-  getEmployeeComponents(@Param('employeeId') employeeId: string) {
-    return this.payrollService.getEmployeeComponents(employeeId);
+  async getEmployeeComponents(@Param('employeeId') employeeId: string) {
+    const result = await this.payrollService.getEmployeeComponents(employeeId);
+    return apiSuccess('Employee salary components retrieved', result);
   }
 
   @Post('employee-components')
   @RequirePermissions('payroll.create')
-  createEmployeeComponent(@Body() data: CreateEmployeeSalaryComponentDto, @Request() req: any) {
-    return this.payrollService.createEmployeeComponent(data, req.user.id);
+  async createEmployeeComponent(@Body() data: CreateEmployeeSalaryComponentDto, @Request() req: any) {
+    const result = await this.payrollService.createEmployeeComponent(data, req.user.id);
+    return apiSuccess('Employee salary component created', result);
   }
 
   @Patch('employee-components/:id')
   @RequirePermissions('payroll.update')
-  updateEmployeeComponent(@Param('id') id: string, @Body() data: UpdateEmployeeSalaryComponentDto, @Request() req: any) {
-    return this.payrollService.updateEmployeeComponent(id, data, req.user.id);
+  async updateEmployeeComponent(@Param('id') id: string, @Body() data: UpdateEmployeeSalaryComponentDto, @Request() req: any) {
+    const result = await this.payrollService.updateEmployeeComponent(id, data, req.user.id);
+    return apiSuccess('Employee salary component updated', result);
   }
 
   @Delete('employee-components/:id')
   @RequirePermissions('payroll.update')
-  deleteEmployeeComponent(@Param('id') id: string, @Request() req: any) {
-    return this.payrollService.deleteEmployeeComponent(id, req.user.id);
+  async deleteEmployeeComponent(@Param('id') id: string, @Request() req: any) {
+    const result = await this.payrollService.deleteEmployeeComponent(id, req.user.id);
+    return apiSuccess('Employee salary component deleted', result);
   }
 
   // =========================================================================
@@ -94,68 +105,79 @@ export class PayrollController {
 
   @Get('periods')
   @RequirePermissions('payroll.view')
-  getPeriods(@Query() params: any) {
-    return this.payrollService.getPeriods(params);
+  async getPeriods(@Query() params: any) {
+    const result = await this.payrollService.getPeriods(params);
+    return apiSuccess('Payroll periods retrieved', result.data, result.meta);
   }
 
   @Post('periods')
   @RequirePermissions('payroll.create')
-  createPeriod(@Body() data: CreatePayrollPeriodDto, @Request() req: any) {
-    return this.payrollService.createPeriod(data, req.user.id);
+  async createPeriod(@Body() data: CreatePayrollPeriodDto, @Request() req: any) {
+    const result = await this.payrollService.createPeriod(data, req.user.id);
+    return apiSuccess('Payroll period created', result);
   }
 
   @Get('periods/:id')
   @RequirePermissions('payroll.view')
-  getPeriod(@Param('id') id: string) {
-    return this.payrollService.getPeriod(id);
+  async getPeriod(@Param('id') id: string) {
+    const result = await this.payrollService.getPeriod(id);
+    return apiSuccess('Payroll period retrieved', result);
   }
 
   @Patch('periods/:id')
   @RequirePermissions('payroll.update')
-  updatePeriod(@Param('id') id: string, @Body() data: UpdatePayrollPeriodDto, @Request() req: any) {
-    return this.payrollService.updatePeriod(id, data, req.user.id);
+  async updatePeriod(@Param('id') id: string, @Body() data: UpdatePayrollPeriodDto, @Request() req: any) {
+    const result = await this.payrollService.updatePeriod(id, data, req.user.id);
+    return apiSuccess('Payroll period updated', result);
   }
 
   @Delete('periods/:id')
   @RequirePermissions('payroll.update')
-  deletePeriod(@Param('id') id: string, @Request() req: any) {
-    return this.payrollService.deletePeriod(id, req.user.id);
+  async deletePeriod(@Param('id') id: string, @Request() req: any) {
+    const result = await this.payrollService.deletePeriod(id, req.user.id);
+    return apiSuccess('Payroll period deleted', result);
   }
 
   @Post('periods/:id/open')
   @RequirePermissions('payroll.update')
-  openPeriod(@Param('id') id: string, @Request() req: any) {
-    return this.payrollService.openPeriod(id, req.user.id);
+  async openPeriod(@Param('id') id: string, @Request() req: any) {
+    const result = await this.payrollService.openPeriod(id, req.user.id);
+    return apiSuccess('Payroll period opened', result);
   }
 
   @Post('periods/:id/calculate')
   @RequirePermissions('payroll.create')
-  calculatePeriod(@Param('id') id: string, @Request() req: any) {
-    return this.payrollService.calculatePeriod(id, req.user.id);
+  async calculatePeriod(@Param('id') id: string, @Request() req: any) {
+    const result = await this.payrollService.calculatePeriod(id, req.user.id);
+    return apiSuccess('Payroll period calculated', result);
   }
 
   @Post('periods/:id/approve')
   @RequirePermissions('payroll.approve')
-  approvePeriod(@Param('id') id: string, @Request() req: any) {
-    return this.payrollService.approvePeriod(id, req.user.id);
+  async approvePeriod(@Param('id') id: string, @Request() req: any) {
+    const result = await this.payrollService.approvePeriod(id, req.user.id);
+    return apiSuccess('Payroll period approved', result);
   }
 
   @Post('periods/:id/pay')
   @RequirePermissions('payroll.pay')
-  payPeriod(@Param('id') id: string, @Request() req: any) {
-    return this.payrollService.payPeriod(id, req.user.id);
+  async payPeriod(@Param('id') id: string, @Request() req: any) {
+    const result = await this.payrollService.payPeriod(id, req.user.id);
+    return apiSuccess('Payroll period paid', result);
   }
 
   @Post('periods/:id/close')
   @RequirePermissions('payroll.update')
-  closePeriod(@Param('id') id: string, @Request() req: any) {
-    return this.payrollService.closePeriod(id, req.user.id);
+  async closePeriod(@Param('id') id: string, @Request() req: any) {
+    const result = await this.payrollService.closePeriod(id, req.user.id);
+    return apiSuccess('Payroll period closed', result);
   }
 
   @Post('periods/:id/cancel')
   @RequirePermissions('payroll.update')
-  cancelPeriod(@Param('id') id: string, @Request() req: any) {
-    return this.payrollService.cancelPeriod(id, req.user.id);
+  async cancelPeriod(@Param('id') id: string, @Request() req: any) {
+    const result = await this.payrollService.cancelPeriod(id, req.user.id);
+    return apiSuccess('Payroll period cancelled', result);
   }
 
   // =========================================================================
@@ -164,20 +186,23 @@ export class PayrollController {
 
   @Get('runs')
   @RequirePermissions('payroll.view')
-  getRuns(@Query() params: any) {
-    return this.payrollService.getRuns(params);
+  async getRuns(@Query() params: any) {
+    const result = await this.payrollService.getRuns(params);
+    return apiSuccess('Payroll runs retrieved', result.data, result.meta);
   }
 
   @Get('runs/:id')
   @RequirePermissions('payroll.view')
-  getRun(@Param('id') id: string) {
-    return this.payrollService.getRun(id);
+  async getRun(@Param('id') id: string) {
+    const result = await this.payrollService.getRun(id);
+    return apiSuccess('Payroll run retrieved', result);
   }
 
   @Patch('runs/:id')
   @RequirePermissions('payroll.update')
-  updateRun(@Param('id') id: string, @Body() data: UpdatePayrollRunDto, @Request() req: any) {
-    return this.payrollService.updateRun(id, data, req.user.id);
+  async updateRun(@Param('id') id: string, @Body() data: UpdatePayrollRunDto, @Request() req: any) {
+    const result = await this.payrollService.updateRun(id, data, req.user.id);
+    return apiSuccess('Payroll run updated', result);
   }
 
   // =========================================================================
@@ -186,8 +211,9 @@ export class PayrollController {
 
   @Get('payslips')
   @RequirePermissions('payroll.view')
-  getPayslips(@Query() params: any) {
-    return this.payrollService.getPayslips(params);
+  async getPayslips(@Query() params: any) {
+    const result = await this.payrollService.getPayslips(params);
+    return apiSuccess('Payslips retrieved', result.data, result.meta);
   }
 
   // =========================================================================
@@ -196,20 +222,23 @@ export class PayrollController {
 
   @Get('payments')
   @RequirePermissions('payroll.pay')
-  getPayments(@Query() params: any) {
-    return this.payrollService.getPayments(params);
+  async getPayments(@Query() params: any) {
+    const result = await this.payrollService.getPayments(params);
+    return apiSuccess('Payments retrieved', result.data, result.meta);
   }
 
   @Get('payslips/:id')
   @RequirePermissions('payroll.view')
-  getPayslip(@Param('id') id: string) {
-    return this.payrollService.getPayslip(id);
+  async getPayslip(@Param('id') id: string) {
+    const result = await this.payrollService.getPayslip(id);
+    return apiSuccess('Payslip retrieved', result);
   }
 
   @Post('payslips/:id/mark-paid')
   @RequirePermissions('payroll.pay')
-  markPayslipPaid(@Param('id') id: string, @Body() data: MarkPayslipPaidDto, @Request() req: any) {
-    return this.payrollService.markPayslipPaid(id, data, req.user.id);
+  async markPayslipPaid(@Param('id') id: string, @Body() data: MarkPayslipPaidDto, @Request() req: any) {
+    const result = await this.payrollService.markPayslipPaid(id, data, req.user.id);
+    return apiSuccess('Payslip marked as paid', result);
   }
 
   @Get('payslips/:id/pdf')
