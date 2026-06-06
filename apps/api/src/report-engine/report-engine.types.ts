@@ -25,7 +25,7 @@ export interface ReportDefinition {
   code: string;
   name: string;
   category: ReportCategory;
-  supportedFormats: ('XLSX' | 'PDF' | 'CSV')[];
+  supportedFormats: ('XLSX' | 'PDF' | 'CSV' | 'JSON')[];
   requiredFilters: string[];
   optionalFilters: string[];
   permissions: string[];

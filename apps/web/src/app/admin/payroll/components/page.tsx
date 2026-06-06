@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader, SectionCard, DataTable, Button, ErrorState } from "@nexsmsid/ui";
 import { createBrowserApiClient } from "@/lib/api-client";
 import { Plus, RefreshCcw } from "lucide-react";
@@ -9,15 +9,14 @@ export default function Page() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const client = createBrowserApiClient();
+  const client = useMemo(() => createBrowserApiClient(), []);
 
   async function loadData() {
     setLoading(true);
     setError(null);
     try {
-      // Basic fetch directly mapping to our new resource endpoints
-      const response = await client.request("/payroll/components");
-      setItems(response.data || []);
+      const response = await client.listPayrollComponents({ limit: 50, page: 1 });
+      setItems((response as any).data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal memuat data");
     } finally {
@@ -33,7 +32,8 @@ export default function Page() {
     { key: "code", header: "Kode", cell: (item: any) => String(item.code ?? "-") },
     { key: "name", header: "Nama Komponen", cell: (item: any) => String(item.name ?? "-") },
     { key: "type", header: "Tipe", cell: (item: any) => String(item.type ?? "-") },
-    { key: "defaultAmount", header: "Nominal", cell: (item: any) => String(item.defaultAmount ?? "-") }
+    { key: "calculationType", header: "Hitung", cell: (item: any) => String(item.calculationType ?? "-") },
+    { key: "defaultAmount", header: "Nominal", cell: (item: any) => formatCurrency(item.defaultAmount) }
   ];
 
   return (
@@ -70,4 +70,8 @@ export default function Page() {
       </SectionCard>
     </div>
   );
+}
+
+function formatCurrency(value: unknown) {
+  return `Rp ${Number(value ?? 0).toLocaleString("id-ID")}`;
 }

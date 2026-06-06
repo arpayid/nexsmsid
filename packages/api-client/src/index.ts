@@ -469,6 +469,12 @@ export function createApiClient(options: ApiClientOptions = {}) {
     return query ? `?${query}` : "";
   }
 
+  function normalizeListResponse(response: ApiResponse<any>) {
+    const payload = response.data;
+    if (Array.isArray(payload)) return { data: payload, meta: response.meta };
+    return { data: payload?.data ?? [], meta: payload?.meta ?? response.meta };
+  }
+
   async function uploadFile<TData>(path: string, file: Blob | File, fieldName = "file", fallbackFilename = "upload.xlsx") {
     const formData = new FormData();
     const filename = (file as { name?: string }).name ?? fallbackFilename;
@@ -2356,7 +2362,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     async listHRPositions(params?: any) {
       const qs = new URLSearchParams(params).toString();
       const response = await request<any>(`/hr/positions?${qs}`);
-      return response;
+      return normalizeListResponse(response);
     },
     async getHRPosition(id: string) {
       const response = await request<any>(`/hr/positions/${id}`);
@@ -2377,7 +2383,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     async listEmployees(params?: any) {
       const qs = new URLSearchParams(params).toString();
       const response = await request<any>(`/hr/employees?${qs}`);
-      return response;
+      return normalizeListResponse(response);
     },
     async getEmployee(id: string) {
       const response = await request<any>(`/hr/employees/${id}`);
@@ -2398,7 +2404,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     async listEmployeeAttendance(params?: any) {
       const qs = new URLSearchParams(params).toString();
       const response = await request<any>(`/hr/attendance?${qs}`);
-      return response;
+      return normalizeListResponse(response);
     },
     async createEmployeeAttendance(data: any) {
       const response = await request<any>("/hr/attendance", { method: "POST", body: JSON.stringify(data) });
@@ -2415,7 +2421,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     async listLeaveRequests(params?: any) {
       const qs = new URLSearchParams(params).toString();
       const response = await request<any>(`/hr/leaves?${qs}`);
-      return response;
+      return normalizeListResponse(response);
     },
     async getLeaveRequest(id: string) {
       const response = await request<any>(`/hr/leaves/${id}`);
@@ -2453,7 +2459,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     async listPayrollComponents(params?: any) {
       const qs = new URLSearchParams(params).toString();
       const response = await request<any>(`/payroll/components?${qs}`);
-      return response;
+      return normalizeListResponse(response);
     },
     async getPayrollComponent(id: string) {
       const response = await request<any>(`/payroll/components/${id}`);
@@ -2490,7 +2496,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     async listPayrollPeriods(params?: any) {
       const qs = new URLSearchParams(params).toString();
       const response = await request<any>(`/payroll/periods?${qs}`);
-      return response;
+      return normalizeListResponse(response);
     },
     async getPayrollPeriod(id: string) {
       const response = await request<any>(`/payroll/periods/${id}`);
@@ -2535,7 +2541,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     async listPayrollRuns(params?: any) {
       const qs = new URLSearchParams(params).toString();
       const response = await request<any>(`/payroll/runs?${qs}`);
-      return response;
+      return normalizeListResponse(response);
     },
     async getPayrollRun(id: string) {
       const response = await request<any>(`/payroll/runs/${id}`);
@@ -2548,7 +2554,12 @@ export function createApiClient(options: ApiClientOptions = {}) {
     async listPayslips(params?: any) {
       const qs = new URLSearchParams(params).toString();
       const response = await request<any>(`/payroll/payslips?${qs}`);
-      return response;
+      return normalizeListResponse(response);
+    },
+    async listPayrollPayments(params?: any) {
+      const qs = new URLSearchParams(params).toString();
+      const response = await request<any>(`/payroll/payments?${qs}`);
+      return normalizeListResponse(response);
     },
     async getPayslip(id: string) {
       const response = await request<any>(`/payroll/payslips/${id}`);

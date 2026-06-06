@@ -1335,94 +1335,259 @@ export class ReportDataService {
   // =========================================================================================
 
   private async getHrEmployeeRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.status) where.status = filters.status;
+    if (filters.employmentType) where.employmentType = filters.employmentType;
+    if (filters.positionId) where.positionId = filters.positionId;
+
+    const employees = await this.prisma.employeeProfile.findMany({
+      where,
+      include: { position: true },
+      orderBy: { fullName: 'asc' },
+    });
+
     return {
       title: 'Employee Data Recap',
       columns: [
         { key: 'employeeCode', label: 'Employee Code', width: 20 },
         { key: 'fullName', label: 'Full Name', width: 30 },
+        { key: 'positionName', label: 'Position', width: 24 },
         { key: 'employmentType', label: 'Employment Type', width: 20 },
+        { key: 'basicSalary', label: 'Basic Salary', width: 18 },
         { key: 'status', label: 'Status', width: 20 },
+        { key: 'joinedAt', label: 'Joined At', width: 16 },
       ],
-      rows: [],
+      rows: employees.map((employee) => ({
+        employeeCode: employee.employeeCode,
+        fullName: employee.fullName,
+        positionName: employee.position?.name || '-',
+        employmentType: employee.employmentType,
+        basicSalary: formatReportCurrency(employee.basicSalary),
+        status: employee.status,
+        joinedAt: formatReportDate(employee.joinedAt),
+      })),
     };
   }
 
   private async getHrAttendanceRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.employeeId) where.employeeId = filters.employeeId;
+    if (filters.startDate || filters.endDate) {
+      where.date = {
+        ...(filters.startDate ? { gte: new Date(filters.startDate) } : {}),
+        ...(filters.endDate ? { lte: new Date(filters.endDate) } : {}),
+      };
+    }
+
+    const attendance = await this.prisma.employeeAttendance.findMany({
+      where,
+      include: { employee: true },
+      orderBy: [{ date: 'desc' }, { employee: { fullName: 'asc' } }],
+    });
+
     return {
       title: 'Employee Attendance Recap',
+      subtitle: filters.startDate || filters.endDate ? `Period: ${filters.startDate || '-'} to ${filters.endDate || '-'}` : undefined,
       columns: [
         { key: 'date', label: 'Date', width: 15 },
         { key: 'employeeCode', label: 'Employee Code', width: 20 },
         { key: 'fullName', label: 'Full Name', width: 30 },
         { key: 'status', label: 'Status', width: 20 },
+        { key: 'lateMinutes', label: 'Late Minutes', width: 16 },
+        { key: 'workMinutes', label: 'Work Minutes', width: 16 },
       ],
-      rows: [],
+      rows: attendance.map((item) => ({
+        date: formatReportDate(item.date),
+        employeeCode: item.employee?.employeeCode || '-',
+        fullName: item.employee?.fullName || '-',
+        status: item.status,
+        lateMinutes: item.lateMinutes,
+        workMinutes: item.workMinutes ?? '-',
+      })),
     };
   }
 
   private async getHrLeaveRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.employeeId) where.employeeId = filters.employeeId;
+    if (filters.status) where.status = filters.status;
+
+    const leaves = await this.prisma.leaveRequest.findMany({
+      where,
+      include: { employee: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
     return {
       title: 'Employee Leave Recap',
       columns: [
         { key: 'employeeCode', label: 'Employee Code', width: 20 },
         { key: 'fullName', label: 'Full Name', width: 30 },
         { key: 'type', label: 'Leave Type', width: 20 },
+        { key: 'startDate', label: 'Start Date', width: 16 },
+        { key: 'endDate', label: 'End Date', width: 16 },
+        { key: 'totalDays', label: 'Total Days', width: 12 },
         { key: 'status', label: 'Status', width: 20 },
       ],
-      rows: [],
+      rows: leaves.map((leave) => ({
+        employeeCode: leave.employee?.employeeCode || '-',
+        fullName: leave.employee?.fullName || '-',
+        type: leave.type,
+        startDate: formatReportDate(leave.startDate),
+        endDate: formatReportDate(leave.endDate),
+        totalDays: leave.totalDays,
+        status: leave.status,
+      })),
     };
   }
 
   private async getPayrollPeriodRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.status) where.status = filters.status;
+    if (filters.year) where.year = Number(filters.year);
+
+    const periods = await this.prisma.payrollPeriod.findMany({
+      where,
+      include: { _count: { select: { runs: true } } },
+      orderBy: [{ year: 'desc' }, { month: 'desc' }],
+    });
+
     return {
       title: 'Payroll Period Recap',
       columns: [
         { key: 'code', label: 'Code', width: 20 },
         { key: 'name', label: 'Name', width: 30 },
+        { key: 'month', label: 'Month', width: 10 },
+        { key: 'year', label: 'Year', width: 10 },
+        { key: 'runCount', label: 'Runs', width: 10 },
+        { key: 'paymentDate', label: 'Payment Date', width: 16 },
         { key: 'status', label: 'Status', width: 20 },
       ],
-      rows: [],
+      rows: periods.map((period) => ({
+        code: period.code,
+        name: period.name,
+        month: period.month,
+        year: period.year,
+        runCount: period._count.runs,
+        paymentDate: formatReportDate(period.paymentDate),
+        status: period.status,
+      })),
     };
   }
 
   private async getPayrollRunRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.periodId) where.periodId = filters.periodId;
+    if (filters.paymentStatus) where.status = filters.paymentStatus;
+
+    const runs = await this.prisma.payrollRun.findMany({
+      where,
+      include: { employee: true, period: true },
+      orderBy: [{ period: { year: 'desc' } }, { period: { month: 'desc' } }, { employee: { fullName: 'asc' } }],
+    });
+
     return {
       title: 'Payroll Run Recap',
       columns: [
         { key: 'periodCode', label: 'Period', width: 20 },
         { key: 'employeeCode', label: 'Employee', width: 20 },
+        { key: 'fullName', label: 'Full Name', width: 30 },
+        { key: 'totalEarnings', label: 'Earnings', width: 18 },
+        { key: 'totalDeductions', label: 'Deductions', width: 18 },
         { key: 'netAmount', label: 'Net Amount', width: 20 },
         { key: 'paymentStatus', label: 'Status', width: 20 },
       ],
-      rows: [],
+      rows: runs.map((run) => ({
+        periodCode: run.period?.code || '-',
+        employeeCode: run.employee?.employeeCode || '-',
+        fullName: run.employee?.fullName || '-',
+        totalEarnings: formatReportCurrency(run.totalEarnings),
+        totalDeductions: formatReportCurrency(run.totalDeductions),
+        netAmount: formatReportCurrency(run.netAmount),
+        paymentStatus: run.status,
+      })),
     };
   }
 
   private async getPayrollComponentRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null };
+    if (filters.type) where.type = filters.type;
+
+    const components = await this.prisma.payrollComponent.findMany({
+      where,
+      orderBy: { code: 'asc' },
+    });
+
     return {
       title: 'Payroll Component Recap',
       columns: [
         { key: 'code', label: 'Code', width: 20 },
         { key: 'name', label: 'Name', width: 30 },
         { key: 'type', label: 'Type', width: 20 },
+        { key: 'calculationType', label: 'Calculation', width: 18 },
         { key: 'defaultAmount', label: 'Default Amount', width: 20 },
+        { key: 'isActive', label: 'Active', width: 10 },
       ],
-      rows: [],
+      rows: components.map((component) => ({
+        code: component.code,
+        name: component.name,
+        type: component.type,
+        calculationType: component.calculationType,
+        defaultAmount: formatReportCurrency(component.defaultAmount),
+        isActive: component.isActive ? 'Yes' : 'No',
+      })),
     };
   }
 
   private async getPayrollPaymentRecap(filters: Record<string, any>): Promise<ReportDataResult> {
+    const where: any = { deletedAt: null, status: 'PAID' };
+    if (filters.startDate || filters.endDate) {
+      where.paidAt = {
+        ...(filters.startDate ? { gte: new Date(filters.startDate) } : {}),
+        ...(filters.endDate ? { lte: new Date(filters.endDate) } : {}),
+      };
+    }
+    if (filters.periodId) where.payrollRun = { periodId: filters.periodId };
+
+    const payslips = await this.prisma.payslip.findMany({
+      where,
+      include: { payrollRun: { include: { employee: true, period: true } } },
+      orderBy: { paidAt: 'desc' },
+    });
+
     return {
       title: 'Payroll Payment Recap',
+      subtitle: filters.startDate || filters.endDate ? `Period: ${filters.startDate || '-'} to ${filters.endDate || '-'}` : undefined,
       columns: [
         { key: 'periodCode', label: 'Period', width: 20 },
         { key: 'employeeCode', label: 'Employee', width: 20 },
+        { key: 'fullName', label: 'Full Name', width: 30 },
+        { key: 'payslipNumber', label: 'Payslip', width: 28 },
+        { key: 'netAmount', label: 'Net Amount', width: 18 },
         { key: 'paymentDate', label: 'Payment Date', width: 20 },
         { key: 'paymentMethod', label: 'Method', width: 20 },
+        { key: 'paymentReference', label: 'Reference', width: 24 },
       ],
-      rows: [],
+      rows: payslips.map((payslip) => ({
+        periodCode: payslip.payrollRun?.period?.code || '-',
+        employeeCode: payslip.payrollRun?.employee?.employeeCode || '-',
+        fullName: payslip.payrollRun?.employee?.fullName || '-',
+        payslipNumber: payslip.payslipNumber,
+        netAmount: formatReportCurrency(payslip.payrollRun?.netAmount),
+        paymentDate: formatReportDate(payslip.paidAt),
+        paymentMethod: payslip.paymentMethod || '-',
+        paymentReference: payslip.paymentReference || '-',
+      })),
     };
   }
+}
+
+function formatReportDate(value: Date | string | null | undefined) {
+  return value ? new Date(value).toISOString().split('T')[0] : '-';
+}
+
+function formatReportCurrency(value: unknown) {
+  return Number(value ?? 0).toLocaleString('id-ID');
 }
 
 function letterReportColumns() {

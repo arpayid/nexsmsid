@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 
 @Injectable()
@@ -13,7 +13,7 @@ export class PayrollCalculationService {
     });
 
     if (!period || period.status !== 'OPEN') {
-      throw new Error('Payroll period must be OPEN to calculate');
+      throw new BadRequestException('Payroll period must be OPEN to calculate');
     }
 
     // Get active employees
@@ -21,7 +21,12 @@ export class PayrollCalculationService {
       where: { status: 'ACTIVE', deletedAt: null },
       include: {
         salaryComponents: {
-          where: { isActive: true, deletedAt: null },
+          where: {
+            isActive: true,
+            deletedAt: null,
+            OR: [{ effectiveFrom: null }, { effectiveFrom: { lte: period.endDate } }],
+            AND: [{ OR: [{ effectiveTo: null }, { effectiveTo: { gte: period.startDate } }] }],
+          },
           include: { component: true },
         },
       },
@@ -62,14 +67,12 @@ export class PayrollCalculationService {
       if (!comp || !comp.isActive) continue;
 
       let amount = 0;
-      if (comp.calculationType === 'FIXED') {
-        amount = Number(sc.amount ?? comp.defaultAmount ?? 0);
-      } else if (comp.calculationType === 'PERCENTAGE') {
+      if (comp.calculationType === 'PERCENTAGE') {
         const pct = Number(sc.percentage ?? comp.defaultPercentage ?? 0);
         amount = (basicSalary * pct) / 100;
+      } else {
+        amount = Number(sc.amount ?? comp.defaultAmount ?? 0);
       }
-      // Note: DAILY, HOURLY, PER_SESSION would require attendance integration. 
-      // For baseline Phase 12.5, we simplify or use manual/default overrides.
 
       if (amount <= 0) continue;
 

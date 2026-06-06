@@ -231,22 +231,29 @@ export class PayrollService {
     });
 
     const runs = await this.prisma.payrollRun.findMany({ where: { periodId: id, deletedAt: null } });
+    const paidAt = new Date();
 
-    // Generate payslips
+    // Generate or mark payslips as paid when the full payroll period is paid.
     for (const run of runs) {
       await this.prisma.payrollRun.update({
         where: { id: run.id },
-        data: { status: 'PAID', paidById: userId, paidAt: new Date() },
+        data: { status: 'PAID', paidById: userId, paidAt },
       });
 
       const psExists = await this.prisma.payslip.findFirst({ where: { payrollRunId: run.id } });
-      if (!psExists) {
+      if (psExists) {
+        await this.prisma.payslip.update({
+          where: { id: psExists.id },
+          data: { status: 'PAID', issuedAt: psExists.issuedAt ?? paidAt, paidAt },
+        });
+      } else {
         await this.prisma.payslip.create({
           data: {
             payrollRunId: run.id,
             payslipNumber: `PS-${period.code}-${run.employeeId.slice(0,4).toUpperCase()}-${crypto.randomUUID().split('-')[0]}`,
-            status: 'ISSUED',
-            issuedAt: new Date(),
+            status: 'PAID',
+            issuedAt: paidAt,
+            paidAt,
           },
         });
       }
@@ -331,12 +338,14 @@ export class PayrollService {
   // PAYSLIPS
   // =========================================================================
 
-  async getPayslips(params: { page?: number; limit?: number; status?: string }) {
-    const { page = 1, limit = 10, status } = params;
+  async getPayslips(params: { page?: number; limit?: number; status?: string; payrollRunId?: string; periodId?: string }) {
+    const { page = 1, limit = 10, status, payrollRunId, periodId } = params;
     const skip = (page - 1) * limit;
 
     const where: any = { deletedAt: null };
     if (status) where.status = status;
+    if (payrollRunId) where.payrollRunId = payrollRunId;
+    if (periodId) where.payrollRun = { periodId };
 
     const [total, data] = await Promise.all([
       this.prisma.payslip.count({ where }),
@@ -346,6 +355,28 @@ export class PayrollService {
         skip,
         take: Number(limit),
         orderBy: { issuedAt: 'desc' },
+      }),
+    ]);
+
+    return { data, meta: { total, page: Number(page), limit: Number(limit) } };
+  }
+
+  async getPayments(params: { page?: number; limit?: number; status?: string; periodId?: string }) {
+    const { page = 1, limit = 10, status, periodId } = params;
+    const skip = (page - 1) * limit;
+
+    const where: any = { deletedAt: null };
+    where.status = status || { in: ['ISSUED', 'PAID'] };
+    if (periodId) where.payrollRun = { periodId };
+
+    const [total, data] = await Promise.all([
+      this.prisma.payslip.count({ where }),
+      this.prisma.payslip.findMany({
+        where,
+        include: { payrollRun: { include: { employee: { select: { fullName: true, employeeCode: true } }, period: { select: { code: true, name: true } } } } },
+        skip,
+        take: Number(limit),
+        orderBy: [{ paidAt: 'desc' }, { issuedAt: 'desc' }],
       }),
     ]);
 
@@ -367,16 +398,29 @@ export class PayrollService {
 
   async markPayslipPaid(id: string, data: MarkPayslipPaidDto, userId: string) {
     const ps = await this.getPayslip(id);
+    const paidAt = new Date();
     const updated = await this.prisma.payslip.update({
       where: { id },
       data: {
         status: 'PAID',
-        paidAt: new Date(),
+        paidAt,
         paymentMethod: data.paymentMethod,
         paymentReference: data.paymentReference,
       },
       include: { payrollRun: { include: { employee: true } } }
     });
+
+    await this.prisma.payrollRun.update({
+      where: { id: ps.payrollRunId },
+      data: { status: 'PAID', paidAt, paidById: userId },
+    });
+
+    const unpaidRuns = await this.prisma.payrollRun.count({
+      where: { periodId: ps.payrollRun.periodId, deletedAt: null, status: { not: 'PAID' } },
+    });
+    if (unpaidRuns === 0) {
+      await this.prisma.payrollPeriod.update({ where: { id: ps.payrollRun.periodId }, data: { status: 'PAID' } });
+    }
 
     await this.audit.record({ actorId: userId, action: "payroll.payslip.paid", entity: "Marked payslip as paid", metadata: { payslipId: id } });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader, SectionCard, DataTable, Button, ErrorState } from "@nexsmsid/ui";
 import { createBrowserApiClient } from "@/lib/api-client";
 import { Plus, RefreshCcw } from "lucide-react";
@@ -9,15 +9,14 @@ export default function Page() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const client = createBrowserApiClient();
+  const client = useMemo(() => createBrowserApiClient(), []);
 
   async function loadData() {
     setLoading(true);
     setError(null);
     try {
-      // Basic fetch directly mapping to our new resource endpoints
-      const response = await client.request("/payroll/runs");
-      setItems(response.data || []);
+      const response = await client.listPayrollRuns({ limit: 50, page: 1 });
+      setItems((response as any).data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal memuat data");
     } finally {
@@ -30,10 +29,12 @@ export default function Page() {
   }, []);
 
   const columns = [
-    { key: "employeeId", header: "ID Pegawai", cell: (item: any) => String(item.employeeId ?? "-") },
+    { key: "employee", header: "Pegawai", cell: (item: any) => String(item.employee?.fullName ?? item.employeeId ?? "-") },
     { key: "periodId", header: "Periode", cell: (item: any) => String(item.periodId ?? "-") },
-    { key: "netAmount", header: "Total Gaji Bersih", cell: (item: any) => String(item.netAmount ?? "-") },
-    { key: "paymentStatus", header: "Status Pembayaran", cell: (item: any) => String(item.paymentStatus ?? "-") }
+    { key: "totalEarnings", header: "Penerimaan", cell: (item: any) => formatCurrency(item.totalEarnings) },
+    { key: "totalDeductions", header: "Potongan", cell: (item: any) => formatCurrency(item.totalDeductions) },
+    { key: "netAmount", header: "Gaji Bersih", cell: (item: any) => formatCurrency(item.netAmount) },
+    { key: "status", header: "Status", cell: (item: any) => String(item.status ?? "-") }
   ];
 
   return (
@@ -70,4 +71,8 @@ export default function Page() {
       </SectionCard>
     </div>
   );
+}
+
+function formatCurrency(value: unknown) {
+  return `Rp ${Number(value ?? 0).toLocaleString("id-ID")}`;
 }

@@ -98,7 +98,7 @@ export class HRController {
   // =========================================================================
 
   @Get('attendance')
-  @RequirePermissions('payroll.create')
+  @RequirePermissions('payroll.view')
   getAttendance(@Query() params: any) {
     return this.hrService.getAttendance(params);
   }
@@ -122,7 +122,7 @@ export class HRController {
   }
 
   @Get('employees/:id/attendance')
-  @RequirePermissions('payroll.create')
+  @RequirePermissions('payroll.view')
   getEmployeeAttendance(@Param('id') id: string, @Query() params: any) {
     return this.hrService.getAttendance({ ...params, employeeId: id });
   }
@@ -132,7 +132,7 @@ export class HRController {
   // =========================================================================
 
   @Get('leaves')
-  @RequirePermissions('payroll.create')
+  @RequirePermissions('payroll.view')
   getLeaveRequests(@Query() params: any) {
     return this.hrService.getLeaveRequests(params);
   }
@@ -144,7 +144,7 @@ export class HRController {
   }
 
   @Get('leaves/:id')
-  @RequirePermissions('payroll.create')
+  @RequirePermissions('payroll.view')
   getLeaveRequest(@Param('id') id: string) {
     return this.hrService.getLeaveRequest(id);
   }

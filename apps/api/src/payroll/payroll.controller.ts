@@ -190,6 +190,16 @@ export class PayrollController {
     return this.payrollService.getPayslips(params);
   }
 
+  // =========================================================================
+  // PAYMENTS
+  // =========================================================================
+
+  @Get('payments')
+  @RequirePermissions('payroll.pay')
+  getPayments(@Query() params: any) {
+    return this.payrollService.getPayments(params);
+  }
+
   @Get('payslips/:id')
   @RequirePermissions('payroll.view')
   getPayslip(@Param('id') id: string) {

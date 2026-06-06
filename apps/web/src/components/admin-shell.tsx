@@ -171,14 +171,19 @@ const navigationGroups: NavigationGroup[] = [
   {
     label: "HR & Payroll",
     items: [
-      { href: "/admin/hr", icon: Users, label: "Dashboard HR", permission: "hr.view" },
-      { href: "/admin/hr/employees", icon: UserCheck, label: "Data Pegawai", permission: "hr.view" },
-      { href: "/admin/hr/attendance", icon: Clock, label: "Kehadiran", permission: "hr.attendance" },
-      { href: "/admin/hr/leaves", icon: CalendarOff, label: "Cuti & Izin", permission: "hr.leave" },
+      { href: "/admin/hr", icon: Users, label: "Dashboard HR", permission: "payroll.view" },
+      { href: "/admin/hr/employees", icon: UserCheck, label: "Data Pegawai", permission: "payroll.view" },
+      { href: "/admin/hr/positions", icon: BriefcaseBusiness, label: "Jabatan HR", permission: "payroll.view" },
+      { href: "/admin/hr/attendance", icon: Clock, label: "Kehadiran", permission: "payroll.view" },
+      { href: "/admin/hr/leaves", icon: CalendarOff, label: "Cuti & Izin", permission: "payroll.view" },
       { href: "/admin/payroll", icon: Wallet, label: "Dashboard Payroll", permission: "payroll.view" },
+      { href: "/admin/payroll/components", icon: Coins, label: "Komponen Gaji", permission: "payroll.view" },
+      { href: "/admin/payroll/settings", icon: Settings, label: "Setting Gaji", permission: "payroll.view" },
       { href: "/admin/payroll/periods", icon: CalendarClock, label: "Periode Penggajian", permission: "payroll.view" },
       { href: "/admin/payroll/runs", icon: Receipt, label: "Daftar Gaji", permission: "payroll.view" },
-      { href: "/admin/payroll/components", icon: Coins, label: "Komponen Gaji", permission: "payroll.view" },
+      { href: "/admin/payroll/payslips", icon: FileText, label: "Slip Gaji", permission: "payroll.view" },
+      { href: "/admin/payroll/payments", icon: Wallet, label: "Pembayaran Gaji", permission: "payroll.pay" },
+      { href: "/admin/payroll/reports", icon: BarChart3, label: "Laporan Payroll", permission: "reports.view" },
     ]
   },
   {
@@ -386,8 +391,8 @@ export function AdminShell({ children }: Readonly<{ children: ReactNode }>) {
                   <Settings className="h-5 w-5" />
                 </span>
                 <div className={cn("min-w-0", labelVisibility)}>
-                  <p className="truncate text-sm font-black text-slate-950">Phase 10.1 UI</p>
-                  <p className="truncate text-xs font-semibold text-muted-foreground">Consistent admin shell</p>
+                  <p className="truncate text-sm font-black text-slate-950">Phase 12.5 HR Payroll</p>
+                  <p className="truncate text-xs font-semibold text-muted-foreground">Validation ready</p>
                 </div>
               </div>
             </div>

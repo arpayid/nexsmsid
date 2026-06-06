@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader, SectionCard, DataTable, Button, ErrorState } from "@nexsmsid/ui";
 import { createBrowserApiClient } from "@/lib/api-client";
 import { Plus, RefreshCcw } from "lucide-react";
@@ -9,15 +9,14 @@ export default function Page() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const client = createBrowserApiClient();
+  const client = useMemo(() => createBrowserApiClient(), []);
 
   async function loadData() {
     setLoading(true);
     setError(null);
     try {
-      // Basic fetch directly mapping to our new resource endpoints
-      const response = await client.request("/hr/leaves");
-      setItems(response.data || []);
+      const response = await client.listLeaveRequests({ limit: 50, page: 1 });
+      setItems((response as any).data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal memuat data");
     } finally {
@@ -30,8 +29,10 @@ export default function Page() {
   }, []);
 
   const columns = [
-    { key: "employeeId", header: "ID Pegawai", cell: (item: any) => String(item.employeeId ?? "-") },
-    { key: "leaveType", header: "Tipe", cell: (item: any) => String(item.leaveType ?? "-") },
+    { key: "employee", header: "Pegawai", cell: (item: any) => String(item.employee?.fullName ?? item.employeeId ?? "-") },
+    { key: "type", header: "Tipe", cell: (item: any) => String(item.type ?? "-") },
+    { key: "period", header: "Periode", cell: (item: any) => `${formatDate(item.startDate)} - ${formatDate(item.endDate)}` },
+    { key: "totalDays", header: "Hari", cell: (item: any) => String(item.totalDays ?? "-") },
     { key: "status", header: "Status", cell: (item: any) => String(item.status ?? "-") }
   ];
 
@@ -69,4 +70,8 @@ export default function Page() {
       </SectionCard>
     </div>
   );
+}
+
+function formatDate(value: unknown) {
+  return value ? new Date(String(value)).toLocaleDateString("id-ID") : "-";
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader, SectionCard, DataTable, Button, ErrorState } from "@nexsmsid/ui";
 import { createBrowserApiClient } from "@/lib/api-client";
 import { Plus, RefreshCcw } from "lucide-react";
@@ -9,15 +9,14 @@ export default function Page() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const client = createBrowserApiClient();
+  const client = useMemo(() => createBrowserApiClient(), []);
 
   async function loadData() {
     setLoading(true);
     setError(null);
     try {
-      // Basic fetch directly mapping to our new resource endpoints
-      const response = await client.request("/payroll/periods");
-      setItems(response.data || []);
+      const response = await client.listPayrollPeriods({ limit: 50, page: 1 });
+      setItems((response as any).data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal memuat data");
     } finally {
@@ -34,6 +33,7 @@ export default function Page() {
     { key: "name", header: "Nama Periode", cell: (item: any) => String(item.name ?? "-") },
     { key: "month", header: "Bulan", cell: (item: any) => String(item.month ?? "-") },
     { key: "year", header: "Tahun", cell: (item: any) => String(item.year ?? "-") },
+    { key: "paymentDate", header: "Tanggal Bayar", cell: (item: any) => formatDate(item.paymentDate) },
     { key: "status", header: "Status", cell: (item: any) => String(item.status ?? "-") }
   ];
 
@@ -71,4 +71,8 @@ export default function Page() {
       </SectionCard>
     </div>
   );
+}
+
+function formatDate(value: unknown) {
+  return value ? new Date(String(value)).toLocaleDateString("id-ID") : "-";
 }
