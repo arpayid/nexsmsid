@@ -695,7 +695,7 @@ export class LibraryService {
       return l;
     });
 
-    await this.audit.record({ actorId: userId, action: "library.loan.create", entity: "Created library loan", metadata: {
+    await this.audit.record({ actorId: userId, action: "library.borrow.create", entity: "Created library loan", metadata: {
       loanId: loan.id,
       copyId: dto.copyId,
     } });
@@ -757,7 +757,7 @@ export class LibraryService {
       }
     });
 
-    await this.audit.record({ actorId: userId, action: "library.loan.return", entity: "Returned library loan", metadata: {
+    await this.audit.record({ actorId: userId, action: "library.borrow.return", entity: "Returned library loan", metadata: {
       loanId: id,
     } });
 
@@ -794,7 +794,7 @@ export class LibraryService {
       });
     });
 
-    await this.audit.record({ actorId: userId, action: "library.loan.lost", entity: "Marked loan as lost", metadata: {
+    await this.audit.record({ actorId: userId, action: "library.borrow.lost", entity: "Marked loan as lost", metadata: {
       loanId: id,
     } });
 
@@ -817,7 +817,7 @@ export class LibraryService {
       });
     });
 
-    await this.audit.record({ actorId: userId, action: "library.loan.cancel", entity: "Cancelled library loan", metadata: {
+    await this.audit.record({ actorId: userId, action: "library.borrow.cancel", entity: "Cancelled library loan", metadata: {
       loanId: id,
     } });
 

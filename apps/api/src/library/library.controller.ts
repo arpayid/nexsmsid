@@ -282,7 +282,7 @@ export class LibraryController {
   }
 
   @Post('loans')
-  @RequirePermissions('library.loan')
+  @RequirePermissions('library.borrow')
   createLoan(@Body() dto: CreateLibraryLoanDto, @Req() req: any) {
     return this.libraryService.createLoan(dto, req.user.id);
   }

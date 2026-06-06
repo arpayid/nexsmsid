@@ -157,7 +157,7 @@ const navigationGroups: NavigationGroup[] = [
       { href: "/admin/library", icon: BookOpen, label: "Dashboard Perpustakaan", permission: "library.view" },
       { href: "/admin/library/categories", icon: ClipboardList, label: "Kategori", permission: "library.view" },
       { href: "/admin/library/books", icon: BookOpen, label: "Data Buku", permission: "library.view" },
-      { href: "/admin/library/loans", icon: HeartHandshake, label: "Peminjaman", permission: "library.loan" },
+      { href: "/admin/library/loans", icon: HeartHandshake, label: "Peminjaman", permission: "library.borrow" },
       { href: "/admin/library/fines", icon: Banknote, label: "Denda", permission: "library.fine" },
       { href: "/admin/library/reports", icon: BarChart3, label: "Laporan", permission: "library.view" }
     ]
