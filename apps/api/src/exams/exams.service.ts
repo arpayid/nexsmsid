@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException }
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../database/prisma.service";
 
-type PaginationQuery = { limit?: number; page?: number; search?: string };
+type PaginationQuery = { limit?: string | number; page?: string | number; search?: string };
 
 const examInclude = {
   examType: true,
@@ -21,13 +21,28 @@ const scheduleInclude = {
 export class ExamsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private getPagination(query?: { page?: string | number; limit?: string | number }) {
+    const rawPage = Number(query?.page ?? 1);
+    const rawLimit = Number(query?.limit ?? 20);
+
+    const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(Math.floor(rawLimit), 100) : 20;
+
+    return {
+      page,
+      limit,
+      skip: (page - 1) * limit,
+      take: limit
+    };
+  }
+
   // ── Exam Types ──────────────────────────────────────────────
   async listExamTypes(query: PaginationQuery) {
-    const { limit = 10, page = 1, search } = query;
+    const { page, limit, skip, take } = this.getPagination(query);
     const where: Prisma.ExamTypeWhereInput = { deletedAt: null };
-    if (search) where.name = { contains: search, mode: "insensitive" };
+    if (query.search) where.name = { contains: query.search, mode: "insensitive" };
     const [data, total] = await Promise.all([
-      this.prisma.examType.findMany({ where, skip: (page - 1) * limit, take: limit, orderBy: { name: "asc" } }),
+      this.prisma.examType.findMany({ where, skip, take, orderBy: { name: "asc" } }),
       this.prisma.examType.count({ where })
     ]);
     return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
@@ -57,11 +72,11 @@ export class ExamsService {
 
   // ── Exam Rooms ──────────────────────────────────────────────
   async listRooms(query: PaginationQuery) {
-    const { limit = 10, page = 1, search } = query;
+    const { page, limit, skip, take } = this.getPagination(query);
     const where: Prisma.ExamRoomWhereInput = { deletedAt: null };
-    if (search) where.OR = [{ code: { contains: search, mode: "insensitive" } }, { name: { contains: search, mode: "insensitive" } }];
+    if (query.search) where.OR = [{ code: { contains: query.search, mode: "insensitive" } }, { name: { contains: query.search, mode: "insensitive" } }];
     const [data, total] = await Promise.all([
-      this.prisma.examRoom.findMany({ where, skip: (page - 1) * limit, take: limit, orderBy: { code: "asc" } }),
+      this.prisma.examRoom.findMany({ where, skip, take, orderBy: { code: "asc" } }),
       this.prisma.examRoom.count({ where })
     ]);
     return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
@@ -91,14 +106,14 @@ export class ExamsService {
 
   // ── Exams ───────────────────────────────────────────────────
   async listExams(query: PaginationQuery & { status?: string; examTypeId?: string; academicYearId?: string }) {
-    const { limit = 10, page = 1, search, status, examTypeId, academicYearId } = query;
+    const { page, limit, skip, take } = this.getPagination(query);
     const where: Prisma.ExamWhereInput = { deletedAt: null };
-    if (search) where.name = { contains: search, mode: "insensitive" };
-    if (status) where.status = status as any;
-    if (examTypeId) where.examTypeId = examTypeId;
-    if (academicYearId) where.academicYearId = academicYearId;
+    if (query.search) where.name = { contains: query.search, mode: "insensitive" };
+    if (query.status) where.status = query.status as any;
+    if (query.examTypeId) where.examTypeId = query.examTypeId;
+    if (query.academicYearId) where.academicYearId = query.academicYearId;
     const [data, total] = await Promise.all([
-      this.prisma.exam.findMany({ where, include: examInclude, skip: (page - 1) * limit, take: limit, orderBy: { createdAt: "desc" } }),
+      this.prisma.exam.findMany({ where, include: examInclude, skip, take, orderBy: { createdAt: "desc" } }),
       this.prisma.exam.count({ where })
     ]);
     return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
@@ -144,12 +159,12 @@ export class ExamsService {
 
   // ── Participants ────────────────────────────────────────────
   async listParticipants(examId: string, query: PaginationQuery) {
-    const { limit = 10, page = 1, search } = query;
+    const { page, limit, skip, take } = this.getPagination(query);
     const where: Prisma.ExamParticipantWhereInput = { examId, deletedAt: null };
-    if (search) where.student = { name: { contains: search, mode: "insensitive" } };
+    if (query.search) where.student = { name: { contains: query.search, mode: "insensitive" } };
     const [data, total] = await Promise.all([
       this.prisma.examParticipant.findMany({
-        where, skip: (page - 1) * limit, take: limit,
+        where, skip, take,
         include: { student: { include: { user: { select: { id: true, name: true } } } }, session: true },
         orderBy: { number: "asc" }
       }),
@@ -269,11 +284,11 @@ export class ExamsService {
 
   // ── Question Banks ────────────────────────────────────────────
   async listBanks(query: PaginationQuery) {
-    const { limit = 10, page = 1, search } = query;
+    const { page, limit, skip, take } = this.getPagination(query);
     const where: Prisma.QuestionBankWhereInput = { deletedAt: null };
-    if (search) where.name = { contains: search, mode: "insensitive" };
+    if (query.search) where.name = { contains: query.search, mode: "insensitive" };
     const [data, total] = await Promise.all([
-      this.prisma.questionBank.findMany({ where, skip: (page - 1) * limit, take: limit, orderBy: { name: "asc" } }),
+      this.prisma.questionBank.findMany({ where, skip, take, orderBy: { name: "asc" } }),
       this.prisma.questionBank.count({ where })
     ]);
     return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
@@ -287,11 +302,11 @@ export class ExamsService {
 
   // ── Results ─────────────────────────────────────────────────
   async listResults(examId: string, query: PaginationQuery) {
-    const { limit = 10, page = 1 } = query;
+    const { page, limit, skip, take } = this.getPagination(query);
     const where: Prisma.ExamResultWhereInput = { examId };
     const [data, total] = await Promise.all([
       this.prisma.examResult.findMany({
-        where, skip: (page - 1) * limit, take: limit,
+        where, skip, take,
         include: { participant: { include: { student: { include: { user: { select: { id: true, name: true } } } } } }, question: true },
         orderBy: { createdAt: "asc" }
       }),
